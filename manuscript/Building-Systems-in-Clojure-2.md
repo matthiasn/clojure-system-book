@@ -5,8 +5,7 @@ Blog post originally published on **[matthiasnehlsen.com](http://matthiasnehlsen
 
 **TL;DR:** This article covers the usage of **Transducers** in Clojure, spiced up with some **core.async**. Here's an animation that shows the information flow of the **composed transducer** that we are going to build in this article:
 
-
-
+![transducer illustration](images/arrow.png)
 
 If any of that is of interest to you at all (or if you want to see more animations like the one above), you may want to **read** the following article.
 
@@ -134,27 +133,33 @@ Let's create a vector of JSON fragments and try it out. We have already establis
 
 Now we can check on the REPL if this will produce three complete JSON strings. It is expected here that the last one is lost because we would only check its completeness once there is a following tweet[^6]. Once the collection to process is empty, the **arity-1** (single argument) function is called one last time, which really only returns the aggregate at that point:
 
-    birdwatch.main=> (in-ns 'birdwatch.twitterclient.processing)
-    #<Namespace birdwatch.twitterclient.processing>
-    
-    birdwatch.twitterclient.processing=> (def chunks ["{\"foo\"" ":1}\n{\"bar\":" "42}" "{\"baz\":42}" "{\"bla\":42}"])
-    #'birdwatch.twitterclient.processing/chunks
-    
-    birdwatch.twitterclient.processing=> (into [] (streaming-buffer) chunks)
-    ["{\"foo\":1}" "{\"bar\":42}" "{\"baz\":42}"]
+{line-numbers=off,lang=clojure}
+~~~
+birdwatch.main=> (in-ns 'birdwatch.twitterclient.processing)
+#<Namespace birdwatch.twitterclient.processing>
+
+birdwatch.twitterclient.processing=> (def chunks ["{\"foo\"" ":1}\n{\"bar\":" "42}" "{\"baz\":42}" "{\"bla\":42}"])
+#'birdwatch.twitterclient.processing/chunks
+
+birdwatch.twitterclient.processing=> (into [] (streaming-buffer) chunks)
+["{\"foo\":1}" "{\"bar\":42}" "{\"baz\":42}"]
+~~~
 
 What somewhat confused me at first is what the step function actually was. Let's find out by printing it when the arity-1 function is called. We can modify the fourth line of **stream-buffer** like this:
 
 {line-numbers=off,lang=clojure}
 ~~~
-      ([r] (println step) (step r))
+([r] (println step) (step r))
 ~~~
 
 Now when we run the same as above on the REPL, we can see what the step function actually is:
 
-    birdwatch.twitterclient.processing=> (into [] (streaming-buffer) chunks)
-    #<core$conj_BANG_ clojure.core$conj_BANG_@5fd837a>
-    ["{\"foo\":1}" "{\"bar\":42}" "{\"baz\":42}"]
+{line-numbers=off,lang=clojure}
+~~~
+birdwatch.twitterclient.processing=> (into [] (streaming-buffer) chunks)
+#<core$conj_BANG_ clojure.core$conj_BANG_@5fd837a>
+["{\"foo\":1}" "{\"bar\":42}" "{\"baz\":42}"]
+~~~
 
 Interestingly, the step function is **conj!** which according to the **[source](https://github.com/clojure/clojure/blob/clojure-1.7.0-alpha2/src/clj/clojure/core.clj#L3208)** adds **x** to a **transient collection**[^7].
 
@@ -219,48 +224,49 @@ Let's try the composed transducer on a vector to see what's happening. For that,
 ~~~
 
 Then we should see that the invalid one is logged and the other two are returned (the final one at that point still in the buffer):
-
-    birdwatch.main=> (in-ns 'birdwatch.twitterclient.processing)
-    #<Namespace birdwatch.twitterclient.processing>
-    
-    birdwatch.twitterclient.processing=> (def chunks ["{\"text\"" ":\"foo\"}\n{\"text\":" "\"bar\"}" "{\"baz\":42}" "{\"bla\":42}"])
-    #'birdwatch.twitterclient.processing/chunks
-    
-    birdwatch.twitterclient.processing=> (into [] (process-chunk (atom (t/epoch))) chunks)
-    20:57:39.999 [nREPL-worker-1] ERROR birdwatch.twitterclient.processing - error-msg {:baz 42}
-    [{:text "foo"} {:text "bar"}]
+{line-numbers=off,lang=clojure}
+~~~
+birdwatch.main=> (in-ns 'birdwatch.twitterclient.processing)
+birdwatch.twitterclient.processing=> (def chunks ["{\"text\"" ":\"foo\"}\n{\"text\":" "\"bar\"}" "{\"baz\":42}" "{\"bla\":42}"])
+birdwatch.twitterclient.processing=> (into [] (process-chunk (atom (t/epoch))) chunks)
+20:57:39.999 [nREPL-worker-1] ERROR birdwatch.twitterclient.processing - error-msg {:baz 42}
+[{:text "foo"} {:text "bar"}]
+~~~
 
 Great, we have a composed transducer that works on vectors as expected. According to Rich Hickey this should work equally well on channels. But let's not take his word for it and instead try it out. First, here's my attempt to visualize the usage of a transducer in a channel. To make things easier, no errors occur.
 
-![transducer illustration](arrow.png)
+![transducer illustration](images/arrow.png)
 
 Now for a simple example in the REPL:
 
-    birdwatch.main=> (in-ns 'birdwatch.twitterclient.processing)
-    #<Namespace birdwatch.twitterclient.processing>
-        
-    birdwatch.twitterclient.processing=> (def chunks ["{\"text\"" ":\"foo\"}\r\n{\"text\":" "\"bar\"}" "{\"baz\":42}" "{\"bla\":42}"])
-    #'birdwatch.twitterclient.processing/chunks
+{line-numbers=off,lang=clojure}
+~~~
+birdwatch.main=> (in-ns 'birdwatch.twitterclient.processing)
+#<Namespace birdwatch.twitterclient.processing>
+    
+birdwatch.twitterclient.processing=> (def chunks ["{\"text\"" ":\"foo\"}\r\n{\"text\":" "\"bar\"}" "{\"baz\":42}" "{\"bla\":42}"])
+#'birdwatch.twitterclient.processing/chunks
 
-    birdwatch.twitterclient.processing=> (require '[clojure.core.async :as async :refer [chan go-loop <! put!]])
-    nil
-    
-    birdwatch.twitterclient.processing=> (def c (chan 1 (process-chunk (atom (t/now)))))
-    #'birdwatch.twitterclient.processing/c
-    
-    birdwatch.twitterclient.processing=> (go-loop [] (println (<! c)) (recur))
-    #<ManyToManyChannel clojure.core.async.impl.channels.ManyToManyChannel@2f924b3f>
-    
-    birdwatch.twitterclient.processing=> (put! c (chunks 0))
-    birdwatch.twitterclient.processing=> (put! c (chunks 1))
-    {:text foo}
-    
-    birdwatch.twitterclient.processing=> (put! c (chunks 2))
-    birdwatch.twitterclient.processing=> (put! c (chunks 3))
-    {:text bar}
-    
-    birdwatch.twitterclient.processing=> (put! c (chunks 4))
-    16:44:32.539 [nREPL-worker-2] ERROR birdwatch.twitterclient.processing - error-msg {:baz 42}
+birdwatch.twitterclient.processing=> (require '[clojure.core.async :as async :refer [chan go-loop <! put!]])
+nil
+
+birdwatch.twitterclient.processing=> (def c (chan 1 (process-chunk (atom (t/now)))))
+#'birdwatch.twitterclient.processing/c
+
+birdwatch.twitterclient.processing=> (go-loop [] (println (<! c)) (recur))
+#<ManyToManyChannel clojure.core.async.impl.channels.ManyToManyChannel@2f924b3f>
+
+birdwatch.twitterclient.processing=> (put! c (chunks 0))
+birdwatch.twitterclient.processing=> (put! c (chunks 1))
+{:text foo}
+
+birdwatch.twitterclient.processing=> (put! c (chunks 2))
+birdwatch.twitterclient.processing=> (put! c (chunks 3))
+{:text bar}
+
+birdwatch.twitterclient.processing=> (put! c (chunks 4))
+16:44:32.539 [nREPL-worker-2] ERROR birdwatch.twitterclient.processing - error-msg {:baz 42}
+~~~
 
 Excellent, same output. In case you're not familiar with **core.async channels** yet: above we created a channel with the same transducer attached as in the previous example, then we created a **go-loop** to consume the channel and finally, we **put!** the individual chunks on the channel. No worries if this seems a little much right now. Just come back for the next articles where we'll cover this topic in much more detail.
 

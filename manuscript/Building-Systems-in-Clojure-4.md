@@ -44,7 +44,7 @@ https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f31
 
 Here, we are creating a configuration map and start a send loop with this configuration for the **"matches"** topic. Here's that loop:
 
-{% codeblock Send Loop lang:clojure https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f311f6f/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/interop/redis.clj
+https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f311f6f/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/interop/redis.clj
 
 {line-numbers=off,lang=clojure}
 ~~~

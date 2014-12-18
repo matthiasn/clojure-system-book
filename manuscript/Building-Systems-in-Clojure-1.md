@@ -23,7 +23,7 @@ Let's have a look at how the initialization of the application we have already s
 
 https://github.com/matthiasn/BirdWatch/blob/a26c201d2cc2c89f4b3d2ecb8e6adb403e6f89c7/Clojure-Websockets/src/clj/birdwatch/main.clj main.clj
 
-{line-numbers=on,lang=clojure}
+{line-numbers=off,lang=clojure}
 ~~~
 (ns birdwatch.main
   (:gen-class)
@@ -71,21 +71,24 @@ I personally think this **reads really well**, even if you have never seen Cloju
 
 Now, when we start the application, all the dependencies will be started in an order that the component library determines so that all dependencies are met. Here's the output of that startup process:
 
-    mn:Clojure-Websockets mn$ lein run
-    16:46:30.925 [main] INFO  birdwatch.main - Application started, PID 6682
-    16:46:30.937 [main] INFO  birdwatch.twitter-client - Starting Twitterclient Channels Component
-    16:46:30.939 [main] INFO  birdwatch.twitter-client - Starting Twitterclient Component
-    16:46:30.940 [main] INFO  birdwatch.twitter-client - Starting Twitter client.
-    16:46:31.323 [main] INFO  birdwatch.persistence - Starting Persistence Channels Component
-    16:46:31.324 [main] INFO  birdwatch.persistence - Starting Persistence Component
-    16:46:31.415 [main] INFO  org.elasticsearch.plugins - [Chameleon] loaded [], sites []
-    16:46:32.339 [main] INFO  birdwatch.communicator - Starting Communicator Channels Component
-    16:46:32.340 [main] INFO  birdwatch.communicator - Starting Communicator Component
-    16:46:32.355 [main] INFO  birdwatch.http - Starting HTTP Component
-    16:46:32.375 [main] INFO  birdwatch.http - Http-kit server is running at http://localhost:8888/
-    16:46:32.376 [main] INFO  birdwatch.percolator - Starting Percolation Channels Component
-    16:46:32.377 [main] INFO  birdwatch.percolator - Starting Percolator Component
-    16:46:32.380 [main] INFO  birdwatch.switchboard - Starting Switchboard Component
+{line-numbers=off,lang=text}
+~~~
+mn:Clojure-Websockets mn$ lein run
+16:46:30.925 [main] INFO  birdwatch.main - Application started, PID 6682
+16:46:30.937 [main] INFO  birdwatch.twitter-client - Starting Twitterclient Channels Component
+16:46:30.939 [main] INFO  birdwatch.twitter-client - Starting Twitterclient Component
+16:46:30.940 [main] INFO  birdwatch.twitter-client - Starting Twitter client.
+16:46:31.323 [main] INFO  birdwatch.persistence - Starting Persistence Channels Component
+16:46:31.324 [main] INFO  birdwatch.persistence - Starting Persistence Component
+16:46:31.415 [main] INFO  org.elasticsearch.plugins - [Chameleon] loaded [], sites []
+16:46:32.339 [main] INFO  birdwatch.communicator - Starting Communicator Channels Component
+16:46:32.340 [main] INFO  birdwatch.communicator - Starting Communicator Component
+16:46:32.355 [main] INFO  birdwatch.http - Starting HTTP Component
+16:46:32.375 [main] INFO  birdwatch.http - Http-kit server is running at http://localhost:8888/
+16:46:32.376 [main] INFO  birdwatch.percolator - Starting Percolation Channels Component
+16:46:32.377 [main] INFO  birdwatch.percolator - Starting Percolator Component
+16:46:32.380 [main] INFO  birdwatch.switchboard - Starting Switchboard Component
+~~~
 
 Next week, we will look at how these components wire a channel grid and how information flows through this grid. You do not have to wait to see more code though, everything is on **[GitHub](https://github.com/matthiasn/BirdWatch)** already.
 
