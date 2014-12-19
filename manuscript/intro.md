@@ -1,4 +1,4 @@
-# Building a System in Clojure
+# Introduction
 
 In this book, we will build a system in Clojure that processes streaming data and visualizes different insights into the data in a browser. All visualizations of data display information in (near) real-time.
 
@@ -12,6 +12,3 @@ Please join me on this journey as I explore the problem further and at the same 
 
 Cheers,
 Matthias
-
-
-
