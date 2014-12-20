@@ -1,6 +1,10 @@
-intro.md
+Intro.md
 Building-Systems-in-Clojure-1.md
 Building-Systems-in-Clojure-2.md
 Building-Systems-in-Clojure-3.md
 Building-Systems-in-Clojure-4.md
-Outline.md
+ArchitectureCode.md
+Testing.md
+OperationalInsight.md
+LoadTestingOptimization.md
+Deployment.md

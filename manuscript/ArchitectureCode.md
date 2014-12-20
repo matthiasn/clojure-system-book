@@ -1,4 +1,4 @@
-# Outline Draft 
+# Architecture and Code
 
 ## Introduction
 
@@ -30,12 +30,10 @@
 
 ### React.js Concepts
 
-### Reagent
+### Reagent (or potentially freactive)
 
 ## Client-side Implementation
 
 ## SVG-manipulation with ClojureScript
 
 ## Conclusion
-
-
