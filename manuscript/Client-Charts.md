@@ -5,4 +5,4 @@
 ### Wordcount Trends Chart (with Linear Regression)
 
 
----
+{pagebreak}

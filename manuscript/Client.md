@@ -15,3 +15,4 @@ The following libraries are still required, should also be replaced though:
 * d3.layout.cloud.js 
 * wordcloud.js - own JavaScript implementation for interacting with d3.layout.cloud.js
 
+{pagebreak}

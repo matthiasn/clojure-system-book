@@ -6,4 +6,4 @@
 
 ### Pure.css
 
----
+{pagebreak}
