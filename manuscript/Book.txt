@@ -19,6 +19,12 @@ MainApp-PercolationComponent.md
 MainApp-WebsocketComponent.md
 
 Client.md
+Client-State.md
+Client-Channels.md
+Client-WebSockets.md
+Client-DataAggregation.md
+Client-UI.md
+Client-Charts.md
 
 Testing.md
 OperationalInsight.md
