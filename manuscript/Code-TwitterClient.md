@@ -144,7 +144,7 @@ What somewhat confused me at first is what the step function actually was. Let's
 
 Now when we run the same as above on the REPL, we can see what the step function actually is:
 
-{line-numbers=off,lang=clojure}
+{line-numbers=off,lang=text}
 ~~~
 => (into [] (streaming-buffer) chunks)
 #<core$conj_BANG_ clojure.core$conj_BANG_@5fd837a>
