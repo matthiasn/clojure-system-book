@@ -10,7 +10,10 @@ Here is how that stream looks like when each chunk is simply printed to the cons
 
 For reasons unbeknownst to me, tweets stopped respecting the chunk borders for the last half year. Instead, tweets occasionally span two or three chunks. This makes processing the tweets a little more complicated than we might wish for. One tweet per chunk is straightforward: 
 
-    Receive chunk -> parse JSON into map -> put on conveyor belt (channel)
+{line-numbers=off,lang=text}
+~~~
+Receive chunk -> parse JSON into map -> put on conveyor belt (channel)
+~~~
 
 That looks like functional programming, right? No state to be kept anywhere, just functions producing results that are passed into other functions. But as desirable as that sounds, it does not align with reality. Instead, we need logical reasoning and state. What is the instruction we would give a sentient being? Imagine an intelligent agent standing between two conveyor belts. Imagine that agent being you. Here we go:
 
@@ -20,10 +23,10 @@ I think we would all know what to do. There is a space where you park fragments 
 
 
 ### Transducers
-{% blockquote Rich Hickey http://blog.cognitect.com/blog/2014/8/6/transducers-are-coming Cognitect Blog, August 6, 2014 %}
-Transducers are a powerful and composable way to build algorithmic transformations that you can reuse in many contexts, and they're coming to Clojure core and core.async.{% endblockquote %}
 
-In a way, a transducer is the **essence** of a computation over data, without being bound to any kind of collection or data structure. Above, before we had to concern ourselves with the incomplete fragments, there was one step of the computation that we could **model as a transducer**: the part where we wanted to parse JSON into a map data structure. 
+> Transducers are a powerful and composable way to build algorithmic transformations that you can reuse in many contexts, and they're coming to Clojure core and core.async. **[Rich Hickey, August 2014](http://blog.cognitect.com/blog/2014/8/6/transducers-are-coming)** 
+
+In a way, a transducer is the **essence** of a computation over data, without being bound to any kind of collection or data structure. Above, before we had to concern ourselves with the incomplete fragments, there was one step of the computation that we could **model as a transducer**: the part where we wanted to parse JSON into a map data structure.
 
 Imagine we wanted to transform a vector of JSON strings into a vector of such parsed maps. We could simply do this:
 
@@ -68,9 +71,7 @@ The above creates a channel with a buffer size of one that applies the transduce
 
 But this does not help in our initial case here, where we know that some of the chunks are not complete but instead have to be glued together with the next one or two pieces. For that, we will need some kind of **state**. In the example above, that would be the space where we place fragments of a hundred dollar bill. But what if we want to see this aggregation process as a **black box**? Then, the aggregation cannot really have outside state. Also, as Rich Hickey mentioned in his StrangeLoop talk, there is no space in the machinery to keep state. What if one such transducer could have local state even if that is contained and not accessible from the outside? It turns out this is where stateful transducers can help.
 
-Here’s how that looks like in code:
-
-https://github.com/matthiasn/BirdWatch/blob/f39a5692e4733784124d0f0930202d4270762d77/Clojure-Websockets/src/clj/birdwatch/twitterclient/processing.clj
+Here’s how that looks like in **[code](https://github.com/matthiasn/BirdWatch/blob/f39a5692e4733784124d0f0930202d4270762d77/Clojure-Websockets/src/clj/birdwatch/twitterclient/processing.clj)**:
 
 {line-numbers=off,lang=clojure}
 ~~~
@@ -122,15 +123,15 @@ Let's create a vector of JSON fragments and try it out. We have already establis
 
 Now we can check on the REPL if this will produce three complete JSON strings. It is expected here that the last one is lost because we would only check its completeness once there is a following tweet[^5]. Once the collection to process is empty, the **arity-1** (single argument) function is called one last time, which really only returns the aggregate at that point:
 
-{line-numbers=off,lang=clojure}
+{line-numbers=off,lang=text}
 ~~~
-birdwatch.main=> (in-ns 'birdwatch.twitterclient.processing)
+=> (in-ns 'birdwatch.twitterclient.processing)
 #<Namespace birdwatch.twitterclient.processing>
 
-birdwatch.twitterclient.processing=> (def chunks ["{\"foo\"" ":1}\n{\"bar\":" "42}" "{\"baz\":42}" "{\"bla\":42}"])
+=> (def chunks ["{\"foo\"" ":1}\n{\"bar\":" "42}" "{\"baz\":42}" "{\"bla\":42}"])
 #'birdwatch.twitterclient.processing/chunks
 
-birdwatch.twitterclient.processing=> (into [] (streaming-buffer) chunks)
+=> (into [] (streaming-buffer) chunks)
 ["{\"foo\":1}" "{\"bar\":42}" "{\"baz\":42}"]
 ~~~
 
@@ -145,7 +146,7 @@ Now when we run the same as above on the REPL, we can see what the step function
 
 {line-numbers=off,lang=clojure}
 ~~~
-birdwatch.twitterclient.processing=> (into [] (streaming-buffer) chunks)
+=> (into [] (streaming-buffer) chunks)
 #<core$conj_BANG_ clojure.core$conj_BANG_@5fd837a>
 ["{\"foo\":1}" "{\"bar\":42}" "{\"baz\":42}"]
 ~~~
@@ -154,9 +155,7 @@ Interestingly, the step function is **conj!** which according to the **[source](
 
 The step function is different when we use the transducer on a channel, but more about that when we use it in that scenario.
 
-There's more to do before we can **compose all transducers** and attach them to the appropriate channel. Specifically, we can receive valid JSON from Twitter, which is not a tweet. This happens, for example, when we get a notification that we lag behind in consuming the stream. In that case we only want to pass on the parsed map if it is likely that it was a tweet and otherwise log it as an error. There is one **key** that all tweets have in common, which does not seem to appear in any status messages from Twitter: **:text**. We can thus use that key as the **predicate** for recognizing a tweet:
-
-https://github.com/matthiasn/BirdWatch/blob/f39a5692e4733784124d0f0930202d4270762d77/Clojure-Websockets/src/clj/birdwatch/twitterclient/processing.clj
+There's more to do before we can **compose all transducers** and attach them to the appropriate channel. Specifically, we can receive valid JSON from Twitter, which is not a tweet. This happens, for example, when we get a notification that we lag behind in consuming the stream. In that case we only want to pass on the parsed map if it is likely that it was a tweet and otherwise log it as an error. There is one **key** that all tweets have in common, which does not seem to appear in any status messages from Twitter: **:text**. We can thus use that key as the **predicate** for recognizing a tweet. Here's the **[code](https://github.com/matthiasn/BirdWatch/blob/f39a5692e4733784124d0f0930202d4270762d77/Clojure-Websockets/src/clj/birdwatch/twitterclient/processing.clj)**:
 
 {line-numbers=off,lang=clojure}
 ~~~
@@ -168,8 +167,6 @@ https://github.com/matthiasn/BirdWatch/blob/f39a5692e4733784124d0f0930202d427076
 ~~~
 
 Next, we also want to log the count of tweets received since the application started. Let's do this only for full thousands. We will need some kind of counter to keep track of the count. Let's create another **stateful transducer**:
-
-https://github.com/matthiasn/BirdWatch/blob/f39a5692e4733784124d0f0930202d4270762d77/Clojure-Websockets/src/clj/birdwatch/twitterclient/processing.clj
 
 {line-numbers=off,lang=clojure}
 ~~~
@@ -190,8 +187,6 @@ This transducer is comparable to the one we saw earlier, except that the local a
 
 Now, we can compose all these steps:
 
-https://github.com/matthiasn/BirdWatch/blob/f39a5692e4733784124d0f0930202d4270762d77/Clojure-Websockets/src/clj/birdwatch/twitterclient/processing.clj
-
 {line-numbers=off,lang=clojure}
 ~~~
 (defn process-chunk [last-received]
@@ -203,22 +198,23 @@ https://github.com/matthiasn/BirdWatch/blob/f39a5692e4733784124d0f0930202d427076
    (log-count last-received)))
 ~~~
 
-The above creates a composed function that takes the timestamp atom provided by the TwitterClient component as an argument. We can now use this **transducing function** and apply it to different data structures. Here, we use it to create a channel that takes tweet chunk fragments and delivers parsed tweets on the other side of the conveyor belt. 
+The above creates a composed function that takes the timestamp atom provided by the TwitterClient component as an argument. The entires namespace can be found **[here](https://github.com/matthiasn/BirdWatch/blob/f39a5692e4733784124d0f0930202d4270762d77/Clojure-Websockets/src/clj/birdwatch/twitterclient/processing.clj)**. We can now use this **transducing function** and apply it to different data structures. Here, we use it to create a channel that takes tweet chunk fragments and delivers parsed tweets on the other side of the conveyor belt. 
 
 Let's try the composed transducer on a vector to see what's happening. For that, we create a vector with two JSON strings that contain the **:text** property and two that don't. 
 
-{line-numbers=off,lang=clojure}
+{line-numbers=off,lang=text}
 ~~~
 ["{\"text\"" ":\"foo\"}\n{\"text\":" "\"bar\"}" "{\"baz\":42}" "{\"bla\":42}"])
 ~~~
 
 Then we should see that the invalid one is logged and the other two are returned (the final one at that point still in the buffer):
-{line-numbers=off,lang=clojure}
+
+{line-numbers=off,lang=text}
 ~~~
-birdwatch.main=> (in-ns 'birdwatch.twitterclient.processing)
-birdwatch.twitterclient.processing=> (def chunks ["{\"text\"" ":\"foo\"}\n{\"text\":" "\"bar\"}" "{\"baz\":42}" "{\"bla\":42}"])
-birdwatch.twitterclient.processing=> (into [] (process-chunk (atom (t/epoch))) chunks)
-20:57:39.999 [nREPL-worker-1] ERROR birdwatch.twitterclient.processing - error-msg {:baz 42}
+=> (in-ns 'birdwatch.twitterclient.processing)
+=> (def chunks ["{\"text\"" ":\"foo\"}\n{\"text\":" "\"bar\"}" "{\"baz\":42}" "{\"bla\":42}"])
+=> (into [] (process-chunk (atom (t/epoch))) chunks)
+ERROR birdwatch.twitterclient.processing - error-msg {:baz 42}
 [{:text "foo"} {:text "bar"}]
 ~~~
 
@@ -226,35 +222,35 @@ Great, we have a composed transducer that works on vectors as expected. Accordin
 
 ![transducer illustration](images/arrow.png)
 
+You can also see the illustration above as an animation in the original **[blog post](http://matthiasnehlsen.com/blog/2014/10/06/Building-Systems-in-Clojure-2/)**.
+
 Now for a simple example in the REPL:
 
-{line-numbers=off,lang=clojure}
+{line-numbers=off,lang=text}
 ~~~
-birdwatch.main=> (in-ns 'birdwatch.twitterclient.processing)
+=> (in-ns 'birdwatch.twitterclient.processing)
 #<Namespace birdwatch.twitterclient.processing>
-    
-birdwatch.twitterclient.processing=> (def chunks ["{\"text\"" ":\"foo\"}\r\n{\"text\":" "\"bar\"}" "{\"baz\":42}" "{\"bla\":42}"])
+
+=> (def chunks ["{\"text\"" ":\"foo\"}\r\n{\"text\":" "\"bar\"}" "{\"baz\":42}" "{\"bla\":42}"])
 #'birdwatch.twitterclient.processing/chunks
 
-birdwatch.twitterclient.processing=> (require '[clojure.core.async :as async :refer [chan go-loop <! put!]])
-nil
-
-birdwatch.twitterclient.processing=> (def c (chan 1 (process-chunk (atom (t/now)))))
+=> (require '[clojure.core.async :as async :refer [chan go-loop <! put!]])
+=> (def c (chan 1 (process-chunk (atom (t/now)))))
 #'birdwatch.twitterclient.processing/c
 
-birdwatch.twitterclient.processing=> (go-loop [] (println (<! c)) (recur))
+=> (go-loop [] (println (<! c)) (recur))
 #<ManyToManyChannel clojure.core.async.impl.channels.ManyToManyChannel@2f924b3f>
 
-birdwatch.twitterclient.processing=> (put! c (chunks 0))
-birdwatch.twitterclient.processing=> (put! c (chunks 1))
+=> (put! c (chunks 0))
+=> (put! c (chunks 1))
 {:text foo}
 
-birdwatch.twitterclient.processing=> (put! c (chunks 2))
-birdwatch.twitterclient.processing=> (put! c (chunks 3))
+=> (put! c (chunks 2))
+=> (put! c (chunks 3))
 {:text bar}
 
-birdwatch.twitterclient.processing=> (put! c (chunks 4))
-16:44:32.539 [nREPL-worker-2] ERROR birdwatch.twitterclient.processing - error-msg {:baz 42}
+=> (put! c (chunks 4))
+ERROR birdwatch.twitterclient.processing - error-msg {:baz 42}
 ~~~
 
 Excellent, same output. In case you're not familiar with **core.async channels** yet: above we created a channel with the same transducer attached as in the previous example, then we created a **go-loop** to consume the channel and finally, we **put!** the individual chunks on the channel. No worries if this seems a little much right now. We'll cover this topic in much more detail in later chapters.
