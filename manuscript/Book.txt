@@ -1,11 +1,14 @@
 Intro.md
 Architecture-Overview.md
+
 Redesign.md
+
 Code-Initialization.md
 Code-TwitterClient.md
 Code-Switchboard1.md
 Code-PersistenceComponent1.md
 Code-PercolationComponent1.md
+
 Code-InteropComponent1.md
 
 Code-InteropComponent2.md
@@ -16,7 +19,6 @@ Code-WebsocketComponent.md
 
 Client.md
 
-Building-Systems-in-Clojure-4.md
 Testing.md
 OperationalInsight.md
 LoadTestingOptimization.md
