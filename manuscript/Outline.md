@@ -1,20 +1,5 @@
-# Architecture and Code
+# Server-side Architecture and Code
 
-## Introduction
-
-## Architectural Overview
-
-## Server-side Libraries
-
-### Component Library
-
-### Core.async
-
-### Carmine for Redis Pub/Sub
-
-## Server-side Implementation
-
-### Twitter Client
 
 ### Switchboard Component
 

@@ -1,9 +1,12 @@
 Intro.md
-Building-Systems-in-Clojure-1.md
-Building-Systems-in-Clojure-2.md
+Architecture-Overview.md
+Code-Initialization.md
+Code-TwitterClient.md
+
+Outline.md
+
 Building-Systems-in-Clojure-3.md
 Building-Systems-in-Clojure-4.md
-ArchitectureCode.md
 Testing.md
 OperationalInsight.md
 LoadTestingOptimization.md
