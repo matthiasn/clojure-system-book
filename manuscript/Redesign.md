@@ -1,6 +1,6 @@
 ## Redesign
 
-The redesign ideas were originally published as a blog post on **[matthiasnehlsen.com](http://matthiasnehlsen.com/blog/2014/10/30/Building-Systems-in-Clojure-3/)**. The content will be adapted to fit the book format better.
+The redesign ideas were originally published as a blog post on **[matthiasnehlsen.com](http://matthiasnehlsen.com/blog/2014/10/30/Building-Systems-in-Clojure-3/)**. The content will be adapted to fit the book format better!
 
 I recently did a lot of transcript proofreading concerning enlightening talk for my **[talk-transcripts project](https://github.com/matthiasn/talk-transcripts)**. The most recent one was **[Design, Composition and Performance](https://github.com/matthiasn/talk-transcripts/blob/master/Hickey_Rich/DesignCompositionPerformance.md)**, the tenth transcript of a talk by **[Rich Hickey](https://twitter.com/richhickey)**. That one in particular got me thinking that there are quite a few ideas I want to adopt in **[BirdWatch](https://github.com/matthiasn/BirdWatch)**, the application about which I started writing this series of articles. That calls for some **redesign**, so it’s probably time to make up my mind what exactly it is that I am trying to solve with this application.
 
