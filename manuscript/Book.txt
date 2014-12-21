@@ -1,21 +1,22 @@
 Intro.md
 Architecture-Overview.md
-
 Redesign.md
 
 Code-Initialization.md
 Code-TwitterClient.md
-Code-Switchboard1.md
-Code-PersistenceComponent1.md
-Code-PercolationComponent1.md
 
-Code-InteropComponent1.md
+TwitterClient.md
+TwitterClient-Switchboard.md
+TwitterClient-PersistenceComponent.md
+TwitterClient-PercolationComponent.md
+TwitterClient-InteropComponent.md
 
-Code-InteropComponent2.md
-Code-Switchboard2.md
-Code-PersistenceComponent2.md
-Code-PercolationComponent2.md
-Code-WebsocketComponent.md
+MainApp.md
+MainApp-InteropComponent.md
+MainApp-Switchboard.md
+MainApp-PersistenceComponent.md
+MainApp-PercolationComponent.md
+MainApp-WebsocketComponent.md
 
 Client.md
 

@@ -1,4 +1,4 @@
-## InterOp Component #1
+## TwitterClient - InterOp Component
 
 This chapter was originally published as a blog post on **[matthiasnehlsen.com](http://matthiasnehlsen.com/blog/2014/11/07/Building-Systems-in-Clojure-4/)**. The content will be adapted to fit the book format better!
 

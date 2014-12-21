@@ -1,4 +1,4 @@
-## SwitchBoard Component #1
+## TwitterClient - SwitchBoard Component
 
 This component takes care of distributing data in the TwitterClient application by connecting **core.async** channels together, comparable to an operator in the early days of telephony[^sb-image]:
 

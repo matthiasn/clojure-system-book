@@ -1,2 +1,0 @@
-## SwitchBoard Component #2
-

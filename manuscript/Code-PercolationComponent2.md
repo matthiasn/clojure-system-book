@@ -1,3 +1,0 @@
-## Percolation Component #2
-
-
