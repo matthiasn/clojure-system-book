@@ -8,7 +8,7 @@ Let’s start in **[hammock mode](https://www.youtube.com/watch?v=f84n5oFoZBc)**
 
 Here is how that stream looks like when each chunk is simply printed to the console:
 
-![streaming API output](images/streaming-api.gif) 
+![streaming API output](images/streaming-api.gif)
 
 For reasons unbeknownst to me, tweets stopped respecting the chunk borders for the last half year. Instead, tweets occasionally span two or three chunks. This makes processing the tweets a little more complicated than we might wish for. One tweet per chunk is straightforward: 
 
