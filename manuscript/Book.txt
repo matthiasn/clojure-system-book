@@ -1,4 +1,5 @@
 Intro.md
+HowToUse.md
 Architecture-Overview.md
 
 Code-Initialization.md
