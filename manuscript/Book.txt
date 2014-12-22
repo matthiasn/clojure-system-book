@@ -2,9 +2,9 @@ Intro.md
 Architecture-Overview.md
 
 Code-Initialization.md
-Code-TwitterClient.md
 
 TwitterClient.md
+TwitterClient-TwitterClient.md
 TwitterClient-Switchboard.md
 TwitterClient-PersistenceComponent.md
 TwitterClient-PercolationComponent.md

@@ -59,10 +59,11 @@ Let's walk through the interactions of the entire system step by step:
 11. Finally, the aggregate will be delivered to the client. This could either be through the WebSocket connection or through **[REST](http://en.wikipedia.org/wiki/Representational_state_transfer)** (the dashed line). Currently, a (larger) chunk with 500 tweets each is delivered to the client instead of an aggregate.
 
 
-So far, these changes are only partially implemented. **Decoupling** the processes between a Twitter client and the client-serving part is done and allows restarting the latter **without disconnecting** from the Streaming API and also allows horizontal scaling. 
+So far, these changes are only partially implemented. **Decoupling** the processes between a Twitter client and the client-serving part is done and allows restarting the latter **without disconnecting** from the Streaming API and also allows horizontal scaling where multiple client-serving applications can connect to the Pub/Sub:
+
+![Redesigned Architecture - InterOp](images/redesign2.png)
 
 Server-side aggregation is not implemented yet, that part will follow soon.
-
 
 
 [^redesign-browser]: Right now with all tweets loaded onto the client, the maximum for a desktop browser is somewhere in the range of a **few tens of thousands** of tweets before the application slows down noticably.
