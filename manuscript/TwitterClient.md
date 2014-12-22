@@ -32,7 +32,6 @@ In a way, a transducer is the **essence** of a computation over data, without be
 
 Imagine we wanted to transform a vector of JSON strings into a vector of such parsed maps. We could simply do this:
 
-{line-numbers=off,lang=clojure}
 ~~~
 (map json/read-json ["{\"foo\":1}" "{\"bar\":42}"])
 ~~~
@@ -43,28 +42,24 @@ We could, for example, not only run the mapping function over every item in a ve
 
 With Clojure 1.7, we can now create such a transducing function by simply leaving out the data structure:
 
-{line-numbers=off,lang=clojure}
 ~~~
 (def xform (map json/read-json))
 ~~~
 
 Now, we can apply this transducing function to different kinds of data structures that are transducible processes. For example, we could transform all entries from a vector into another vector, like so:
 
-{line-numbers=off,lang=clojure}
 ~~~
 (into [] xform ["{\"foo\":1}" "{\"bar\":42}"])
 ~~~
 
 Or into a sequence, like this:
 
-{line-numbers=off,lang=clojure}
 ~~~
 (sequence xform ["{\"foo\":1}" "{\"bar\":42}"])
 ~~~
 
 It may not look terribly useful so far. But this can also be applied to a channel. Say, we want to create a channel that accepts JSON strings and transforms each message into a Clojure map. Simple:
 
-{line-numbers=off,lang=clojure}
 ~~~
 (chan 1 xform)
 ~~~

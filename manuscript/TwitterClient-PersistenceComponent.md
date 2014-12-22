@@ -4,7 +4,6 @@ This component takes care of persisting tweets to an index in ElasticSearch. Onc
 
 Because there is only a channel to take from but no other channel to put a result onto, we will not use a pipeline but instead run a good old ````go-loop````. Inside the **[component](https://github.com/matthiasn/BirdWatch/blob/5fe69fbfaa956039e1f89a26811d0c86775dd594/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/persistence/component.clj)**, there aren't any surprises:
 
-{line-numbers=off,lang=clojure}
 ~~~
 (ns birdwatch-tc.persistence.component
   (:gen-class)
@@ -42,7 +41,6 @@ Because there is only a channel to take from but no other channel to put a resul
 
 All we see above is yet another component that really only has the single channel ````:persistence```` inside the ````Persistence-Channels```` component and that **[starts](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/percolator/elastic.clj)** said ````go-loop```` and passes the channel plus some configuration and the connection object.
 
-{line-numbers=off,lang=clojure}
 ~~~
 (ns birdwatch-tc.persistence.elastic
   (:gen-class)

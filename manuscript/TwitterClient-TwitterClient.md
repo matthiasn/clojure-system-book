@@ -4,7 +4,6 @@ But these simple, per-item transducers do not not help in our case, where we kno
 
 Here’s how this stateful transducer looks like in **[code](https://github.com/matthiasn/BirdWatch/blob/f39a5692e4733784124d0f0930202d4270762d77/Clojure-Websockets/src/clj/birdwatch/twitterclient/processing.clj)**:
 
-{line-numbers=off,lang=clojure}
 ~~~
 (defn- streaming-buffer []
   (fn [step]
@@ -24,21 +23,18 @@ In the first line of the let binding, we use the **[-> (thread-first)](http://cl
 
 Now, we cannot immediately process all those items in the resulting sequence. We know that all are complete except for the last one as otherwise there would not have been a subsequent tweet. But the last one may not be complete. Accordingly, we derive
 
-{line-numbers=off,lang=clojure}
 ~~~
 (butlast json-lines)
 ~~~
  
 under the name **to-process**. Then, we reset the buffer to whatever is in that last string: 
 
-{line-numbers=off,lang=clojure}
 ~~~
 (reset! buff (last json-lines))
 ~~~
 
 Finally, we have **reduce** call the **step** function for every item in **to-process**:
 
-{line-numbers=off,lang=clojure}
 ~~~
 (if to-process (reduce step r to-process) r)
 ~~~
@@ -47,7 +43,6 @@ That way, only complete JSON strings are pushed down to the next operation, wher
 
 Let's create a vector of JSON fragments and try it out. We have already established that transducers can be used on different data structures, it therefore should work equally well on a vector. Here's the vector for the test:
 
-{line-numbers=off,lang=clojure}
 ~~~
 ["{\"foo\"" ":1}\n{\"bar\":" "42}" "{\"baz\":42}" "{\"bla\":42}"]
 ~~~
@@ -88,7 +83,6 @@ The step function is different when we use the transducer on a channel, but more
 
 There's more to do before we can **compose all transducers** and attach them to the appropriate channel. Specifically, we can receive valid JSON from Twitter, which is not a tweet. This happens, for example, when we get a notification that we lag behind in consuming the stream. In that case we only want to pass on the parsed map if it is likely that it was a tweet and otherwise log it as an error. There is one **key** that all tweets have in common, which does not seem to appear in any status messages from Twitter: **:text**. We can thus use that key as the **predicate** for recognizing a tweet. Here's the **[code](https://github.com/matthiasn/BirdWatch/blob/f39a5692e4733784124d0f0930202d4270762d77/Clojure-Websockets/src/clj/birdwatch/twitterclient/processing.clj)**:
 
-{line-numbers=off,lang=clojure}
 ~~~
 (defn- tweet? [data]
   "Checks if data is a tweet. If so, pass on, otherwise log error."
@@ -99,7 +93,6 @@ There's more to do before we can **compose all transducers** and attach them to 
 
 Next, we also want to log the count of tweets received since the application started. Let's do this only for full thousands. We will need some kind of counter to keep track of the count. Let's create another **stateful transducer**:
 
-{line-numbers=off,lang=clojure}
 ~~~
 (defn- log-count [last-received]
   "Stateful transducer, counts processed items and updating last-received atom. Logs progress every 1000 items."
@@ -118,7 +111,6 @@ This transducer is comparable to the one we saw earlier, except that the local a
 
 Now, we can compose all these steps:
 
-{line-numbers=off,lang=clojure}
 ~~~
 (defn process-chunk [last-received]
   "Creates composite transducer for processing tweet chunks. Last-received atom passed in for updates."

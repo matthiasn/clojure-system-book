@@ -11,7 +11,6 @@ I chose **Pub/Sub** over a queue because I wanted to **[fan-out](http://en.wikip
 
 Let's look at some code. First of all, I am using a **component** that provides a **send channel** and a **receive channel**. It can be reused on either side of the Pub/Sub connection (or for bidirectional communication, of course). Here's the **[code](https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f311f6f/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/interop/component.clj)**.
  
-{line-numbers=off,lang=clojure}
 ~~~
 (defrecord Interop-Channels []
   component/Lifecycle
@@ -23,7 +22,6 @@ Let's look at some code. First of all, I am using a **component** that provides 
 
 This channels component can now be wired into other components. Here's the **[component](https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f311f6f/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/interop/component.clj)** on the publisher side:
 
-{line-numbers=off,lang=clojure}
 ~~~
 (defrecord Interop [conf channels]
   component/Lifecycle
@@ -35,11 +33,8 @@ This channels component can now be wired into other components. Here's the **[co
          (assoc component :conn nil)))
 ~~~
 
-Here, we are creating a configuration map and start a send loop with this configuration for the **"matches"** topic. Here's that loop:
+Here, we are creating a configuration map and start a send loop with this configuration for the **"matches"** topic. Here's that **[loop](https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f311f6f/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/interop/redis.clj)**:
 
-https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f311f6f/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/interop/redis.clj
-
-{line-numbers=off,lang=clojure}
 ~~~
 (defn run-send-loop
   "loop for sending items by publishing them on a Redis pub topic"
@@ -51,11 +46,8 @@ https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f31
 
 This **go-loop** consumes all messages that come in on **send-chan** channel and publishes them on **topic** for the specified configuration **conn**.
 
-Here's the other side of the communication with the component subscribing to the same topic. The channels component stays the same. The component itself looks a little different:
+Here's the other side of the communication with the component subscribing to the same topic. The channels component stays the same. The component **[itself](https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f311f6f/Clojure-Websockets/MainApp/src/clj/birdwatch/interop/component.clj)** looks a little different:
 
-https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f311f6f/Clojure-Websockets/MainApp/src/clj/birdwatch/interop/component.clj
-
-{line-numbers=off,lang=clojure}
 ~~~
 (defrecord Interop [conf channels listener]
   component/Lifecycle
@@ -71,7 +63,6 @@ https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f31
 
 Just like for the publisher side, there's the configuration map. Next, we subscribe to a topic and hold on to the returned listener so that we can unsubscribe from the topic and shut it down later when the component[^sierra-component] is **[shut down](https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f311f6f/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/interop/redis.clj)**:
 
-{line-numbers=off,lang=clojure}
 ~~~
 (defn- msg-handler-fn
   "create handler function for messages from Redis Pub/Sub"
