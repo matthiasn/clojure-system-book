@@ -19,14 +19,14 @@ Here, unlike in object-oriented dependency injection, things are a little differ
 
 I recently did a lot of transcript proofreading concerning enlightening talk for my **[talk-transcripts project](https://github.com/matthiasn/talk-transcripts)**. The most recent one was **[Design, Composition and Performance](https://github.com/matthiasn/talk-transcripts/blob/master/Hickey_Rich/DesignCompositionPerformance.md)**, the tenth transcript of a talk by **Rich Hickey**. That one in particular got me thinking that there are quite a few ideas I want to adopt, so it was time to make up my mind what exactly it is that I am trying to solve with this application.
 
-So here’s the idea:
+So here's the idea:
 
 * We have a stream of information and we are interested in a subset of that information, which we can match on via **full-text search** and **ranges**. The searches are anything that **[ElasticSearch](http://www.elasticsearch.com)** / **[Lucene](http://lucene.apache.org)** can match on.
 * Furthermore, we are interested in **live results** plus a certain period of time back into the **recent** past. For now, we are using tweets from the **[Twitter Streaming API](https://dev.twitter.com/streaming/overview)**, but the source could be anything, such as other social media data. Sensor data could also be really interesting. Live means new matches are added to the displayed results within about a second.
 * The results are supposed to be shown in a browser, including on **mobile devices**. The number of items reasoned about should **not be limited by** the available **memory** of the browser[^redesign-browser].
 * My immediate goal is to be able to reason about the **last one million tweets** for a certain topic. Also, it should be possible to serve **many concurrent ad-hoc queries**, like hundreds or more different ones.
 
-What comes to mind immediately when regurgitating the requirements above is **[Storm](https://storm.apache.org)** and the **[Lambda Architecture](http://lambda-architecture.net)**. First I thought, great, such a search could be realized as a **bolt** in Storm. But then I realized, and please correct me if I’m wrong, that topologies are fixed once they are running. This limits the flexibility to add and tear down additional live searches. I am afraid that keeping a few stand-by bolts to assign to queries dynamically would not be flexible enough.
+What comes to mind immediately when regurgitating the requirements above is **[Storm](https://storm.apache.org)** and the **[Lambda Architecture](http://lambda-architecture.net)**. First I thought, great, such a search could be realized as a **bolt** in Storm. But then I realized, and please correct me if I'm wrong, that topologies are fixed once they are running. This limits the flexibility to add and tear down additional live searches. I am afraid that keeping a few stand-by bolts to assign to queries dynamically would not be flexible enough.
 
 So instead I suggest doing the **final aggregation** (the reduce phase) on the browser side in a **ClojureScript** application. On the server side, partial results are aggregated for shorter time periods. These partial results can be generated in a cluster of nodes whilst the client is fed with live data immediately. Let's have a look at a drawing before I walk you through the individual steps:
 
