@@ -6,7 +6,7 @@ In this book, we will build a system in Clojure that processes streaming data an
 
 The sample implementation that we will use is the **[BirdWatch](https://github.com/matthiasn/BirdWatch)** application, a project I have started in Scala with AngularJS on the client side but that I have then switched over to an all-Clojure/ClojureScript implementation. This application subscribes to the **[Twitter Streaming API](https://dev.twitter.com/docs/streaming-apis)** for all tweets that contain one or more terms out of a set of terms and makes the tweets searchable through storing them in ElasticSearch. All search results are updated in the browser when new matching tweets come in through the streaming data source.
 
-A live version of the Clojure version of this application is available here: **[http://birdwatch2.matthiasnehlsen.com](http://birdwatch2.matthiasnehlsen.com/#*)**.
+A live version of the Clojure version of this application is available **[here](http://birdwatch2.matthiasnehlsen.com/#*)**.
 
 Over the course of this book, we will follow the data and explore parts of the system in the same order that the streaming data flows through the system.
 
