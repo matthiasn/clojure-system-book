@@ -68,3 +68,5 @@ mn:Clojure-Websockets mn$ lein run
 16:46:32.377 [main] INFO  birdwatch.percolator - Starting Percolator Component
 16:46:32.380 [main] INFO  birdwatch.switchboard - Starting Switchboard Component
 ~~~
+
+Note that in the code above, we are looking at a previous version of the application in which the entire application used to live inside a single JVM. The reason is that the corresponding animation in the **[original blog post](http://matthiasnehlsen.com/blog/2014/09/24/Building-Systems-in-Clojure-1/)** also deals with this single-JVM architecture. In terms of the application initialization, the mechanism doesn't change when scaling out, though.

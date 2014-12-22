@@ -1,6 +1,5 @@
 Intro.md
 Architecture-Overview.md
-Redesign.md
 
 Code-Initialization.md
 Code-TwitterClient.md
