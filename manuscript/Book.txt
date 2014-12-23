@@ -17,6 +17,7 @@ MainApp-Switchboard.md
 MainApp-PersistenceComponent.md
 MainApp-PercolationComponent.md
 MainApp-WebsocketComponent.md
+MainApp-HttpComponent.md
 
 Client.md
 Client-State.md
