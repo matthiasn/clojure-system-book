@@ -1,8 +1,6 @@
 ## MainApp - Persistence Component
 
-This component takes care of retrieving tweets from an index in ElasticSearch so that they can be delivered to the connected web client.
-
-https://github.com/matthiasn/BirdWatch/blob/d104db4a7ac7a745593e34398751f81a50d167d0/Clojure-Websockets/MainApp/src/clj/birdwatch/persistence/component.clj
+This component takes care of responding to queries for previous tweets by retrieving them from an index in ElasticSearch so that they can be delivered to the connected web client. It also responds to queries for single tweets that are missing in the user interface. This is not used yet but it will be. Finally, this component runs a loop that frequently sends out stats about the size of the ElasticSearch index that stores all the tweets. Here's how the **[component](https://github.com/matthiasn/BirdWatch/blob/d104db4a7ac7a745593e34398751f81a50d167d0/Clojure-Websockets/MainApp/src/clj/birdwatch/persistence/component.clj)** looks like:
 
 ~~~
 (ns birdwatch.persistence.component
@@ -50,8 +48,9 @@ https://github.com/matthiasn/BirdWatch/blob/d104db4a7ac7a745593e34398751f81a50d1
 (defn new-persistence-channels [] (map->Persistence-Channels {}))
 ~~~
 
+Once again, we are using ````pipeline````s and associated transducing functions for taking a query off a channel and putting the result on another channel. In the case of queries for a number of previous tweets, the query is taken off the ````:query```` channel, processed by ````es/query-xf```` and the result put onto the ````:query-results```` channel.
 
-https://github.com/matthiasn/BirdWatch/blob/d104db4a7ac7a745593e34398751f81a50d167d0/Clojure-Websockets/MainApp/src/clj/birdwatch/persistence/elastic.clj
+Here is the **[namespace](https://github.com/matthiasn/BirdWatch/blob/3c793a8ded198ba9aa2360f1efb538dd548383b2/Clojure-Websockets/MainApp/src/clj/birdwatch/persistence/elastic.clj)** with the functions that are used in the component:
 
 ~~~
 (ns birdwatch.persistence.elastic
@@ -74,11 +73,6 @@ https://github.com/matthiasn/BirdWatch/blob/d104db4a7ac7a745593e34398751f81a50d1
         hits (esrsp/hits-from search)
         source (pt/get-source hits)
         res (vec source)]
-    (inspect :elastic/query-res {:query query
-                                 :total-hits (esrsp/total-hits search)
-                                 :retrieved (count hits)
-                                 :first-hit (first hits)
-                                 :chars (count (str res))})
     res))
 
 (defn query-xf
@@ -107,9 +101,14 @@ https://github.com/matthiasn/BirdWatch/blob/d104db4a7ac7a745593e34398751f81a50d1
            (recur)))
 ~~~
 
+The ````query-xf```` transducing function really only calls the ````query```` function and passes the result of that query on in a map that also contains the ````:uid```` of the requesting client. This is kind of the address field on an envelope if you will. The ````query```` function then retrieves tweets from ElasticSearch and runs ````pt/get-source```` on each chunk, which brings the result in the form we need further on. We will look at that briefly below.
+
+The ````tweet-query-xf```` transducing function is comparable to the one above, only that it directly queries ElasticSearch and returns query matches for missing tweets to the correct channel.
+
+Then, there's also the ````run-tweet-count-loop```` function, it runs a ````go-loop```` that gets executed every 10 seconds and then gets the size of the tweet index and puts that on a channel. Eventually, this will be broadcast to all connected web clients for display in the user interface.
 
 
-https://github.com/matthiasn/BirdWatch/blob/d104db4a7ac7a745593e34398751f81a50d167d0/Clojure-Websockets/MainApp/src/clj/birdwatch/persistence/tools.clj
+Finally, there are additional helper functions in a separate **[namespace](https://github.com/matthiasn/BirdWatch/blob/d104db4a7ac7a745593e34398751f81a50d167d0/Clojure-Websockets/MainApp/src/clj/birdwatch/persistence/tools.clj)**:
 
 ~~~
 (ns birdwatch.persistence.tools
@@ -147,3 +146,4 @@ https://github.com/matthiasn/BirdWatch/blob/d104db4a7ac7a745593e34398751f81a50d1
   (map strip-source coll))
 ~~~
 
+All the functions above do is unwrap an ElasticSearch result and strip tweets from all the keys that aren't actually used by the client. Nothing facy here, only something to reduce the payload size when returning query results via the websocket connection to the client asking for the tweets.
