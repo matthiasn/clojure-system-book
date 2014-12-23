@@ -1,6 +1,6 @@
 ## Http Component
 
-Let's dive right into the **[code](https://github.com/matthiasn/BirdWatch/blob/3c793a8ded198ba9aa2360f1efb538dd548383b2/Clojure-Websockets/MainApp/src/clj/birdwatch/http/component.clj)**:
+Let's dive right into the **[code](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/clj/birdwatch/http/component.clj)**:
 
 ~~~
 (ns birdwatch.http.component
@@ -27,7 +27,7 @@ Let's dive right into the **[code](https://github.com/matthiasn/BirdWatch/blob/3
            (GET  "/dev" [] (static-html "index-dev.html"))
            (GET  "/chsk" req ((:ajax-get-or-ws-handshake-fn comm) req))
            (POST "/chsk" req ((:ajax-post-fn comm) req))
-           (route/resources "/") ; Static files, notably public/main.js (our cljs target)
+           (route/resources "/") ; Static files, e.g. /js/build/birdwatch-opt.js (our cljs target)
            (route/not-found "Page not found"))
          (let [my-ring-handler   (ring.middleware.defaults/wrap-defaults my-routes ring-defaults-config)
                server (http-kit-server/run-server my-ring-handler {:port (:port conf)})
