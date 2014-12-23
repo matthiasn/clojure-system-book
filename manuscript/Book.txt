@@ -7,8 +7,8 @@ Code-Initialization.md
 TwitterClient.md
 TwitterClient-TwitterClient.md
 TwitterClient-Switchboard.md
-TwitterClient-PersistenceComponent.md
 TwitterClient-PercolationComponent.md
+TwitterClient-PersistenceComponent.md
 TwitterClient-InteropComponent.md
 
 MainApp.md

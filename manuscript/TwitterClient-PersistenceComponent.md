@@ -2,7 +2,7 @@
 
 This component takes care of persisting tweets to an index in ElasticSearch. Once again we have a component with the typical lifecycle functions and an associated ````Persistence-Channels```` component. Here, this component only has a single channel, ````:persistence````.
 
-Because there is only a channel to take from but no other channel to put a result onto, we will not use a pipeline but instead run a good old ````go-loop````. Inside the **[component](https://github.com/matthiasn/BirdWatch/blob/5fe69fbfaa956039e1f89a26811d0c86775dd594/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/persistence/component.clj)**, there aren't any surprises:
+Because there is only a channel to take from but no other channel to put a result onto, we will not use a ````pipeline```` but instead run a good old ````go-loop````. Inside the **[component](https://github.com/matthiasn/BirdWatch/blob/5fe69fbfaa956039e1f89a26811d0c86775dd594/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/persistence/component.clj)**, there aren't any surprises:
 
 ~~~
 (ns birdwatch-tc.persistence.component
@@ -61,6 +61,6 @@ All we see above is yet another component that really only has the single channe
            (recur)))
 ~~~
 
-The ````go-loop````above is pretty straightforward. Whatever we encounter on this channel, we try to persist in ElasticSearch, inside the index as specified in ````(:es-index conf)````, for type ````tweet````, with ````(:id_str t)````as the **document id** and finally with the tweet ````t````itself. This makes me think that I've been wanting to implement **[schema](https://github.com/Prismatic/schema)** for a while now. I don't mind using the plain old map for representating a tweet, but coming from strongly typed languages, I at least would like something to blow up when the item does not conform to an expected schema as opposed to storing something completely different while still calling its type in ElasticSearch ````tweet````. Certainly an improvement to make soon.
+The ````go-loop```` above is pretty straightforward. Whatever we encounter on this channel, we try to persist in ElasticSearch, inside the index as specified in ````(:es-index conf)````, for type ````tweet````, with ````(:id_str t)````as the **document id** and finally with the tweet ````t```` itself. This makes me think that I've been wanting to implement **[schema](https://github.com/Prismatic/schema)** for a while now. I don't mind using the plain old map for representating a tweet, but coming from strongly typed languages, I at least would like something to blow up when the item does not conform to an expected schema as opposed to storing something completely different while still calling its type in ElasticSearch ````tweet````. Certainly an improvement to make soon.
 
 Have you noticed a pattern? Once again, nothing in this component (and the associated namespace) knows anything about any other part of the application. The only thing I'd be okay with for sharing in this context would be a schema for the tweet as mentioned above. That should be maintained once.

@@ -24,7 +24,7 @@ So here's the idea:
 * We have a stream of information and we are interested in a subset of that information, which we can match on via **full-text search** and **ranges**. The searches are anything that **[ElasticSearch](http://www.elasticsearch.com)** / **[Lucene](http://lucene.apache.org)** can match on.
 * Furthermore, we are interested in **live results** plus a certain period of time back into the **recent** past. For now, we are using tweets from the **[Twitter Streaming API](https://dev.twitter.com/streaming/overview)**, but the source could be anything, such as other social media data. Sensor data could also be really interesting. Live means new matches are added to the displayed results within about a second.
 * The results are supposed to be shown in a browser, including on **mobile devices**. The number of items reasoned about should **not be limited by** the available **memory** of the browser[^redesign-browser].
-* My immediate goal is to be able to reason about the **last one million tweets** for a certain topic. Also, it should be possible to serve **many concurrent ad-hoc queries**, like hundreds or more different ones.
+* My next goal is to be able to reason about the **last one million tweets** for a certain topic. Also, it should be possible to serve **many concurrent ad-hoc queries**, like hundreds or more different ones.
 
 What comes to mind immediately when regurgitating the requirements above is **[Storm](https://storm.apache.org)** and the **[Lambda Architecture](http://lambda-architecture.net)**. First I thought, great, such a search could be realized as a **bolt** in Storm. But then I realized, and please correct me if I'm wrong, that topologies are fixed once they are running. This limits the flexibility to add and tear down additional live searches. I am afraid that keeping a few stand-by bolts to assign to queries dynamically would not be flexible enough.
 
@@ -32,7 +32,7 @@ So instead I suggest doing the **final aggregation** (the reduce phase) on the b
 
 ![Redesigned Architecture](images/redesign.png)
 
-Initially, this application was designed to run in a single JVM, but after some redesign, I split the server side into two different components. The architecture you saw in the drawing above turned out to be a great preparation for separating parts of the application into separate JVMs for scaling out the application. My idea was that there should be one TwitterClient (as Twitter only allows one connection to the capped Streaming API) but multiple web client facing applications so that the number of connections the system could handle would not be limited by whatever a single machine could handle. The separation of components and limiting their interaction to passing messages on channels made it extremely simple to scale out the application by fanning out the streaming data to multiple client-facing JVMs. All that was needed in addition was a component for the interoperability. None of the existing components needed to change except for the switchboard where the data flow gets wired together.
+Initially, this application was designed to run in a single JVM, but after some redesign, I split the server side into two different components. The architecture you saw in the drawing above turned out to be a great preparation for separating parts of the application into separate JVMs for scaling out the application. My idea was that there should be one **TwitterClient** application (as Twitter only allows one connection to the capped Streaming API) but multiple web client facing applications so that the number of connections the system could handle would not be limited by whatever a single machine could handle. Let's call that the **MainApp** application. The separation of components and limiting their interaction to passing messages on channels made it extremely simple to scale the application by fanning out the streaming data to multiple client-facing JVMs. All that was needed in addition was a component for the interoperability. None of the existing components needed to change except for the switchboard where the data flow gets wired together.
 
 Let's walk through the interactions of the entire system step by step:
 
@@ -63,7 +63,7 @@ So far, these changes are only partially implemented. **Decoupling** the process
 
 ![Redesigned Architecture - InterOp](images/redesign2.png)
 
-Server-side aggregation is not implemented yet, that part will follow soon.
+The server-side aggregation is not implemented yet, that part will follow soon.
 
 
 [^redesign-browser]: Right now with all tweets loaded onto the client, the maximum for a desktop browser is somewhere in the range of a **few tens of thousands** of tweets before the application slows down noticably.

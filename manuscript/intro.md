@@ -10,9 +10,13 @@ A live version of the Clojure version of this application is available **[here](
 
 Over the course of this book, we will follow the data and explore parts of the system in the same order that the streaming data flows through the system.
 
-There has been a **[series of articles](http://matthiasnehlsen.com/blog/2014/09/24/Building-Systems-in-Clojure-1/)** that attempted to explain different aspects of the system, but I think that a book is a much better artifact to work on than a series of blog articles. Please note that part of the content in this book is still more or less directly taken from the previous blog posts.
+There has been a **[series of articles](http://matthiasnehlsen.com/blog/2014/09/24/Building-Systems-in-Clojure-1/)** that attempted to explain different aspects of the system, but I think that a book is a much better artifact to work on than a series of blog articles.
 
-Please join me on this journey as I explore the problem further and at the same time attempt to write a book about it. Iinitially, I will make this content freely available. Please check out if you find the content at all useful and discuss where you see better solutions. Only if you a) find the content helpful and b) you can afford it, I'd ask you to pay the recommended price (or whatever other amount you find appropriate). I am looking forward to a fun project and a lively discussion about all aspects of building a system in Clojure.
+Please join me on this journey as I explore the problem further and at the same time attempt to write a book about it. 
+
+During the first couple of days, I made this content freely available. If you received this book for free and you realize that you like the content, please consider paying the suggested price. I guarantee you that any additional revenue will allow me to finish this book earlier.
+
+I am looking forward to a fun project and a lively discussion about all aspects of building a system in Clojure.
 
 Cheers,
 Matthias

@@ -1,6 +1,6 @@
 ## MainApp - Percolation Component
 
-This component first of all receives registration request from connected web clients via the ````:register-percolation```` channel. For that, it keeps all current ````subscriptions```` in an ````atom````.
+This component first of all receives registration requests from connected web clients via the ````:register-percolation```` channel. For that, it keeps information about all current ````subscriptions```` in an ````atom````.
 
 The component also receives the ````[t matches]```` vectors on the ````:percolation```` channel. These originate from the ````Percolator```` component inside the **TwitterClient** application and that each contain a ````map```` containing a ````tweet```` plus a ````set```` with the the IDs of all the ````matches````.
 

@@ -146,4 +146,4 @@ Finally, there are additional helper functions in a separate **[namespace](https
   (map strip-source coll))
 ~~~
 
-All the functions above do is unwrap an ElasticSearch result and strip tweets from all the keys that aren't actually used by the client. Nothing facy here, only something to reduce the payload size when returning query results via the websocket connection to the client asking for the tweets.
+All the functions above do is unwrap an ElasticSearch result and strip tweets from all the keys that aren't actually used by the client. Nothing fancy here, only something to reduce the payload size when returning query results via the websocket connection to the client asking for the tweets.
