@@ -27,6 +27,7 @@ Client-WebSockets.md
 Client-DataAggregation.md
 Client-UI.md
 Client-Wordcount.md
+Client-Timeseries.md
 Client-Charts.md
 
 Testing.md
