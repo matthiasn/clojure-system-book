@@ -1,8 +1,6 @@
 ## WebSocket Communication Component
 
-
-
-https://github.com/matthiasn/BirdWatch/blob/3c793a8ded198ba9aa2360f1efb538dd548383b2/Clojure-Websockets/MainApp/src/clj/birdwatch/communicator/component.clj
+This component handles the interaction with the client applications by allowing us to interact with messages going to and coming from the clients via websocket connections from out Clojure application. The actual communication with over the network is then handled by the HttpComponent, which we will look at briefly in the next chapter. Here are the ````Communicator```` and the ````Communicator-Channels``` **[components](https://github.com/matthiasn/BirdWatch/blob/3c793a8ded198ba9aa2360f1efb538dd548383b2/Clojure-Websockets/MainApp/src/clj/birdwatch/communicator/component.clj)**:
 
 ~~~
 (ns birdwatch.communicator.component
