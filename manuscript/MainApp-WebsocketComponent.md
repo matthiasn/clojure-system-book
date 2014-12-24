@@ -1,6 +1,6 @@
 ## WebSocket Communication Component
 
-This component handles the interaction with the client applications by allowing us to interact with messages going to and coming from the clients via websocket connections from out Clojure application. The actual communication with over the network is then handled by the HttpComponent, which we will look at briefly in the next chapter. Here are the ````Communicator```` and the ````Communicator-Channels``` **[components](https://github.com/matthiasn/BirdWatch/blob/3c793a8ded198ba9aa2360f1efb538dd548383b2/Clojure-Websockets/MainApp/src/clj/birdwatch/communicator/component.clj)**:
+This component handles the interaction with the client applications by allowing us to interact with messages going to and coming from the clients via websocket connections from out Clojure application. The actual communication with over the network is then handled by the HttpComponent, which we will look at briefly in the next chapter. Here are the ````Communicator```` and the ````Communicator-Channels``` **[components](https://github.com/matthiasn/BirdWatch/blob/a7a27c76fb4a882daa485d0231de30c1cc078652/Clojure-Websockets/MainApp/src/clj/birdwatch/communicator/component.clj)**:
 
 ~~~
 (ns birdwatch.communicator.component
@@ -45,20 +45,19 @@ This component handles the interaction with the client applications by allowing 
            :query-results (chan)
            :tweet-missing (chan)
            :missing-tweet-found (chan)
-           :persistence (chan)
-           :rt-persistence (chan)
            :tweet-count (chan)
            :register-perc (chan)
            :perc-matches (chan)))
   (stop [component] (log/info "Stop Communicator Channels Component")
-        (assoc component :query nil :query-results nil :tweet-missing nil :missing-tweet-found nil
-                         :persistence nil :rt-persistence nil :tweet-count nil)))
+        (assoc component :query nil :query-results nil :tweet-missing nil
+                         :missing-tweet-found nil :tweet-count nil)))
 
 (defn new-communicator-channels [] (map->Communicator-Channels {}))
 ~~~
 
+The ````Communicator-Channels```` component has a more channels than the other components we've seen so far, but there's really no limit on how many we can use. There's a channel for passing query requests on from clients to some query processor, another channel for results, the same for missing tweets, a channel to send off requests for registering percolation, a channel that frequently delivers stats about the index size in ElasticSearch and a channel that delivers the percolation matches. Note that as in all other components, we don't have to know anything about the implementation of any other component in the system. All we need to know is the channels for interfacing with the outside world.
 
-https://github.com/matthiasn/BirdWatch/blob/3c793a8ded198ba9aa2360f1efb538dd548383b2/Clojure-Websockets/MainApp/src/clj/birdwatch/communicator/websockets.clj
+Here's the associated **[namespace](https://github.com/matthiasn/BirdWatch/blob/3c793a8ded198ba9aa2360f1efb538dd548383b2/Clojure-Websockets/MainApp/src/clj/birdwatch/communicator/websockets.clj)**:
 
 ~~~
 (ns birdwatch.communicator.websockets
@@ -125,4 +124,10 @@ https://github.com/matthiasn/BirdWatch/blob/3c793a8ded198ba9aa2360f1efb538dd5483
            (recur)))
 ~~~
 
+The first function ````user-id-fn```` takes care of generating a random UUID for each new connection.
 
+````make-handler```` takes care of distributing incoming messages from clients over websockets connections depending on their type, which is denoted by the first position in a message vector and should be a namespaced keyword. With that, ````core.match```` can put the payload onto the appropriate channels.
+
+The ````send-loop```` function takes care of sending messages from the server to the client. It takes a function to call specific to the message type and a channel to take from. Next, we have functions taking care of specific messages, for example the ````tweet-stats```` function, which delivers the stats to all connected clients whenever a stats message comes in from the ````:tweet-count```` channel. ````perc-matches```` does the matchmaking between percolation matches and clients currently connected and will only deliver a new tweet to a client when that matches the client's search.
+
+Finally, we run a loop that frequently (every 2 seconds) broadcasts the number of clients currently connected to all clients.

@@ -2,6 +2,8 @@
 
 ## Architectural Overview
 
+Here's an overview of the TwitterClient application. No worries if it's too small to read everything, we will look at different parts of it in detail later.
+
 ![TwitterClient Application](images/twitterclient_architecture.png)
 
 The purpose of the **TwitterClient** application is to maintain a streaming connection with the **[Twitter Streaming API](https://dev.twitter.com/streaming/overview)**, restart this connection if necessary, persist received tweets and make tweets available on a **[Redis Pub/Sub](http://redis.io/topics/pubsub)**. There can only be one instance of this application at any one time because Twitter does not allow you to start multiple clients at the same time.
