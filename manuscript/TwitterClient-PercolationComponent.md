@@ -6,6 +6,8 @@ This is where ElasticSearch's **[Percolator feature](http://www.elasticsearch.or
 
 The registration of queries in the percolation index and the delivery happens in the Percolation Component of the **client-facing application** and will be covered in more detail there. Here, you just need to know that upon registering a search, a hash of the query is used as the ID so that any possible query is only ever registered once.
 
+![Percolator Component with Channels](images/tc_percolation.png)
+
 In this component, new tweets are matched against existing searches, which returns a sequence of matching query IDs. New tweets are received on the ````:percolation```` channel and results (tweet with set of matches) are put on the ````:percolation-matches```` channel from the Percolation-Channels component. Here's the **[component itself](https://github.com/matthiasn/BirdWatch/blob/5fe69fbfaa956039e1f89a26811d0c86775dd594/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/percolator/component.clj)**:
 
 ~~~

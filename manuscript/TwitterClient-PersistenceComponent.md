@@ -2,6 +2,8 @@
 
 This component takes care of persisting tweets to an index in ElasticSearch. Once again we have a component with the typical lifecycle functions and an associated ````Persistence-Channels```` component. Here, this component only has a single channel, ````:persistence````.
 
+![Persistence Component with Channels](images/tc_persistence.png)
+
 Because there is only a channel to take from but no other channel to put a result onto, we will not use a ````pipeline```` but instead run a good old ````go-loop````. Inside the **[component](https://github.com/matthiasn/BirdWatch/blob/5fe69fbfaa956039e1f89a26811d0c86775dd594/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/persistence/component.clj)**, there aren't any surprises:
 
 ~~~

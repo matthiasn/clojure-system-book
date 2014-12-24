@@ -4,6 +4,7 @@ In the "Scaling Out" section of the architectural overview, I drew a picture of 
 
 ![Redesigned Architecture - InterOp](images/redesign2.png)
 
+![InterOp Component with Channels](images/tc_interop.png)
 
 ### Redis Pub/Sub with Carmine
 

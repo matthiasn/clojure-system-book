@@ -6,6 +6,8 @@ This component takes care of distributing data in the TwitterClient application 
 
 [^sb-image]: Photo by Joseph A. Carr, 1975, from **[Wikimedia](http://commons.wikimedia.org/wiki/File:JT_Switchboard_770x540.jpg)**
 
+![Switchboard Component](images/tc_switchboard.png)
+
 Let's have a look at the **[code](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/switchboard.clj)**:
 
 ~~~

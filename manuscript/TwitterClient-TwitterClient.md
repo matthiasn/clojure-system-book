@@ -143,7 +143,7 @@ ERROR birdwatch.twitterclient.processing - error-msg {:baz 42}
 
 Great, we have a composed transducer that works on vectors as expected. According to Rich Hickey this should work equally well on channels. But let's not take his word for it and instead try it out. First, here's my attempt to visualize the usage of a transducer in a channel. To make things easier, no errors occur.
 
-![transducer illustration](images/arrow.png)
+![TwitterClient Component with channels](images/twitterclient.png)
 
 You can also see the illustration above as an animation in the original **[blog post](http://matthiasnehlsen.com/blog/2014/10/06/Building-Systems-in-Clojure-2/)**.
 
