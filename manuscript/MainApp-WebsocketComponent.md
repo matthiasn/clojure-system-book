@@ -128,7 +128,7 @@ Here's the associated **[namespace](https://github.com/matthiasn/BirdWatch/blob/
 
 The ````user-id-fn```` function takes care of generating a random UUID for each new connection.
 
-The ````make-handler```` function takes care of distributing incoming messages from clients over websockets connections depending on their type, which is denoted by the first position in a message vector and should be a namespaced keyword. With that, ````core.match```` can put the payload onto the appropriate channels.
+The ````make-handler```` function takes care of distributing incoming messages from clients over websocket connections depending on their type, which is denoted by the first position in a message vector and should be a namespaced keyword. With that, ````core.match```` can put the payload onto the appropriate channels.
 
 The ````send-loop```` function takes care of sending messages from the server to the client. It takes a function to call specific to the message type and a channel to take from. Next, we have functions taking care of specific messages, for example the ````tweet-stats```` function, which delivers the stats to all connected clients whenever a stats message comes in from the ````:tweet-count```` channel.
 
