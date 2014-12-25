@@ -1,6 +1,6 @@
 ## MainApp - SwitchBoard Component
 
-The ````SwitchBoard```` component is comparable to the one that we saw in the **TwitterClient** application, only a little more involved. Let's look at the code right away:
+The ````SwitchBoard```` component is comparable to the one that we saw in the **TwitterClient** application, only with more channels involved. Let's look at the code right away:
 
 ~~~
 (ns birdwatch.switchboard
@@ -34,5 +34,5 @@ The ````SwitchBoard```` component is comparable to the one that we saw in the **
 (defn new-switchboard [] (map->Switchboard {}))
 ~~~
 
-In this component, we only ````pipe```` channels into each other, we thus only facilitate one-on-one connections. When looking at the code right now, I realize that the ````tweets-mult```` is not actually used at all. I remember though that when removing it and reloading the application on the **repl**, the application did not work any longer. Supposedly, that had something to do with the **component** library not recognizing that anything could change and thus holding on to the wrong channels from the previous initialization of the component. But that is just a hunch and probably should be explored further.
+In this component, we only ````pipe```` channels into each other, we thus only facilitate one-on-one connections. When looking at the code right now, I realize that the ````tweets-mult```` is not actually used at all. I remember though that when removing it and reloading the application on the **repl**, the application did not work any longer. Supposedly, that had something to do with the **component** library not recognizing that anything in the component could change and thus holding on to the wrong component instance from the first initialization and with that hold on to channels that aren't in use any longer. But that is just a hunch and probably should be explored further.
 

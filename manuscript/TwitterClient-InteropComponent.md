@@ -89,7 +89,8 @@ The ````Interop-Channels```` component can now be wired into the ````Interop````
   (car/close-listener listener))
 ~~~
 
-This **go-loop** consumes all messages that come in on **send-chan** channel and publishes them on **topic** for the specified configuration **conn**. All other functions are not used here, but this component is the same on both sides of the pub/sub. We will look at the counterpart when looking at the **MainApp** application.
+Here, we are only using ````run-send-loop```` to start sending all messages that come in on a channel.
+Specifically, this````go-loop```` consumes all messages that come in on the ````send-chan```` channel and publishes them on the ````topic```` in Redis for the specified configuration connection ````conn````. All other functions are not used here, but this component is the same on both sides of the pub/sub. We will look at the counterpart when looking at the **MainApp** application.
 
 Here's a drawing of this component together with the channels:
 

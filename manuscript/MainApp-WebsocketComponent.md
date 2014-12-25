@@ -1,6 +1,8 @@
 ## WebSocket Communication Component
 
-This component handles the interaction with the client applications by allowing us to interact with messages going to and coming from the clients via websocket connections from out Clojure application. The actual communication with over the network is then handled by the HttpComponent, which we will look at briefly in the next chapter. Here are the ````Communicator```` and the ````Communicator-Channels``` **[components](https://github.com/matthiasn/BirdWatch/blob/a7a27c76fb4a882daa485d0231de30c1cc078652/Clojure-Websockets/MainApp/src/clj/birdwatch/communicator/component.clj)**:
+This component handles the interaction with the web clients. It distributes messages coming from websocket clients to the appropriate channels of the application and vice versa.
+
+The actual communication with over the network is then handled by the HttpComponent, which we will look at briefly in the next chapter. Here are the ````Communicator```` and the ````Communicator-Channels``` **[components](https://github.com/matthiasn/BirdWatch/blob/a7a27c76fb4a882daa485d0231de30c1cc078652/Clojure-Websockets/MainApp/src/clj/birdwatch/communicator/component.clj)**:
 
 ~~~
 (ns birdwatch.communicator.component
@@ -124,9 +126,9 @@ Here's the associated **[namespace](https://github.com/matthiasn/BirdWatch/blob/
            (recur)))
 ~~~
 
-The first function ````user-id-fn```` takes care of generating a random UUID for each new connection.
+The ````user-id-fn```` function takes care of generating a random UUID for each new connection.
 
-````make-handler```` takes care of distributing incoming messages from clients over websockets connections depending on their type, which is denoted by the first position in a message vector and should be a namespaced keyword. With that, ````core.match```` can put the payload onto the appropriate channels.
+The ````make-handler```` function takes care of distributing incoming messages from clients over websockets connections depending on their type, which is denoted by the first position in a message vector and should be a namespaced keyword. With that, ````core.match```` can put the payload onto the appropriate channels.
 
 The ````send-loop```` function takes care of sending messages from the server to the client. It takes a function to call specific to the message type and a channel to take from. Next, we have functions taking care of specific messages, for example the ````tweet-stats```` function, which delivers the stats to all connected clients whenever a stats message comes in from the ````:tweet-count```` channel.
 

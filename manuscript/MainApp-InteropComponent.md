@@ -88,4 +88,4 @@ No big surprises here. Just like for the publisher side, there's the configurati
   (car/close-listener listener))
 ~~~
 
-The only difference between both sides of the **pub/sub** is which functions we use. One could also implement bidirectional communication between two components by utilizing all of these functions. Maybe this is something that could be moved into a library at some point when having a clearer understanding of realworld requirements.
+The only difference between both sides of the **pub/sub** is which functions we use. One could also implement bidirectional communication between two components by utilizing all of these functions. Maybe this is something that could be moved into a library at some point when having a clearer understanding of real-world requirements.
