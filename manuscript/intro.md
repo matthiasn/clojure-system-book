@@ -10,7 +10,7 @@ A live version of the Clojure version of this application is available **[here](
 
 Over the course of this book, we will follow the data and explore parts of the system in the same order that the streaming data flows through the system.
 
-There has been a **[series of articles](http://matthiasnehlsen.com/blog/2014/09/24/Building-Systems-in-Clojure-1/)** that attempted to explain different aspects of the system, but I think that a book is a much better artifact to work on than a series of blog articles.
+There has been a **[series of articles](http://matthiasnehlsen.com/blog/2014/09/24/Building-Systems-in-Clojure-1/)** that attempted to explain different aspects of the system, but I think that a book is a much better artifact to work on when trying to explain this application than a series of blog articles.
 
 Please join me on this journey as I explore the problem further and at the same time attempt to write a book about it. 
 
