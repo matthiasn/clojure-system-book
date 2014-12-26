@@ -1,6 +1,10 @@
 ## MainApp - SwitchBoard Component
 
-The ````SwitchBoard```` component is comparable to the one that we saw in the **TwitterClient** application, only with more channels involved. Let's look at the code right away:
+The ````SwitchBoard```` component is comparable to the one that we saw in the **TwitterClient** application, only with more channels involved.
+
+![MainApp - SwitchBoard Component](images/mainapp_switchboard.png)
+
+Let's look at the code:
 
 ~~~
 (ns birdwatch.switchboard

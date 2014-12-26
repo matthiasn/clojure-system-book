@@ -2,6 +2,8 @@
 
 This component handles the interaction with the web clients. It distributes messages coming from websocket clients to the appropriate channels of the application and vice versa.
 
+![MainApp - Communicator Component](images/mainapp_communicator.png)
+
 The actual communication with over the network is then handled by the HttpComponent, which we will look at briefly in the next chapter. Here are the ````Communicator```` and the ````Communicator-Channels``` **[components](https://github.com/matthiasn/BirdWatch/blob/a7a27c76fb4a882daa485d0231de30c1cc078652/Clojure-Websockets/MainApp/src/clj/birdwatch/communicator/component.clj)**:
 
 ~~~

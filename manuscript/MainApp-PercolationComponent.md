@@ -4,7 +4,11 @@ This component first of all receives registration requests from connected web cl
 
 The component also receives the ````[t matches]```` vectors on the ````:percolation```` channel. These originate from the ````Percolator```` component inside the **TwitterClient** application and that each contain a ````map```` containing a ````tweet```` plus a ````set```` with the the IDs of all the ````matches````.
 
-A transducing function which has access to the ````subscriptions```` atom then passes the vector on, enriched by the dereferenced ````@subscriptions````. The result is then passed to the ````:percolation-matches```` channel through being deployed by a ````pipeline````. Without further ado, here's the **[code](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/MainApp/src/clj/birdwatch/percolator/component.clj)**:
+A transducing function which has access to the ````subscriptions```` atom then passes the vector on, enriched by the dereferenced ````@subscriptions````. The result is then passed to the ````:percolation-matches```` channel through being deployed by a ````pipeline````. 
+
+![MainApp - Percolation Component](images/mainapp_percolation.png)
+
+Without further ado, here's the **[code](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/MainApp/src/clj/birdwatch/percolator/component.clj)**:
 
 ~~~
 (ns birdwatch.percolator.component

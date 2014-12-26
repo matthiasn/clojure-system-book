@@ -4,7 +4,9 @@ This component takes care of receiving data from another JVM. As a quick reminde
 
 ![Redesigned Architecture - InterOp](images/redesign2.png)
 
-The code is comparable to the ````InterOp```` component on the other side, only that on this **[side](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/MainApp/src/clj/birdwatch/interop/component.clj)** we don't publish but subscribe:
+The code is comparable to the ````InterOp```` component on the other side, only that on this **[side](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/MainApp/src/clj/birdwatch/interop/component.clj)** we don't publish but subscribe.
+
+![MainApp - InterOp Component](images/mainapp_interop.png)
 
 ~~~
 (ns birdwatch.interop.component

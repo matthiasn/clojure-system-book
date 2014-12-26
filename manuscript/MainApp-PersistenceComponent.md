@@ -1,6 +1,10 @@
 ## MainApp - Persistence Component
 
-This component takes care of responding to queries for previous tweets by retrieving them from an index in ElasticSearch so that they can be delivered to the connected web client. It also responds to queries for single tweets that are missing in the user interface. This is not used yet but it will be. Finally, this component runs a loop that frequently sends out stats about the size of the ElasticSearch index that stores all the tweets. Here's how the **[component](https://github.com/matthiasn/BirdWatch/blob/d104db4a7ac7a745593e34398751f81a50d167d0/Clojure-Websockets/MainApp/src/clj/birdwatch/persistence/component.clj)** looks like:
+This component takes care of responding to queries for previous tweets by retrieving them from an index in ElasticSearch so that they can be delivered to the connected web client. It also responds to queries for single tweets that are missing in the user interface. This is not used yet but it will be. Finally, this component runs a loop that frequently sends out stats about the size of the ElasticSearch index that stores all the tweets.
+
+![MainApp - Persistence Component](images/mainapp_persistence.png)
+
+Here's how the **[component](https://github.com/matthiasn/BirdWatch/blob/d104db4a7ac7a745593e34398751f81a50d167d0/Clojure-Websockets/MainApp/src/clj/birdwatch/persistence/component.clj)** looks like:
 
 ~~~
 (ns birdwatch.persistence.component

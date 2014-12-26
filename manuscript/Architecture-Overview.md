@@ -61,7 +61,7 @@ Let's walk through the interactions of the entire system step by step:
 
 So far, these changes are only partially implemented. **Decoupling** the processes between a Twitter client and the client-serving part is done and allows restarting the latter **without disconnecting** from the Streaming API and also allows horizontal scaling where multiple client-serving applications can connect to the Pub/Sub:
 
-![Redesigned Architecture - InterOp](images/redesign2.png)
+![Redesigned Architecture](images/overview.png)
 
 The server-side aggregation is not implemented yet, that part will follow soon.
 

@@ -1,6 +1,10 @@
 ## Http Component
 
-The ````HttpServer```` component handles the network part of the interaction with the web clients, whereas the ````Communicator```` component we have seen in the last chapter handles the interaction with the client connections from the rest of the application. The ````Communicator```` component is a dependency of the ````HttpServer```` and gets passed when the application starts. Let's dive right into the **[code](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/clj/birdwatch/http/component.clj)**:
+The ````HttpServer```` component handles the network part of the interaction with the web clients, whereas the ````Communicator```` component we have seen in the last chapter handles the interaction with the client connections from the rest of the application.
+
+![MainApp - Http Component](images/mainapp_http.png)
+
+The ````Communicator```` component is a dependency of the ````HttpServer```` and gets passed when the application starts. Let's dive right into the **[code](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/clj/birdwatch/http/component.clj)**:
 
 ~~~
 (ns birdwatch.http.component
