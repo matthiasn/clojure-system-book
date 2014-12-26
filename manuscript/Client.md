@@ -15,4 +15,4 @@ The following libraries are still required, should also be replaced though where
 * **[d3.layout.cloud.js](https://github.com/jasondavies/d3-cloud)**
 * **[wordcloud.js](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/MainApp/resources/public/js/wordcloud.js)** - own JavaScript implementation for interacting with d3.layout.cloud.js
 
-{pagebreak}
+In the following chapter about the client side, you will only find code and little to no description yet. I'm working on that, expect more content in January 2015.
