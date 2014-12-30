@@ -1,6 +1,6 @@
 ## TwitterClient - InterOp Component
 
-In the "Scaling Out" section of the architectural overview, I drew a picture of how I wanted to break apart the initial monolithic application and instead run different parts of the application in separate processes / separate JVMs. The idea was to have a single client for the connection to the **[Twitter Streaming API](https://dev.twitter.com/streaming/overview)** and the persistence of the received Tweets in **[ElasticSearch](http://www.elasticsearch.com)**, plus multiple machines to serve WebSocket connections to the client. For the communication between the processes, I picked **[Redis Pub/Sub](http://redis.io/topics/pubsub)** because its model of communication suits the requirements really well.
+In the "Scaling Out" section of the architectural overview, I drew a picture of how I wanted to break apart the initial monolithic application and instead run different parts of the application in separate processes / separate JVMs. The idea was to have a single client for the connection to the **[Twitter Streaming API](https://dev.twitter.com/streaming/overview)** and the persistence of the received tweets in **[ElasticSearch](http://www.elasticsearch.com)**, plus multiple machines to serve WebSocket connections to the client. For the communication between the processes, I picked **[Redis Pub/Sub](http://redis.io/topics/pubsub)** because its model of communication suits the requirements really well.
 
 ![Redesigned Architecture - InterOp](images/redesign2.png)
 
@@ -90,7 +90,7 @@ The ````Interop-Channels```` component can now be wired into the ````Interop````
 ~~~
 
 Here, we are only using ````run-send-loop```` to start sending all messages that come in on a channel.
-Specifically, this````go-loop```` consumes all messages that come in on the ````send-chan```` channel and publishes them on the ````topic```` in Redis for the specified configuration connection ````conn````. All other functions are not used here, but this component is the same on both sides of the pub/sub. We will look at the counterpart when looking at the **MainApp** application.
+Specifically, this````go-loop```` consumes all messages that come in on the ````send-chan```` channel and publishes them on the ````topic```` in Redis for the specified configuration connection ````conn````. None of the other functions is used here, but this component is the same on both sides of the pub/sub. We will look at the counterpart when looking at the **MainApp** application.
 
 Here's a drawing of this component together with the channels:
 
