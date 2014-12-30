@@ -2,9 +2,9 @@
 
 Clojure is a beautiful language and I have been fascinated from the first moment I laid eyes on it in 2013. However, what remained a mystery to me for most of the time was how to build more complex systems. I started researching the options that would allow me to structure an arbitrarily complex application in a way that is **easy to understand and maintain**. Here is what I found.
 
-In this book, we will build a system in Clojure that processes streaming data and visualizes different insights into the data in a browser. All visualizations of data display information in (near) real-time.
+In this book, we will build a system in Clojure that processes streaming data and visualizes different insights into the data in a browser. All visualizations of data display information in (near) real time.
 
-The sample implementation that we will use is the **[BirdWatch](https://github.com/matthiasn/BirdWatch)** application, a project I have started in Scala with AngularJS on the client side but that I have then switched over to an all-Clojure/ClojureScript implementation.
+The sample implementation that we will use is the **[BirdWatch](https://github.com/matthiasn/BirdWatch)** application - a project I have started in Scala with AngularJS on the client side, but that I then switched over to an all-Clojure/ClojureScript implementation.
 
 ![Screenshot](images/screenshot.png)
 
