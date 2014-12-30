@@ -1,6 +1,6 @@
 ## Application Initialization
 
-Let's have a look at how the initialization of the application looks in **[code](https://github.com/matthiasn/BirdWatch/blob/a26c201d2cc2c89f4b3d2ecb8e6adb403e6f89c7/Clojure-Websockets/src/clj/birdwatch/main.clj)**:
+Let's have a look at how the initialization of the application looks like in **[code](https://github.com/matthiasn/BirdWatch/blob/a26c201d2cc2c89f4b3d2ecb8e6adb403e6f89c7/Clojure-Websockets/src/clj/birdwatch/main.clj)**:
 
 {line-numbers=off,lang=clojure}
 ~~~
