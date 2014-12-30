@@ -6,7 +6,7 @@ This component takes care of distributing data in the TwitterClient application 
 
 [^sb-image]: Photo by Joseph A. Carr, 1975, from **[Wikimedia](http://commons.wikimedia.org/wiki/File:JT_Switchboard_770x540.jpg)**
 
-In the conceptual drawing, we can see that in this component the channels from different components are wired for the requirements of the application. Here, it would be very simple to attach additional component and send messages to those as well, without other parts of the application having to know anything about it.
+In the conceptual drawing we can see that in this component the channels from different components are wired for the requirements of the application. Here, it would be very simple to attach additional components and send messages to those as well, without other parts of the application having to know anything about it.
 
 ![Switchboard Component](images/tc_switchboard.png)
 
@@ -39,4 +39,4 @@ Let's have a look at the **[code](https://github.com/matthiasn/BirdWatch/blob/43
 (defn new-switchboard [] (map->Switchboard {}))
 ~~~
 
-Here, really the only thing that happens is that we create a ````mult```` from the ````:tweets```` channel, which is a multiplier that allows us to connect multiple channels that each consume all elements on the ````mult````. Then, we ````tap```` into the ````mult```` and connect both the ````:percolation```` and the ````:persistence```` channels.
+Here, the only thing that really happens is that we create a ````mult```` from the ````:tweets```` channel, which is a multiplier that allows us to connect multiple channels that each consume all elements on the ````mult````. Then, we ````tap```` into the ````mult```` and connect both the ````:percolation```` and the ````:persistence```` channels.
