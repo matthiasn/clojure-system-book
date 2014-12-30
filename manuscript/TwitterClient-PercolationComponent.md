@@ -1,10 +1,10 @@
 ## TwitterClient - Percolation Component
 
-The Percolation Component is responsible for matching new tweets with existing queries. Remember, in this application, we update the search results shown in the client in (near-)realtime when new matches are available. In order to do that, we need some kind of matching mechanism between searches and new items.
+The Percolation Component is responsible for matching new tweets with existing queries. Remember, in this application, we update the search results shown in the client in (near-)real time when new matches are available. In order to do that, we need some kind of matching mechanism between searches and new items.
 
 This is where ElasticSearch's **[Percolator feature](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-percolate.html)** helps. Percolation queries are kind of reverse searches that allow the registration of an observing real-time search in the percolation index. Each new tweet is then presented to the percolation index in ElasticSearch to determine which of the registered searches match on the new item.
 
-The registration of queries in the percolation index and the delivery happens in the Percolation Component of the **client-facing application** and will be covered in more detail there. Here, you just need to know that upon registering a search, a hash of the query is used as the ID so that any possible query is only ever registered once.
+The registration of queries in the percolation index and the delivery happens in the percolation component of the **client-facing application** and will be covered in more detail there. Here, you just need to know that upon registering a search, a hash of the query is used as the ID so that any possible query is only ever registered once.
 
 ![Percolator Component with Channels](images/tc_percolation.png)
 
@@ -72,4 +72,4 @@ So here's what this function does. For every element (which we know is a tweet) 
 
 Finally, we create a ````vector```` that contains the set and the actual tweet: ````[t matches]````. This result vector is what we finally put on the ````:percolation-matches```` channel.
 
-Note that this component knows nothing about any other part of the program. The transducer does not even know the target channel, it is only concerned with the actual processing step.
+Note that this component knows nothing about any other part of the program. The transducer does not even know the target channel; it is only concerned with the actual processing step.
