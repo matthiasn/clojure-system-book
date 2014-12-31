@@ -1,6 +1,6 @@
 ## Http Component
 
-The ````HttpServer```` component handles the network part of the interaction with the web clients, whereas the ````Communicator```` component we have seen in the last chapter handles the interaction with the client connections from the rest of the application.
+The ````HttpServer```` component handles the network part of the interaction with the web clients whereas the ````Communicator```` component mentioned in the last chapter handles the interaction between client connections and the rest of the application.
 
 ![MainApp - Http Component](images/mainapp_http.png)
 
@@ -45,4 +45,4 @@ The ````Communicator```` component is a dependency of the ````HttpServer```` and
 (defn new-http-server [conf] (map->Httpserver {:conf conf}))
 ~~~
 
-The component code is mostly taken from the **[sente example](https://github.com/ptaoussanis/sente/blob/master/example-project/src/example/my_app.cljx)**. I've only adapted it to fit into the component lifecycle so that the server gets shut down when the component stops.
+The component code is mostly taken from the **[sente example](https://github.com/ptaoussanis/sente/blob/master/example-project/src/example/my_app.cljx)**. I've only adapted it to fit into the component lifecycle so that the server is shut down when the component stops.
