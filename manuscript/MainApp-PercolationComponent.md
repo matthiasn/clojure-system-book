@@ -2,9 +2,9 @@
 
 This component first of all receives registration requests from connected web clients via the ````:register-percolation```` channel. For that, it keeps information about all current ````subscriptions```` in an ````atom````.
 
-The component also receives the ````[t matches]```` vectors on the ````:percolation```` channel. These originate from the ````Percolator```` component inside the **TwitterClient** application and that each contain a ````map```` containing a ````tweet```` plus a ````set```` with the the IDs of all the ````matches````.
+The component also receives the ````[t matches]```` vectors on the ````:percolation```` channel. These originate from the ````Percolator```` component inside the **TwitterClient** application, each of which contains a ````map```` with a ````tweet```` plus a ````set```` with the IDs of all the ````matches````.
 
-A transducing function which has access to the ````subscriptions```` atom then passes the vector on, enriched by the dereferenced ````@subscriptions````. The result is then passed to the ````:percolation-matches```` channel through being deployed by a ````pipeline````. 
+A transducing function which has access to the ````subscriptions```` atom then passes the vector on, enriched by the dereferenced ````@subscriptions````. This transducing function is used by a ````pipeline```` that takes each item off the ````:percolation```` channel, has the transducing function process each item and then puts the result on the ````:percolation-matches```` channel.
 
 ![MainApp - Percolation Component](images/mainapp_percolation.png)
 
@@ -47,7 +47,7 @@ Without further ado, here's the **[code](https://github.com/matthiasn/BirdWatch/
 (defn new-percolation-channels [] (map->Percolation-Channels {}))
 ~~~
 
-If the explanations above didn't make a lot of sense yet, no worries, the **[code](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/MainApp/src/clj/birdwatch/percolator/elastic.clj)** will explain:
+If the explanations above haven't made a lot of sense to you yet, no worries, the **[code](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/MainApp/src/clj/birdwatch/percolator/elastic.clj)** will explain:
 
 ~~~
 (ns birdwatch.percolator.elastic
@@ -83,6 +83,6 @@ If the explanations above didn't make a lot of sense yet, no worries, the **[cod
   (map (fn [[t matches]] [t matches @subscriptions])))
 ~~~
 
-In ````run-percolation-loop````, the ````params```` of a **search** are taken off of ````register-percolation-chan```` and the ````start-percolator```` function is called with this map, the connection ````conn```` and the ````subscriptions```` atom. This function then uses ````query```` and ````uid```` from ````params```` to ````swap!```` the ````subscriptions```` atom by ````assoc````ing the ````sha```` hash of a query into the map under the ````uid```` key. In addition, it registers the ````query```` in ElasticSearch's percolator index, with the ````sha```` as the ID.
+In ````run-percolation-loop````, the ````params```` of a **search** are taken off the ````register-percolation-chan```` and the ````start-percolator```` function is called with this map, the connection ````conn```` and the ````subscriptions```` atom. This function then uses ````query```` and ````uid```` from ````params```` to ````swap!```` the ````subscriptions```` atom by ````assoc````ing the ````sha```` hash of a query into the map under the ````uid```` key. In addition, it registers the ````query```` in ElasticSearch's percolator index, with the ````sha```` as the ID.
 
-Finally, the ````percolation-xf```` transducing function, as mentioned above, enriches the vector it receives by adding the dereferenced ````@subscriptions```` in the third position. The **WebsocketComponent** will then do the matchmaking eventually, but we will look at that when discussing the component. Here, we don't need to know any of that, all we need to know is the data structure that's expected down the line. That's what I find beautiful about using **core.async** in conjunction with the **component** library, as we do in this application.
+Finally, the ````percolation-xf```` transducing function, as mentioned above, enriches the vector it receives by adding the dereferenced ````@subscriptions```` in the third position. The **WebsocketComponent** will eventually do the matchmaking, but we will look at that when we discuss the component. Here, we don't need to know any of that, all we need to know is the data structure that's expected down the line. That's what I find so beautiful about using **core.async** in conjunction with the **component** library, as we do in this application.
