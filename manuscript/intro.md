@@ -16,7 +16,7 @@ Over the course of this book, we will follow the data and explore parts of the s
 
 There has been a **[series of articles](http://matthiasnehlsen.com/blog/2014/09/24/Building-Systems-in-Clojure-1/)** that attempted to explain different aspects of the system, but I think that a book is a much better artifact to work on when trying to explain this application than a series of blog articles.
 
-Please join me on this journey as I explore the problem further and at the same time attempt to write a book about it.
+Please join me on this journey as I explore the problem further and at the same time write a book about it. The book will begin with a description of the current architecture, both on the server and the client side. Later on, we will put the design to the test, come up with a load testing strategy and look at ways of improving performance. Likely, we will also go through some refactoring of the current architecture and add some functionality.
 
 During the first couple of days, I made this content freely available. If you received this book for free and you realize that you like the content, please consider paying the suggested price. I guarantee you that any additional revenue will allow me to finish this book earlier.
 
