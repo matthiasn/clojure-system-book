@@ -4,7 +4,8 @@
 
 ### Reagent (or potentially freactive)
 
-https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/elements.cljs
+
+Let's start with the simpler elements in the ````birdwatch.ui.elements```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/elements.cljs)**:
 
 ~~~
 (ns birdwatch.ui.elements
@@ -70,7 +71,8 @@ https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252b
 
 
 
-https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/tweets.cljs
+
+Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/tweets.cljs)**:
 
 ~~~
 (ns birdwatch.ui.tweets

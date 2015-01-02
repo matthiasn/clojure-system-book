@@ -1,6 +1,6 @@
 ## WebSocket Communication 
 
-The ````birdwatch.communicator```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/communicator.cljs)** handles the interaction with the server-side application through the use of a WebSocket connection provided by the **[sente](https://github.com/ptaoussanis/sente)** library.
+The ````birdwatch.communicator```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/communicator.cljs)** handles the interaction with the server-side application through the use of a WebSocket connection provided by the **[sente](https://github.com/ptaoussanis/sente)** library. Conceptually, the bi-directional WebSocket connection is similar to two **core.async** channels, one for sending and one for receiving. Since there are no different channels for different message types, all messages on the WebSocket connection need to be marked with their type. This is done by wrapping the payload in a vector where the message type is represented by a **[namespaced keyword](https://clojuredocs.org/clojure.core/keyword)** in the first position and the payload in the second position. With this convention, it is really easy to pattern match using **[core.match](https://github.com/clojure/core.match)**, as we shall see below. It is just as easy to add new message types.
 
 ~~~
 (ns birdwatch.communicator
@@ -86,15 +86,5 @@ The ````birdwatch.communicator```` **[namespace](https://github.com/matthiasn/Bi
 (go-loop [] (let [tid (<! c/tweet-missing-chan)]
               (chsk-send! [:cmd/missing {:id_str tid :uid (:uid @chsk-state)}])
               (recur)))
-
-(defn ^:export send-state
-  "helper function to send state to server (where it can be pretty printed for debugging)"
-  []
-  (chsk-send! [:some/state {:by-followers (into {} (:by-followers @state/app))
-                            :by-retweets  (into {} (:by-followers @state/app))
-                            :by-favorites  (into {} (:by-favorites @state/app))
-                            :by-rt-since-startup  (into {} (:by-rt-since-startup @state/app))
-                            :by-reach  (into {} (:by-reach @state/app))
-                            :by-id  (into {} (:by-id @state/app))}]))
 ~~~
 

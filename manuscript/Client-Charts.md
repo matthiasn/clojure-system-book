@@ -2,7 +2,7 @@
 
 Two of the three charts in the application are completely contructed using ClojureScript, with no need for JavaScript interop. Only the word cloud chart is using D3.js as an external library, plus some interop code.
 
-The Timeseries chart and the Wordcount trend bar chart are contructed as SVG by using the **[reagent](https://github.com/reagent-project/reagent)** library, just like for displaying tweets, only with the difference that we are not contructing HTML here but SVG instead. 
+The Timeseries chart and the Wordcount trend bar chart are contructed as SVG by using the **[reagent](https://github.com/reagent-project/reagent)** library, just like for displaying tweets, only with the difference that we are not contructing HTML here but SVG instead.
 
 ### Timeseries Chart
 
