@@ -33,8 +33,8 @@ This namespace initializes the application on the client side. Here's the entire
 (swap! state/app assoc :search-text (util/search-hash))
 ~~~
 
-The first thing that happens is that the initial application state is set in the respective atom. There is a function named ````initial-state````in the ````state```` namespace that returns a "blank slate" application state, it's result is used to populate the ````state/app```` atom.
+The first thing that happens is that the initial application state is set in the respective atom. There is a function named ````initial-state````in the ````state```` namespace that returns a "blank slate" application state; its result is used to populate the ````state/app```` atom.
 
-Next, ````ui/init-views```` is called, a function that initializes all UI components. we will look at it later when covering the ````ui```` namespace.
+Next, ````ui/init-views```` is called, a function that initializes all UI components. We will look at it later when we cover the ````ui```` namespace.
 
-Then, ````update-loop````s are started for updating the charts in regular intervals. The charts themselves are initialized in their respective namespaces. We will look at that when discussing the charts.
+Then, ````update-loop````s are started to update the charts in regular intervals. The charts themselves are initialized in their respective namespaces. We will look at that when we discuss the charts.

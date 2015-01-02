@@ -1,6 +1,6 @@
 ## Application State
 
-All application state is held in atoms, mostly in one large map. The entire application state is stored in one namespace that all other namespaces in the application can import. Here's the **[code](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/state.cljs)**:
+The entire application state is held in atoms, mostly in one large map, and stored in one namespace that all other namespaces in the application can import. Here's the **[code](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/state.cljs)**:
 
 ~~~
 (ns birdwatch.state
@@ -49,8 +49,8 @@ All application state is held in atoms, mostly in one large map. The entire appl
   (swap! app assoc :search-text (str (:search-text @app) " " s)))
 ~~~
 
-The ````app```` atom hold the application state, it is initially empty. On initialization of the application, the empty map is replaced the "clean slate" application state returned by the ````initial-state```` function. This is also used when the application state is reset when starting a new search, without reloading the page. 
+The ````app```` atom holds the application state. It is initially empty. On initialization of the application the empty map is replaced by the "clean slate" application state returned by the ````initial-state```` function. This function is also used when the application state is reset when starting a new search without reloading the page. 
 
-Then, there are two ````go-loops````, one is taking values off ````c/user-count-chan```` and updates the ````:users-count```` key in the application state, and the other does the same for ````c/total-tweets-count-chan```` and updates the ````:total-tweet-count```` key.
+Then, there are two ````go-loops```` - one takes values off of ````c/user-count-chan```` and updates the ````:users-count```` key in the application state and the other does the same for ````c/total-tweets-count-chan```` and updates the ````:total-tweet-count```` key.
 
-Finally, the ````append-search-text```` function append strings to the ````:search-text```` key, this used for example when clicking on entries in the word cloud in order to add words to the search input field.
+Finally, the ````append-search-text```` function appends strings to the ````:search-text```` key, used for example when clicking on entries in the word cloud in order to add words to the search input field.
