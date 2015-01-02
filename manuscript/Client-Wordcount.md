@@ -1,6 +1,6 @@
 ## Wordcount Statistics
 
-https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/wordcount.cljs
+The ````birdwatch.wordcount```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/wordcount.cljs)** is responsible for running wordcount statistics over tweets received from the server, both for live tweets and chunks of previous tweets.
 
 ~~~
 (ns birdwatch.wordcount
@@ -42,3 +42,13 @@ https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252b
         (filter (fn [item] (not (contains? stop-words item))) ,)
         (map #(add-word app %) ,))))
 ~~~
+
+First, we define a set named ````stop-words````. This actually has many more entries and is shortened here so that it fits the page format better. These words are not counted towards the result as they aren't very interesting to look at in the word cloud and the bar chart.
+
+Next, there is the ````get-words```` function which formats the wordcount data from the application state in the way that is required by the word cloud library by using a mapping function.
+
+For the wordcount barchart, which I've implemented myself, I don't need to reformat the data, here ````get-words2```` retrieves the data from the application state as is.
+
+The ````add-word```` function take the application state atom and a word and adds the word to the priority map that contains the words as keys and a counter as the value. If the entry for the word does not exist, ````get```` just returns ````0````, otherwise it returns the previous count. Either way, the return value will be incremented and the ````:words-sorted-by-count```` priority map updated accordingly by using the ````util/swap-pmap```` function. We will look at that mechanism in more detail when looking at the ````util```` namespace.
+
+Finally, the ````process-tweet```` function takes the text of a tweet, splits it, removes words that are too short or too long, converts to lowercase, replaces a few character, filters out words contained in the ````stop-words```` set and adds each remaining word to the application state by calling the ````add-word```` we've seen above.
