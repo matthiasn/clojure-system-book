@@ -1,12 +1,10 @@
 ## Channels
 
-Different parts of the client communicate via **core.async** channels.
-
-https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/channels.cljs
+Different parts of the client communicate via **core.async** channels. All of these are located in a single namespace, which makes it easy to import the channels namespace as the communication backbone from all other namespaces without running into the risk od circular dependencies. Here's the simple *[code](https://github.com/matthiasn/BirdWatch/blob/19e6265b562ec5e08ec6bb2bbe4aaadd72bd8970/Clojure-Websockets/MainApp/src/cljs/birdwatch/channels.cljs)**:
 
 ~~~
 (ns birdwatch.channels
-  (:require [cljs.core.async :as async :refer [<! >! chan put! alts! timeout]]))
+  (:require [cljs.core.async :as async :refer [chan]]))
 
 ;;; Channels for handling information flow in the application.
 (def tweets-chan (chan 1))
@@ -18,3 +16,5 @@ https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252b
 (def prev-chunks-chan (chan))
 (def missing-tweets-chan (chan))
 ~~~
+
+A few channels are created here, which are then used as their names indicate.
