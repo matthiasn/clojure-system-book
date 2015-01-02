@@ -4,6 +4,8 @@ The ````birdwatch.timeseries```` **[namespace](https://github.com/matthiasn/Bird
 
 ![timeseries chart](images/ts_chart.png)
 
+In order to do that, tweets will have to be grouped into time intervals and then counted to see how many have occurred during each time interval.
+
 ~~~
 (ns birdwatch.timeseries
   (:require [birdwatch.util :as util]
