@@ -21,7 +21,7 @@ MainApp-HttpComponent.md
 
 Serverside-Conclusion.md
 
-Client.md
+Client-Architecture.md
 Client-Core.md
 Client-State.md
 Client-Channels.md
