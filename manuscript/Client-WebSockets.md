@@ -1,6 +1,6 @@
 ## WebSocket Communication 
 
-https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/communicator.cljs
+The ````birdwatch.communicator```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/communicator.cljs)** handles the interaction with the server-side application through the use of a WebSocket connection provided by the **[sente](https://github.com/ptaoussanis/sente)** library.
 
 ~~~
 (ns birdwatch.communicator
@@ -96,5 +96,5 @@ https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252b
                             :by-rt-since-startup  (into {} (:by-rt-since-startup @state/app))
                             :by-reach  (into {} (:by-reach @state/app))
                             :by-id  (into {} (:by-id @state/app))}]))
-
 ~~~
+
