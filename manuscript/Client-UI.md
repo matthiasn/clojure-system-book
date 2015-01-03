@@ -226,7 +226,7 @@ Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https:/
 
 Earlier versions of this application used **[Bootstrap](http://getbootstrap.com)** as the CSS framework, including earlier versions of the Clojure / ClojureScript implementation. But after about a year, I really couldn't stand the Bootstrap look any longer. Sure, I could have changed stuff to make it look less like Bootstrap, but then why use Bootstrap in the first place. Here's how that old version looked like:
 
-![Screenshot with Bootstrap CSS](images/screenshot_bootstrap_.png)
+![Screenshot with Bootstrap CSS](images/screenshot_bootstrap.png)
 
 Bootstrap has served me alright over the last two years or so, but it was time for something simpler.
 
@@ -236,6 +236,6 @@ So I had a look for newer CSS frameworks and I found **[Pure](http://purecss.io)
 
 I think this looks fresher than the old version. At the same time it also works much better on small mobile screens, without much customization. For example in the iOS Simulator for the iPhone 6 Plus, it looks like this:
 
-![Screenshot iOS Simulator with Pure CSS](images/screenshot_6plus_.png)
+![Screenshot iOS Simulator with Pure CSS](images/screenshot_6plus.png)
 
 
