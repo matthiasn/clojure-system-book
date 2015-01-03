@@ -1,6 +1,6 @@
 ## Wordcount Statistics
 
-The ````birdwatch.wordcount```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/wordcount.cljs)** is responsible for running wordcount statistics over tweets received from the server, both for both live tweets and chunks of previous tweets.
+The ````birdwatch.wordcount```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/wordcount.cljs)** is responsible for running wordcount statistics over tweets received from the server for both live tweets and chunks of previous tweets.
 
 ~~~
 (ns birdwatch.wordcount
