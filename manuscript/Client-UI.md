@@ -68,7 +68,7 @@ Let's start with the simpler elements in the ````birdwatch.ui.elements```` **[na
     (r/render-component [component] (util/by-id id))))
 ~~~
 
-The first **reagent** component above is also the simplest one: 
+The first **reagent** component above is also the simplest one:
 
 ~~~
 (defn count-view []
@@ -76,8 +76,6 @@ The first **reagent** component above is also the simplest one:
 ~~~
 
 All this does is populate a ````<span>```` with the current value of the ````:count```` key in our application state, updated whenever that value changes.
-
-![count-view](images/count-view.png)
 
 Using this component is also very easy. We need some HTML like this, with an ````id```` where the element can be rendered:
 
@@ -91,6 +89,10 @@ Then, we can tell **reagent** to render the component in this ````<span>````:
 ~~~
 (r/render-component [count-view] (util/by-id "tweet-count"))
 ~~~
+
+![](images/header.png)
+
+You can see the result on the right side of the partial screenshot above.
 
 
 
