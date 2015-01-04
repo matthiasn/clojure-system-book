@@ -230,7 +230,7 @@ Earlier versions of this application used **[Bootstrap](http://getbootstrap.com)
 
 Bootstrap has served me alright over the last two years or so, but it was time for something simpler.
 
-So I had a look for newer CSS frameworks and I found **[Pure](http://purecss.io)**. Pure is much more lightweight than Bootstrap, it requires a much smaller download and the grid model is also much easier to use than Bootstrap. Before we compare the HTML, here's how the new version looks like:
+So I had a look for newer CSS frameworks and I found **[Pure](http://purecss.io)**. Pure is much more lightweight than Bootstrap, it requires a much smaller download and the grid model is also much easier to use than Bootstrap. Here's how the new version looks like:
 
 ![Screenshot with Pure CSS](images/screenshot.png)
 
@@ -238,4 +238,49 @@ I think this looks fresher than the old version. At the same time it also works 
 
 ![Screenshot iOS Simulator with Pure CSS](images/screenshot_6plus.png)
 
+Now it not only looks better, the HTML needed to generate this is also a lot simpler. Let's have a quick look at the HTML:
 
+{lang="HTML"}
+~~~
+<body>
+    <div class="header">
+        <div id="demo-horizontal-menu" class="home-menu pure-menu pure-menu-open pure-menu-horizontal pure-menu-fixed">
+            <a class="pure-menu-heading" href="">Birdwatch</a>
+            <ul>
+                <li><a href="https://github.com/matthiasn/Birdwatch" target="_blank">GitHub</a></li>
+                <li><a href="https://leanpub.com/building-a-system-in-clojure" target="_blank">About</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <div class="l-box">
+            <div id="count">Tweets: <span id="tweet-count"></span></div>
+            <div id="search"></div>
+            <div id="pagination"></div>
+            <div id="sort-buttons"></div>
+        </div>
+        <div class="pure-g">
+            <div class="pure-u-1 pure-u-sm-1-2 pure-u-lg-5-12 l-box">
+                <div id="tweet-frame"></div>
+            </div>
+            <div class="pure-u-1 pure-u-sm-1-2 pure-u-lg-7-12 l-box">
+                <div id="timeseries1" class="timeseries"></div>
+                <hr />
+                <div id="wordCloud" class="cloud" ></div>
+                <hr />
+                <h5>word frequency</h5>
+                <div id="wordcount-barchart" class="barchart" ></div>
+                <hr />
+                <div id="users-count"></div>
+                <div id="total-tweet-count"></div>
+            </div>
+        </div>
+    </div>
+    <!-- Scripts omitted -->
+</body>
+~~~
+
+I like ***[Pure](http://purecss.io)** for the simplicity of its grid model. Although this is not a book about HTML and CSS, let's still walk through the HTML as it comes in handy when you want to design a web application.
+
+**TODO**: explanation of the grid model.
