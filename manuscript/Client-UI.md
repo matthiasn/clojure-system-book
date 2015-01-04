@@ -1,10 +1,21 @@
 ## User Interface
 
 ### React.js Concepts
+**[React](http://facebook.github.io/react/)** is a revolutionary way to build user interfaces. It's model is particularly well suited for working with immutable data structures as is based on rendering out the entire application state every single time something changes, without requiring to mutate the application state itself. React will then render the state into a virtual DOM, keep the previous version of the virtual DOM and run an efficient diffing algorithm between the two and only change the actual and slow DOM where it has found changes between the previous and the current virtual DOM during the diffing phase. 
+
+This may at first sound inefficient but it is actually very fast, making it trivial to achieve 60 frames per second in the browser in most cases. **[David Nolen](https://twitter.com/swannodette)** was the first to my knowledge who realized how well this model is suited for working with ClojureScript's immutable data structures. He then developed **[Om](https://github.com/swannodette/om)** which he first announced in this **[blog post](http://swannodette.github.io/2013/12/17/the-future-of-javascript-mvcs/)**. Kudos to him for this discovery. At that time I was working on an **[AngularJS](http://www.amazon.com/AngularJS-UI-Development-Amit-Ghart-ebook/dp/B00OXVAK7A/ref=sr_1_1?ie=UTF8&qid=1420394659&sr=8-1)** book and reading his blog post made me realize that AngularJS might not be the way to go, at least not for me. I had already been exposed to functional programming principles enough to know the value of working with immutable values. Luckily, the publisher found a co-author as I didn't want to spend another couple of months with AngularJS any longer.
+
+I wrote the first version of the ClojureScript client using **Om**, but I always had the problem that I would need a rather large amount of context when coming back to the code for the user interface. I then discovered **[Reagent](https://github.com/reagent-project/reagent)**, which is also using **React.js** and is based on the same principles as Om. I just found the required code for a component much more terse and legible at the same time with its **[Hiccup](https://github.com/weavejester/hiccup)** syntax that I made a complete switch. I have not regretted that. Now I come back to the UI code and I scratch my head a lot less than with the previous version. I share this experience I read in this **[blog post](http://diogo149.github.io/2014/10/19/om-no/)**, which made me give Reagent a shot. I haven't regretted it.
+
 
 ### Reagent
 
-Let's start with the simpler elements in the ````birdwatch.ui.elements```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/elements.cljs)**:
+For more information on Reagent, I can also recommend this **[blog post](http://getprismatic.com/story/1405451329953)**, besides the decent-enough documentation of the project itself.
+
+I will not start with an introduction to Reagent here, the previously mentioned resources should have you covered. Instead, I will just explain the code, which you actually may find simple enough to learn Reagent from the code itself.
+
+#### Simple Reagent Components
+Let's start the exploration with the simpler components in the ````birdwatch.ui.elements```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/elements.cljs)**:
 
 ~~~
 (ns birdwatch.ui.elements
@@ -158,6 +169,7 @@ Above, ````for```` every item in ````sort-orders```` we destructure the vector a
 
 All buttons share the ````.pure-button.not-rounded```` classes. In addition we set the class in the properties map of the button component: ````:class btn-class````. In that map we also define an ````:on-click```` function: ````#(swap! state/app assoc :sorted k)````. This resets the current sort order to the key associated with the clicked button. Finally, we pass the ````text```` label to the button. Note that we will also set metadata on the component where we use the ````text```` of the component as the ````:key````: ^{:key text}. This is good practice for ReactJS whenever we render a list of something. Here, it wouldn't hurt as the list is not dynamic, but it would still result in a warning on the console. 
 
+#### Reagent Components for Tweets
 
 Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/tweets.cljs)**:
 
@@ -220,6 +232,84 @@ Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https:/
                             ^{:key (:id_str t)} [tweet-view t]
                             ^{:key (:id_str t)} [missing-tweet t]))]))
 ~~~
+
+The first component here is ````twitter-intent````:
+
+~~~
+(defn twitter-intent [tweet intent icon]
+  [:a {:href (str "https://twitter.com/intent/" intent (:id_str tweet))}
+   [:img {:src (str "/images/" icon)}]])
+~~~
+
+This renders a link to Twitter for the specified intent (e.g. retweet) with the correct icon and for the specified tweet. When clicking on this link, you can for example retweet a tweet. Here's how ````twitter-intent```` is used:
+
+~~~
+(defn twitter-intents [tweet]
+  [:div.intent
+   [twitter-intent tweet "tweet?in_reply_to=" "reply.png"]
+   [twitter-intent tweet "retweet?tweet_id=" "retweet.png"]
+   [twitter-intent tweet "favorite?tweet_id=" "favorite.png"]])
+~~~
+
+In the ````twitter-intents```` component, we create a ````div```` with three ````twitter-intent```` components, one for each possible intent. Here's how that looks like when rendered:
+
+![](images/intents.png)
+
+The ````missing-tweet```` is not currently used, so there's no need to cover it right now.
+
+The ````tweet-text```` component is responsible for rendering the tweet text plus the followers, retweet and favorite count plus the count how often the tweet has been retweeted within the tweets currently loaded in the application.
+
+~~~
+(defn tweet-text [tweet user]
+  [:div.tweettext
+   [:div {:dangerouslySetInnerHTML #js {:__html (:html-text tweet)}}]
+   [:div.pull-left.timeInterval (str (util/number-format (:followers_count user)) " followers")]
+   [:div.pull-right.timeInterval (str (util/rt-count tweet) (util/fav-count tweet))
+    [:br] (util/rt-count-since-startup tweet)]])
+~~~
+
+There's one surprise in here. Inside the first child ````div````, ````:dangerouslySetInnerHTML```` is used, which is React's way of rendering already formatted HTML inside a component. The tweet text, which contains links, has already been formatted as HTML in a previous processing step, and here we simply use that HTML string.
+
+Here's the CSS used in the component above:
+
+{lang="CSS"}
+~~~
+.tweettext {
+    padding-left: 10px;
+    padding-bottom: 10px;
+    font-size: 10px;
+    overflow: auto;
+    min-height: 50px;
+}
+.timeInterval {
+    padding-top: 2px;
+    font-size: 10px;
+    color:#999;
+    text-align: right;
+}
+~~~
+
+The ````.timeInterval```` naming is probably not ideal, but I'm just re-using it from the time interval in the ````tweet-view```` component we will look at below.
+
+Next, we have the ````image-view```` component:
+
+~~~
+(defn image-view [media]
+   [:div.tweet-image
+        [:a {:href (:url (get media 0)) :target "_blank"}
+         [:img.pure-img-responsive {:src (str (:media_url (get media 0)) ":small")}]]])
+~~~
+
+This is really straight-forward, it just creates a ````div```` of class ````tweet-image```` that contains a link that opens in a new tab and that contains an image with the source URL set to load the image from Twitter. Here's the CSS for the ````tweet-image```` class:
+
+.tweet-image {
+    max-width: 100%;
+}
+
+With these components in place, we can now look at the representation of a tweet, which looks like this:
+
+![](images/tweet.png)
+
 
 
 ### Pure.css
