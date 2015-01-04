@@ -171,7 +171,7 @@ All buttons share the ````.pure-button.not-rounded```` classes. In addition we s
 
 #### Reagent Components for Tweets
 
-Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/tweets.cljs)**:
+Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/d35684c599c169faa38daf0043a8d6f05848c4a9/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/tweets.cljs)**:
 
 ~~~
 (ns birdwatch.ui.tweets
@@ -207,12 +207,12 @@ Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https:/
     [:br] (util/rt-count-since-startup tweet)]])
 
 (defn image-view [media]
-   [:div.tweet-image
-        [:a {:href (:url (get media 0)) :target "_blank"}
-         [:img.pure-img-responsive {:src (str (:media_url (get media 0)) ":small")}]]])
+  [:div.tweet-image
+   [:a {:href (:url (get media 0)) :target "_blank"}
+    [:img.pure-img-responsive {:src (str (:media_url (get media 0)) ":small")}]]])
 
 (defn tweet-view [raw-tweet]
-  (let [tweet (util/format-tweet raw-tweet)
+  (let [tweet ((memoize util/format-tweet) raw-tweet)
         user (:user tweet)
         screen-name (:screen_name user)
         href (str "http://www.twitter.com/" screen-name)]
@@ -223,7 +223,7 @@ Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https:/
      [:div.pull-right.timeInterval (util/from-now (:created_at tweet))]
      [tweet-text tweet user]
      (when-let [media (:media (:entities tweet))] (pos? (count media)) [image-view media])
-     [twitter-intents tweet]])) ; generate placeholder while fetching tweet
+     [twitter-intents tweet]]))
 
 (defn tweets-view []
   (let [app @state/app
@@ -302,15 +302,49 @@ Next, we have the ````image-view```` component:
 
 This is really straight-forward, it just creates a ````div```` of class ````tweet-image```` that contains a link that opens in a new tab and that contains an image with the source URL set to load the image from Twitter. Here's the CSS for the ````tweet-image```` class:
 
+{lang="CSS"}
+~~~
 .tweet-image {
     max-width: 100%;
 }
+~~~
 
 With these components in place, we can now look at the representation of a tweet, which looks like this:
 
 ![](images/tweet.png)
 
+Here's the same in code:
 
+~~~
+(defn tweet-view [raw-tweet]
+  (let [tweet ((memoize util/format-tweet) raw-tweet)
+        user (:user tweet)
+        screen-name (:screen_name user)
+        href (str "http://www.twitter.com/" screen-name)]
+    [:div.tweet
+     [:span [:a {:href href :target "_blank"} [:img.thumbnail{:src (:profile_image_url user)}]]]
+     [:a {:href href :target "_blank"} [:span.username {:src (:profile_image_url user)} (:name user)]]
+     [:span.username_screen (str " @" screen-name)]
+     [:div.pull-right.timeInterval (util/from-now (:created_at tweet))]
+     [tweet-text tweet user]
+     (when-let [media (:media (:entities tweet))] (pos? (count media)) [image-view media])
+     [twitter-intents tweet]]))
+~~~
+
+This component takes ````raw-tweet```` and formats it by calling ````util/format-tweet```` with it. Notice how the result is ````memoize````d. This caches previous calls to the same, referentially transparent function. I'm not sure if **[memoize](https://clojuredocs.org/clojure.core/memoize)** adds much in this context, but since it's so simple to do, why not. A couple of other values are taken from the tweet map and with that, a ````:div```` is rendered, with the components you would expect when you look at the image above. No big surprises there, except maybe for only rendering the image view when there is media to render. Otherwise, the ````when-let```` would simply evaluate to ````nil```` and thus ignored.
+
+With the ````tweet-view```` component in place, we can now render a list of them in the the ````tweets-view```` component:
+
+~~~
+(defn tweets-view []
+  (let [app @state/app
+        tweets (util/tweets-by-order2 (:sorted app) app (:n app) (dec (:page app)))]
+    [:div (for [t tweets] (if (:user t)
+                            ^{:key (:id_str t)} [tweet-view t]
+                            ^{:key (:id_str t)} [missing-tweet t]))]))
+~~~
+
+In this component, we dereference the application state as ````app````, derive the tweets to be rendered as ````tweets```` and then render a tweet for each entry. In the case that the tweet is not available locally, we render a ````missing-tweet```` component, otherwise we render a ````tweet-view```` component. In each case, we set a ````:key```` as metadata on the component. This allows the underlying React to be more efficient by being able to reuse components instead of having to throw away the DOM node and render a new one.
 
 ### Pure.css
 
