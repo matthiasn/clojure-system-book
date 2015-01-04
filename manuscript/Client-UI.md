@@ -204,6 +204,13 @@ The last component in this namespace is ````pagination-view````:
      ^{:key idx} [pag-item idx])])
 ~~~
 
+Before we dive into the code, here's how the ````pagination-view```` looks like when rendered:
+
+![](images/pagination.png)
+
+Here, we first have a ````pag-item```` component for each page, which is used for switching the view to the particular page when clicked. Within the ````pagination-view````, we then include one ````pag-item```` for each one of the pages within the tweets loaded. This should be updated to use real numbers. But then, one would also need buttons for _first_ and _last_ if we don't want to render 500 pagination items or so. Pull request, anyone? Right now, instead we simply use 15 or, if the actual number of pages is lower, that number.
+
+Once again, a ````:key```` is assigned to each ````pag-item````. As mentioned, this is good practice to follow always with React. Don't adhere and at least you're reminded by a warning on the console.
 
 
 #### Reagent Components for Tweets
