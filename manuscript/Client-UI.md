@@ -12,7 +12,11 @@ I wrote the first version of the ClojureScript client using **Om**, but I always
 
 For more information on Reagent, I can also recommend this **[blog post](http://getprismatic.com/story/1405451329953)**, besides the decent-enough documentation of the project itself.
 
-I will not start with an introduction to Reagent here, the previously mentioned resources should have you covered. Instead, I will just explain the code, which you actually may find simple enough to learn Reagent from the code itself.
+I will not start with an introduction to Reagent here, the previously mentioned resources should have you covered. Instead, I will just explain the code, which you actually may find simple enough to learn Reagent from the code itself. If some of it looks to simple to be true, no worries, it is really not.
+
+You need to know one thing about rendering the application state from one or more atoms, and that is that you need to use Reagent's atom implementation, which allows it to re-render on changes to this atom. From Reagent's **[source](https://github.com/reagent-project/reagent/blob/master/src/reagent/core.cljs#L173): _"Like clojure.core/atom, except that it keeps track of derefs.
+Reagent components that derefs one of these are automatically
+re-rendered."_. Seems to be working fine for me.
 
 #### Simple Reagent Components
 Let's start the exploration with the simpler components in the ````birdwatch.ui.elements```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/elements.cljs)**:
@@ -78,7 +82,7 @@ Let's start the exploration with the simpler components in the ````birdwatch.ui.
     (r/render-component [component] (util/by-id id))))
 ~~~
 
-The first **reagent** component above is also the simplest one, it only defines a simple ````:span```` in **[Hiccup syntax](https://github.com/weavejester/hiccup)**:
+The first Reagent component above is also the simplest one, it only defines a simple ````:span```` in **[Hiccup syntax](https://github.com/weavejester/hiccup)**:
 
 ~~~
 (defn count-view []
@@ -168,6 +172,39 @@ Above, ````for```` every item in ````sort-orders```` we destructure the vector a
 ~~~
 
 All buttons share the ````.pure-button.not-rounded```` classes. In addition we set the class in the properties map of the button component: ````:class btn-class````. In that map we also define an ````:on-click```` function: ````#(swap! state/app assoc :sorted k)````. This resets the current sort order to the key associated with the clicked button. Finally, we pass the ````text```` label to the button. Note that we will also set metadata on the component where we use the ````text```` of the component as the ````:key````: ^{:key text}. This is good practice for ReactJS whenever we render a list of something. Here, it wouldn't hurt as the list is not dynamic, but it would still result in a warning on the console. 
+
+Next, there's the ````search-view```` component:
+
+~~~
+(defn search-view []
+  [:form.pure-form
+   [:fieldset
+    [:input {:type "text" :value (:search-text @state/app)
+             :on-key-press #(when (== (.-keyCode %) 13) (comm/start-search))
+             :on-change #(swap! state/app assoc :search-text (.. % -target -value))
+             :placeholder "Example search: java (job OR jobs OR hiring)"}]
+    [:button.pure-button.pure-button-primary {:on-click #(comm/start-search)}
+     [:span {:class "glyphicon glyphicon-search"}]]]])
+~~~
+
+Here, a ````:form```` of class ````pure-form```` is rendered with a ````:fieldset```` inside. This then contains an ````:input```` field and a ````:button````. The ````:value```` is always determined by the value of the ````:search-text```` key of the application state map. Then, when the user changes the content of the input field, the function used ````:on-change```` of the input changes the state to the new content of the field. Then, either on ````ENTER```` inside the field or a press of the button, ````comm/start-search```` is run.
+
+The last component in this namespace is ````pagination-view````:
+
+~~~
+(defn pag-item [idx]
+  [:button.pure-button.not-rounded.button-xsmall
+   {:class (if (= idx (:page @state/app)) " pure-button-primary" "")
+    :on-click #(swap! state/app assoc :page idx)} idx])
+
+(defn pagination-view []
+  [:div
+   [:button.pure-button.not-rounded.button-xsmall "Page"]
+   (for [idx (take 15 (range 1 (Math/floor (/ (:count @state/app) (:n @state/app)))))]
+     ^{:key idx} [pag-item idx])])
+~~~
+
+
 
 #### Reagent Components for Tweets
 
