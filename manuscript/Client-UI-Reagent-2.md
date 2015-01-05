@@ -84,9 +84,9 @@ In the ````twitter-intents```` component, we create a ````div```` with three ```
 
 ![](images/intents.png)
 
-The ````missing-tweet```` component is rendered for a short while if a tweet is not found locally. It not only shows a text that the tweet is loading, it also ````put!````s a message on the channel requesting the tweet from the server. Then, once the server delivers the tweet back, the actual tweet is rendered immediately instead of this placeholder. This component is not really used at the moment but it should become useful soon.
+The ````missing-tweet```` component is rendered for a short while if a tweet is not found locally. Not only does it show a text that the tweet is loading, it also ````put!````s a message on the channel requesting the tweet from the server. Then, once the server delivers the tweet back, the actual tweet instead of this placeholder is rendered immediately. This component is not really used at the moment but it should become useful soon.
 
-The ````tweet-text```` component is responsible for rendering the tweet text plus the followers, retweet and favorite count plus the count how often the tweet has been retweeted within the tweets currently loaded in the application.
+The ````tweet-text```` component is responsible for rendering the tweet text plus the followers, the retweet and favorite count as well as the count of how often the tweet has been retweeted within the tweets currently loaded in the application.
 
 ~~~
 (defn tweet-text [tweet user]
@@ -97,7 +97,7 @@ The ````tweet-text```` component is responsible for rendering the tweet text plu
     [:br] (util/rt-count-since-startup tweet)]])
 ~~~
 
-There's one surprise in here. Inside the first child ````div````, ````:dangerouslySetInnerHTML```` is used, which is React's way of rendering already formatted HTML inside a component. The tweet text, which contains links, has already been formatted as HTML in a previous processing step, and here we simply use that HTML string.
+There's one surprise here. Inside the first child ````div````, ````:dangerouslySetInnerHTML```` is used, which is React's way of rendering already formatted HTML inside a component. The tweet text, which contains links, has already been formatted as HTML in a previous processing step, and here we simply use that HTML string.
 
 Here's the CSS used in the component above:
 
@@ -129,7 +129,7 @@ Next, we have the ````image-view```` component:
          [:img.pure-img-responsive {:src (str (:media_url (get media 0)) ":small")}]]])
 ~~~
 
-This is really straight-forward, it just creates a ````div```` of class ````tweet-image```` that contains a link that opens in a new tab and that contains an image with the source URL set to load the image from Twitter. Here's the CSS for the ````tweet-image```` class:
+This is really straightforward, it just creates a ````div```` of class ````tweet-image```` that contains a link that opens in a new tab. This link also contains an image with the source URL set to load the image from Twitter. Here's the CSS for the ````tweet-image```` class:
 
 {lang="CSS"}
 ~~~
@@ -160,9 +160,9 @@ Here's the same in code:
      [twitter-intents tweet]]))
 ~~~
 
-This component takes ````raw-tweet```` and formats it by calling ````util/format-tweet```` with it. Notice how the result is ````memoize````d. This caches previous calls to the same, referentially transparent function. I'm not sure if **[memoize](https://clojuredocs.org/clojure.core/memoize)** adds much in this context, but since it's so simple to do, why not. A couple of other values are taken from the tweet map and with that, a ````:div```` is rendered, with the components you would expect when you look at the image above. No big surprises there, except maybe for only rendering the image view when there is media to render. Otherwise, the ````when-let```` would simply evaluate to ````nil```` and thus ignored.
+This component takes ````raw-tweet```` and formats it by calling ````util/format-tweet```` with it. Note how the result is ````memoize````d. This caches previous calls to the same, referentially transparent function. I'm not sure if **[memoize](https://clojuredocs.org/clojure.core/memoize)** really improves performance in this context, but since it's so simple to do, why not. A couple of other values are taken from the tweet map and with that, a ````:div```` is rendered, with the components you would expect when you look at the image above. No big surprises there, except maybe for only rendering the image view when there is media to render. Otherwise, the ````when-let```` would simply evaluate to ````nil```` and thus be ignored.
 
-With the ````tweet-view```` component in place, we can now render a list of them in the the ````tweets-view```` component:
+With the ````tweet-view```` component in place, we can now render a list of them in the ````tweets-view```` component:
 
 ~~~
 (defn tweets-view []
@@ -173,5 +173,5 @@ With the ````tweet-view```` component in place, we can now render a list of them
                             ^{:key (:id_str t)} [missing-tweet t]))]))
 ~~~
 
-In this component, we dereference the application state as ````app````, derive the tweets to be rendered as ````tweets```` and then render a tweet for each entry. In the case that the tweet is not available locally, we render a ````missing-tweet```` component, otherwise we render a ````tweet-view```` component. In each case, we set a ````:key```` as metadata on the component. This allows the underlying React to be more efficient by being able to reuse components instead of having to throw away the DOM node and render a new one. You can probably already guess how the list rendering looks like, otherwise you can find it again in the screenshots of the next chapter.
+In this component, we dereference the application state as ````app````, derive the tweets to be rendered as ````tweets```` and then render a tweet for each entry. If the tweet is not available locally, we render a ````missing-tweet```` component, otherwise we render a ````tweet-view```` component. In each case, we set a ````:key```` as metadata on the component. This allows the underlying React to be more efficient by being able to reuse components instead of having to throw away the DOM node and render a new one. You can probably already guess how the list rendering looks like. If not, you can find it again in the screenshots of the next chapter.
 

@@ -1,20 +1,24 @@
 ## User Interface
 
 ### React.js Concepts
-**[React](http://facebook.github.io/react/)** is a revolutionary way to build user interfaces. It's model is particularly well suited for working with immutable data structures as is based on rendering out the entire application state every single time something changes. Unlike other frameworks, it does not require to mutate your application state itself. React will then render the state into a virtual DOM, always keep the previous version of the virtual DOM and run an efficient diffing algorithm between the two and only change the actual and slow DOM where it has found changes between the previous and the current virtual DOM during the diffing phase.
+**[React](http://facebook.github.io/react/)** is a revolutionary way to build user interfaces. Its model is particularly well suited for working with immutable data structures because it is based on rendering out the entire application state every single time something changes. Unlike other frameworks, it does not require a mutation of your application state itself. React will then render the state into a virtual DOM, always keep the previous version of the virtual DOM and run an efficient diffing algorithm between the two and only change the actual and slow DOM where it has found changes between the previous and the current virtual DOM during the diffing phase.
 
-This may at first sound inefficient but it is actually very fast, making it trivial to achieve 60 frames per second in the browser in most cases. **[David Nolen](https://twitter.com/swannodette)** was the first to my knowledge who realized how well this model is suited for working with ClojureScript's immutable data structures. He then developed **[Om](https://github.com/swannodette/om)** which he first announced in this **[blog post](http://swannodette.github.io/2013/12/17/the-future-of-javascript-mvcs/)**. Kudos to him for this discovery. At that time I was working on an **[AngularJS](http://www.amazon.com/AngularJS-UI-Development-Amit-Ghart-ebook/dp/B00OXVAK7A/ref=sr_1_1?ie=UTF8&qid=1420394659&sr=8-1)** book and reading his blog post made me realize that AngularJS might not be the way to go, at least not for me. I had already been exposed to functional programming principles enough to know the value of working with immutable values. Luckily, the publisher found a co-author as I didn't want to spend another couple of months with AngularJS any longer.
+This may at first sound inefficient but it is actually very fast, making it trivial to achieve 60 frames per second in the browser in most cases. As far as I know, **[David Nolen](https://twitter.com/swannodette)** was the first who realized how well this model is suited for working with ClojureScript's immutable data structures. He then developed **[Om](https://github.com/swannodette/om)**, which he first announced in this **[blog post](http://swannodette.github.io/2013/12/17/the-future-of-javascript-mvcs/)**. Kudos to him for this discovery. At that time I was working on an **[AngularJS](http://www.amazon.com/AngularJS-UI-Development-Amit-Ghart-ebook/dp/B00OXVAK7A/ref=sr_1_1?ie=UTF8&qid=1420394659&sr=8-1)** book and reading his blog post made me realize that AngularJS might not be the way to go, at least not for me. I had already been exposed to functional programming principles enough to know the value of working with immutable values. Luckily, the publisher found a co-author as I didn't want to spend another couple of months with AngularJS.
 
-I wrote the first version of the ClojureScript client using **Om**, but I always had the problem that I would need a rather large amount of context when coming back to the code for the user interface. I then discovered **[Reagent](https://github.com/reagent-project/reagent)**, which is also using **React.js** and is based on the same principles as Om. I just found the required code for a component much more succinct and legible at the same time with its **[Hiccup](https://github.com/weavejester/hiccup)** syntax that I made a complete switch. Now I come back to the UI code and I scratch my head a lot less than with the previous version. I share the experience I read in this **[blog post](http://diogo149.github.io/2014/10/19/om-no/)**, which made me give Reagent a shot. I haven't regretted it. Reagent exposes a lot less incidental complexity than Om, and that just works better with my tiny brain.
+I wrote the first version of the ClojureScript client using **Om**, but I always had the problem that I needed a rather large amount of context when coming back to the code for the user interface. I then discovered **[Reagent](https://github.com/reagent-project/reagent)**, which also uses **React.js** and is based on the same principles as Om. 
+
+I found the required code for a Reagent component to be much more succinct and legible so that I made a complete switch. A good part of the reason here is that I like its **[Hiccup](https://github.com/weavejester/hiccup)** syntax.
+
+Now when I come back to the UI code, I scratch my head a lot less than with the previous version. I share the experience I read in this **[blog post](http://diogo149.github.io/2014/10/19/om-no/)**, which made me give Reagent a shot. I haven't regretted it. Reagent exposes a lot less incidental complexity than Om, and that just works better with my tiny brain.
 
 
 ### Reagent
 
-For more information on Reagent, I can also recommend this **[blog post](http://getprismatic.com/story/1405451329953)**, besides the decent-enough documentation of the project itself.
+For more information on Reagent I can also recommend this **[blog post](http://getprismatic.com/story/1405451329953)**, besides the decent-enough documentation of the project itself.
 
-I will not start with an introduction to Reagent here, the previously mentioned resources should have you covered. Instead, I will just explain the code, which you actually may find simple enough to learn Reagent from the code itself. If some of it looks too simple to be true, no worries, it is really not.
+I will not start with an introduction to Reagent here as the previously mentioned resources should have you covered. Instead, I will just explain the code, which you actually may find simple enough to learn Reagent from the code itself. If some of it looks too simple to be true, no worries, it really is not.
 
-You need to know one thing about rendering the application state from one or more atoms, and that is that you need to use Reagent's ````atom```` implementation, which allows it to detect changes to this atom and re-render accordingly. From Reagent's **[source](https://github.com/reagent-project/reagent/blob/master/src/reagent/core.cljs#L173)**: _"Like clojure.core/atom, except that it keeps track of derefs.
+You need to know one thing when it comes to rendering the application state from one or more atoms, and that is that you need to use Reagent's ````atom```` implementation, which allows it to detect changes to this atom and re-render accordingly. From Reagent's **[source](https://github.com/reagent-project/reagent/blob/master/src/reagent/core.cljs#L173)**: _"Like clojure.core/atom, except that it keeps track of derefs.
 Reagent components that derefs one of these are automatically
 re-rendered."_. Seems to be working fine for me, I have not encountered any issues with this approach yet.
 
@@ -100,7 +104,7 @@ Using this component is also very easy. We need some HTML, with an ````id```` wh
 <div id="count">Tweets: <span id="tweet-count"></span></div>
 ~~~
 
-Then, we can tell **reagent** to render the component in this ````<span>````:
+Then, we can tell **Reagent** to render the component in this ````<span>````:
 
 ~~~
 (r/render-component [count-view] (util/by-id "tweet-count"))
@@ -216,7 +220,7 @@ Before we dive into the code, here's how the ````pagination-view```` looks like 
 
 Here, we first have a ````pag-item```` component for each page, which is used for switching the view to the particular page when clicked. In that case, the anonymous function literal ````#(swap! state/app assoc :page idx)```` is executed.
 
-Within the ````pagination-view````, we then include one ````pag-item```` for each one of the pages within the tweets loaded. This should be updated to use real numbers. But then, we would also need buttons for _first_ and _last_ if we don't want to render 500 pagination items or so. Pull request, anyone? Right now, instead we simply use 15 or, if the actual number of pages is lower, that number.
+Within the ````pagination-view````, we then include one ````pag-item```` for each one of the pages within the tweets loaded. This should be updated to use real numbers. But then, we would also need buttons for _first_ and _last_ if we don't want to render 500 pagination items or so. Pull request, anyone? Right now, we simply use 15 or, if the actual number of pages is lower, that number.
 
 Once again, a ````:key```` is assigned to each ````pag-item````. As mentioned, this is good practice to follow always with React. Don't adhere and at least you're reminded by a warning on the console.
 
@@ -232,7 +236,7 @@ Finally in this namespace, we have some code for initializing the Reagent compon
     (r/render-component [component] (util/by-id id))))
 ~~~
 
-First, we have the vector ````views```` which countains one vector per component, with the function defining it in the first position and the ID of the DOM element to render it into in the second position. 
+First, we have the vector ````views```` which contains one vector per component, with the function defining it in the first position and the ID of the DOM element to render it into in the second position. 
 
-Next, we have the ````init-views```` function which renders each component of the ````views```` vector inside the ````doseq````, where we destructure the individual vectors as ````[component id]```` and use these for calls to ````r/render-component````. This ````init-views```` function is called frome the ````core```` namespace when the application starts.
+Next, we have the ````init-views```` function which renders each component of the ````views```` vector inside the ````doseq````, where we destructure the individual vectors as ````[component id]```` and use them for calls to ````r/render-component````. This ````init-views```` function is called from the ````core```` namespace when the application starts.
 
