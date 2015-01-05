@@ -191,7 +191,9 @@ Next, there's the ````search-view```` component:
      [:span {:class "glyphicon glyphicon-search"}]]]])
 ~~~
 
-Here, a ````:form```` of class ````pure-form```` is rendered with a ````:fieldset```` inside. This then contains an ````:input```` field and a ````:button````. The ````:value```` of the `````:input```` field is always determined by the value of the ````:search-text```` key of the application state map. Then, when the user changes the content of the input field, the function used ````:on-change```` of the input changes the state to the new content of the field. Then, either on ````ENTER```` inside the field or a press of the button, ````comm/start-search```` is run.
+Here, a ````:form```` of class ````pure-form```` is rendered with a ````:fieldset```` inside. This then contains an ````:input```` field and a ````:button````. The ````:value```` of the `````:input```` field is always determined by the value of the ````:search-text```` key of the application state map. Then, when the user changes the content of the input field, the function used ````:on-change```` of the input changes the state to the new content of the field. Then, either on ````ENTER```` inside the field or a press of the button, ````comm/start-search```` is run. Not surprisingly, you can see the search view on the left here:
+
+![](images/header.png)
 
 The last component in this namespace is ````pagination-view````:
 
