@@ -104,7 +104,7 @@ Okay, there is quite a bit to go through, but the code also takes care of the li
   (let [cnt (count xs)]
     (when (pos? cnt) (/ (apply + xs) cnt))))
 
-; adapted from from http://compbio.ucdenver.edu/Hunter_lab/Hunter/cl-statistics.lisp
+; adapted from http://compbio.ucdenver.edu/Hunter_lab/Hunter/cl-statistics.lisp
 (defn linear-regression [ys]
   (let [n (count ys)]
     (when (pos? n)
@@ -136,6 +136,7 @@ In this particular case, we're not using the model for specific predictions; ins
 (def ratio-items (atom {}))
 ~~~
 
+We need a couple of ````atom````s in order to store data related to the intended regression analysis, as you can see above. These are then used in the ````update-words```` function:
 
 ~~~
 (defn update-words
@@ -153,6 +154,9 @@ In this particular case, we're not using the model for specific predictions; ins
              (get (reg/linear-regression (take 1000 (get @ratio-items text))) 1)))))
 ~~~
 
+First of all, the function takes the parameter ````words````, which is the current top-n list from the application state. We use that to ````reset!```` the ````items```` atom, as a vector of indexed vectors, in which the index is in first position and a vector with ````text```` and ````count```` in the second position, as you can see in the ````do-seq```` below: ````[idx [text cnt]]````.
+
+Next, we dereference ````items```` and get ````total-cnt```` which is simply the total count of words within ````items````. Then, we do a couple of things with each item within ````items````, destructured as seen above. Within ````pos-items````, we add / ````conj```` the latest position to the sequence we keep for each word. We do the same for ````ratio-items````, only that here we use a ration. With those updated, we determine the slope for each by running ````reg/linear-regression```` and store the result in the ````pos-trends```` and ````ratio-trends```` map for the particular word. These will later be dereferenced when determining the direction of the arrow.
 
 Now let's have a look at the ````bar```` component:
 
@@ -168,6 +172,29 @@ Now let's have a look at the ````bar```` component:
      (if (> w 50)
        [:text (merge text-defaults {:y (+ y 8) :x (+ w 160)}) cnt]
        [:text (merge text-defaults {:y (+ y 8) :x (+ w 171) :fill "#666" :textAnchor "start"}) cnt])]))
-
 ~~~
 
+For every bar, we dereference ````pos-slope```` and ````ratio-slope````. With that, we create a ````:g```` element, which is a group in SVG. Within it, we position text, the arrows and the bar rectangle ````:rect````. Finally, depending on the width of the bar, we position the counter either inside the bar when it's wide enough or outside when it's too narrow.
+
+To put things together, we then have the ````wordcount-barchart```` component which renders a ````:div```` with the ````:svg```` inside, with one ````bar```` component for each item in ````indexeded````, which is the dereferenced ````items```` atom. In addition, there's some text plus a ````:select```` which is intended for choosing the number of recent items to choose for the regression analysis over the ratios. That's not actually implemented yet though. Pull request, anyone?
+
+~~~
+(defn wordcount-barchart []
+  (let [indexed @items
+        mx (apply max (map (fn [[idx [k v]]] v) indexed))
+        cnt (count indexed)]
+    [:div
+     [:svg {:width ts-w :height (+ (* cnt 15) 5)}
+      [:g
+       (for [[idx [text cnt]] indexed]
+         ^{:key text} [bar text cnt (* idx 15) 15 (* (- ts-w 190) (/ cnt mx)) idx])
+       [:line {:transform "translate(168, 0)" :y 0 :y2 (* cnt 15) :stroke "black"}]]]
+     [:p.legend [:strong "1st trend indicator:"]
+      " recent position changes"]
+     [:p.legend [:strong "2nd trend indicator:"]
+      " ratio change termCount / totalTermsCounted over last "
+      [:select {:defaultValue 100}
+       (for [[v t] opts] ^{:key v} [:option {:value v} t])]]]))
+
+(r/render-component [wordcount-barchart] ts-elem)
+~~~
