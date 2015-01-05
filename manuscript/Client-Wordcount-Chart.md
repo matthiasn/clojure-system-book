@@ -22,7 +22,7 @@ Let's start with the simplest part, the ````birdwatch.charts.shapes```` **[names
     [:polygon {:transform arrowTrans :stroke "none" :fill color :points points}]))
 ~~~
 
-Above, we first have a map named ````arrows````, which contains a vector with the color and the points for each arrow polygon. Then, we have a Reagent component that takes ````x```` and ````y```` coordinates and the direction ````dir```` and that returns a ````:polygon```` in the matching shape and color for the specified orientation of the arrow, positioned at the specified coordinates. 
+Above, we first have a map named ````arrows````, which contains a vector with the color and the points for each arrow polygon. Then, we have a Reagent component that takes ````x```` and ````y```` coordinates and the direction ````dir```` and that returns a ````:polygon```` in the matching shape and color for the specified orientation of the arrow, positioned at the specified coordinates.
 
 The ````arrow```` component is used in the ````birdwatch.charts.wordcount-chart```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/charts/wordcount_chart.cljs)**, which we'll look at next:
 
@@ -92,10 +92,7 @@ The ````arrow```` component is used in the ````birdwatch.charts.wordcount-chart`
              (get (reg/linear-regression (take 1000 (get @ratio-items text))) 1)))))
 ~~~
 
-
-
-
-https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/stats/regression.cljs
+Okay, this is quite a bit to go through, but the code also takes care of the linear regression for the trend arrow. Before we go through the code function by function, let's have a look at the ````birdwatch.stats.regression```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/stats/regression.cljs)** first:
 
 ~~~
 (ns birdwatch.stats.regression)
@@ -123,3 +120,7 @@ https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252b
             res-ms (/ (- Lyy reg-ss) (- n 2))]
         [intercept slope]))))
 ~~~
+
+I've adapted the code from **[Statistical functions in Common Lisp. Version 1.04](http://compbio.ucdenver.edu/Hunter_lab/Hunter/cl-statistics.lisp)** and just removed the stuff I didn't need plus also created the functions ````square```` and ````mean```` for use in the ````linear-regression```` function. 
+
+![](images/linear-regression.png)
