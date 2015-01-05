@@ -1,24 +1,26 @@
 ## User Interface
 
 ### React.js Concepts
-**[React](http://facebook.github.io/react/)** is a revolutionary way to build user interfaces. It's model is particularly well suited for working with immutable data structures as is based on rendering out the entire application state every single time something changes, without requiring to mutate the application state itself. React will then render the state into a virtual DOM, keep the previous version of the virtual DOM and run an efficient diffing algorithm between the two and only change the actual and slow DOM where it has found changes between the previous and the current virtual DOM during the diffing phase. 
+**[React](http://facebook.github.io/react/)** is a revolutionary way to build user interfaces. It's model is particularly well suited for working with immutable data structures as is based on rendering out the entire application state every single time something changes. Unlike other frameworks, it does not require to mutate your application state itself. React will then render the state into a virtual DOM, always keep the previous version of the virtual DOM and run an efficient diffing algorithm between the two and only change the actual and slow DOM where it has found changes between the previous and the current virtual DOM during the diffing phase.
 
 This may at first sound inefficient but it is actually very fast, making it trivial to achieve 60 frames per second in the browser in most cases. **[David Nolen](https://twitter.com/swannodette)** was the first to my knowledge who realized how well this model is suited for working with ClojureScript's immutable data structures. He then developed **[Om](https://github.com/swannodette/om)** which he first announced in this **[blog post](http://swannodette.github.io/2013/12/17/the-future-of-javascript-mvcs/)**. Kudos to him for this discovery. At that time I was working on an **[AngularJS](http://www.amazon.com/AngularJS-UI-Development-Amit-Ghart-ebook/dp/B00OXVAK7A/ref=sr_1_1?ie=UTF8&qid=1420394659&sr=8-1)** book and reading his blog post made me realize that AngularJS might not be the way to go, at least not for me. I had already been exposed to functional programming principles enough to know the value of working with immutable values. Luckily, the publisher found a co-author as I didn't want to spend another couple of months with AngularJS any longer.
 
-I wrote the first version of the ClojureScript client using **Om**, but I always had the problem that I would need a rather large amount of context when coming back to the code for the user interface. I then discovered **[Reagent](https://github.com/reagent-project/reagent)**, which is also using **React.js** and is based on the same principles as Om. I just found the required code for a component much more terse and legible at the same time with its **[Hiccup](https://github.com/weavejester/hiccup)** syntax that I made a complete switch. I have not regretted that. Now I come back to the UI code and I scratch my head a lot less than with the previous version. I share this experience I read in this **[blog post](http://diogo149.github.io/2014/10/19/om-no/)**, which made me give Reagent a shot. I haven't regretted it.
+I wrote the first version of the ClojureScript client using **Om**, but I always had the problem that I would need a rather large amount of context when coming back to the code for the user interface. I then discovered **[Reagent](https://github.com/reagent-project/reagent)**, which is also using **React.js** and is based on the same principles as Om. I just found the required code for a component much more succinct and legible at the same time with its **[Hiccup](https://github.com/weavejester/hiccup)** syntax that I made a complete switch. Now I come back to the UI code and I scratch my head a lot less than with the previous version. I share the experience I read in this **[blog post](http://diogo149.github.io/2014/10/19/om-no/)**, which made me give Reagent a shot. I haven't regretted it. Reagent exposes a lot less incidental complexity than Om, and that just works better with my tiny brain.
 
 
 ### Reagent
 
 For more information on Reagent, I can also recommend this **[blog post](http://getprismatic.com/story/1405451329953)**, besides the decent-enough documentation of the project itself.
 
-I will not start with an introduction to Reagent here, the previously mentioned resources should have you covered. Instead, I will just explain the code, which you actually may find simple enough to learn Reagent from the code itself. If some of it looks to simple to be true, no worries, it is really not.
+I will not start with an introduction to Reagent here, the previously mentioned resources should have you covered. Instead, I will just explain the code, which you actually may find simple enough to learn Reagent from the code itself. If some of it looks too simple to be true, no worries, it is really not.
 
-You need to know one thing about rendering the application state from one or more atoms, and that is that you need to use Reagent's atom implementation, which allows it to re-render on changes to this atom. From Reagent's **[source](https://github.com/reagent-project/reagent/blob/master/src/reagent/core.cljs#L173)**: _"Like clojure.core/atom, except that it keeps track of derefs.
+You need to know one thing about rendering the application state from one or more atoms, and that is that you need to use Reagent's ````atom```` implementation, which allows it to detect changes to this atom and re-render accordingly. From Reagent's **[source](https://github.com/reagent-project/reagent/blob/master/src/reagent/core.cljs#L173)**: _"Like clojure.core/atom, except that it keeps track of derefs.
 Reagent components that derefs one of these are automatically
 re-rendered."_. Seems to be working fine for me, I have not encountered any issues with this approach yet.
 
+
 #### Simple Reagent Components
+
 Let's start the exploration with the simpler components in the ````birdwatch.ui.elements```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/elements.cljs)**:
 
 ~~~
@@ -133,7 +135,7 @@ After seeing the two components above, the ````total-count-view```` component sh
 
 This renders the number of tweets indexed in total. As mentioned in the server-side chapter, the ````Persistence```` component sends a message with an updated total every so many seconds, which is then distributed to all connected clients.
 
-The ````sort-view```` component is a little more involved. We need a couple of buttons for different sort orders, each of which needs a keyword that will be set as the application's current sort order and a label string. In order not to repeat ourselves, we can create a vector named ````sort-orders```` for all the buttons, each of which we can represent as a two-item vector, with the key in the first position and the label string in the second position:
+The ````sort-view```` component is a little more involved. We need a couple of buttons for different sort orders, each of which needs a keyword that will be set as the application's current sort order and a label string. In order not to repeat ourselves, we use a vector named ````sort-orders```` for all the buttons, each of which we can represent as a two-item vector, with the key in the first position and the label string in the second position:
 
 ~~~
 (def sort-orders [[:by-id "latest"][:by-followers "followers"][:by-retweets "retweets"]
@@ -154,6 +156,8 @@ Then, in the ````sort-view```` component itself, we dereference our application 
 [:button.pure-button.not-rounded.sort-button "Sort by"]
 ~~~
 
+This assigns the classes ````pure-button````, ````not-rounded```` and ````sort-button```` to the button, resulting in this styling:
+
 ![sort-view component](images/sort-by.png)
 
 Next, we want to create additional buttons for every element in the ````sort-orders```` vector.
@@ -171,7 +175,7 @@ Above, ````for```` every item in ````sort-orders```` we destructure the vector a
                {:class btn-class :on-click #(swap! state/app assoc :sorted k)} text]
 ~~~
 
-All buttons share the ````.pure-button.not-rounded```` classes. In addition we set the class in the properties map of the button component: ````:class btn-class````. In that map we also define an ````:on-click```` function: ````#(swap! state/app assoc :sorted k)````. This resets the current sort order to the key associated with the clicked button. Finally, we pass the ````text```` label to the button. Note that we will also set metadata on the component where we use the ````text```` of the component as the ````:key````: ^{:key text}. This is good practice for ReactJS whenever we render a list of something. Here, it wouldn't hurt as the list is not dynamic, but it would still result in a warning on the console. 
+All buttons share the ````.pure-button.not-rounded```` classes. In addition we set the class in the properties map of the button component: ````:class btn-class````. In that map we also define an ````:on-click```` function: ````#(swap! state/app assoc :sorted k)````. This resets the current sort order to the key associated with the clicked button. Finally, we pass the ````text```` label to the button. Note that we will also set metadata on the component where we use the ````text```` of the component as the ````:key````: ````^{:key text}````. This is good practice for ReactJS whenever we render a list of something. Here, it wouldn't hurt much to omit it as the list is neither dynamic nor large, but it would still result in a warning on the console. 
 
 Next, there's the ````search-view```` component:
 
@@ -187,7 +191,7 @@ Next, there's the ````search-view```` component:
      [:span {:class "glyphicon glyphicon-search"}]]]])
 ~~~
 
-Here, a ````:form```` of class ````pure-form```` is rendered with a ````:fieldset```` inside. This then contains an ````:input```` field and a ````:button````. The ````:value```` is always determined by the value of the ````:search-text```` key of the application state map. Then, when the user changes the content of the input field, the function used ````:on-change```` of the input changes the state to the new content of the field. Then, either on ````ENTER```` inside the field or a press of the button, ````comm/start-search```` is run.
+Here, a ````:form```` of class ````pure-form```` is rendered with a ````:fieldset```` inside. This then contains an ````:input```` field and a ````:button````. The ````:value```` of the `````:input```` field is always determined by the value of the ````:search-text```` key of the application state map. Then, when the user changes the content of the input field, the function used ````:on-change```` of the input changes the state to the new content of the field. Then, either on ````ENTER```` inside the field or a press of the button, ````comm/start-search```` is run.
 
 The last component in this namespace is ````pagination-view````:
 
@@ -210,7 +214,7 @@ Before we dive into the code, here's how the ````pagination-view```` looks like 
 
 Here, we first have a ````pag-item```` component for each page, which is used for switching the view to the particular page when clicked. In that case, the anonymous function literal ````#(swap! state/app assoc :page idx)```` is executed.
 
-Within the ````pagination-view````, we then include one ````pag-item```` for each one of the pages within the tweets loaded. This should be updated to use real numbers. But then, one would also need buttons for _first_ and _last_ if we don't want to render 500 pagination items or so. Pull request, anyone? Right now, instead we simply use 15 or, if the actual number of pages is lower, that number.
+Within the ````pagination-view````, we then include one ````pag-item```` for each one of the pages within the tweets loaded. This should be updated to use real numbers. But then, we would also need buttons for _first_ and _last_ if we don't want to render 500 pagination items or so. Pull request, anyone? Right now, instead we simply use 15 or, if the actual number of pages is lower, that number.
 
 Once again, a ````:key```` is assigned to each ````pag-item````. As mentioned, this is good practice to follow always with React. Don't adhere and at least you're reminded by a warning on the console.
 
@@ -228,5 +232,5 @@ Finally in this namespace, we have some code for initializing the Reagent compon
 
 First, we have the vector ````views```` which countains one vector per component, with the function defining it in the first position and the ID of the DOM element to render it into in the second position. 
 
-Next, we have the ````init-views```` function which renders each component of the ````views```` vector inside the ````doseq````. This function is called frome the ````core```` namespace when the application starts.
+Next, we have the ````init-views```` function which renders each component of the ````views```` vector inside the ````doseq````, where we destructure the individual vectors as ````[component id]```` and use these for calls to ````r/render-component````. This ````init-views```` function is called frome the ````core```` namespace when the application starts.
 

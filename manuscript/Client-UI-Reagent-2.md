@@ -84,7 +84,7 @@ In the ````twitter-intents```` component, we create a ````div```` with three ```
 
 ![](images/intents.png)
 
-The ````missing-tweet```` is not currently used, so there's no need to cover it right now.
+The ````missing-tweet```` component is rendered for a short while if a tweet is not found locally. It not only shows a text that the tweet is loading, it also ````put!````s a message on the channel requesting the tweet from the server. Then, once the server delivers the tweet back, the actual tweet is rendered immediately instead of this placeholder. This component is not really used at the moment but it should become useful soon.
 
 The ````tweet-text```` component is responsible for rendering the tweet text plus the followers, retweet and favorite count plus the count how often the tweet has been retweeted within the tweets currently loaded in the application.
 
@@ -173,5 +173,5 @@ With the ````tweet-view```` component in place, we can now render a list of them
                             ^{:key (:id_str t)} [missing-tweet t]))]))
 ~~~
 
-In this component, we dereference the application state as ````app````, derive the tweets to be rendered as ````tweets```` and then render a tweet for each entry. In the case that the tweet is not available locally, we render a ````missing-tweet```` component, otherwise we render a ````tweet-view```` component. In each case, we set a ````:key```` as metadata on the component. This allows the underlying React to be more efficient by being able to reuse components instead of having to throw away the DOM node and render a new one. You can probably guess how the list rendering looks like.
+In this component, we dereference the application state as ````app````, derive the tweets to be rendered as ````tweets```` and then render a tweet for each entry. In the case that the tweet is not available locally, we render a ````missing-tweet```` component, otherwise we render a ````tweet-view```` component. In each case, we set a ````:key```` as metadata on the component. This allows the underlying React to be more efficient by being able to reuse components instead of having to throw away the DOM node and render a new one. You can probably already guess how the list rendering looks like, otherwise you can find it again in the screenshots of the next chapter.
 
