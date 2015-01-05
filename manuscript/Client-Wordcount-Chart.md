@@ -92,7 +92,7 @@ The ````arrow```` component is used in the ````birdwatch.charts.wordcount-chart`
              (get (reg/linear-regression (take 1000 (get @ratio-items text))) 1)))))
 ~~~
 
-Okay, this is quite a bit to go through, but the code also takes care of the linear regression for the trend arrow. Before we go through the code function by function, let's have a look at the ````birdwatch.stats.regression```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/stats/regression.cljs)** first:
+Okay, there is quite a bit to go through, but the code also takes care of the linear regression for the trend arrows. Before discuissing each function, let's have a look at the ````birdwatch.stats.regression```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/stats/regression.cljs)** first:
 
 ~~~
 (ns birdwatch.stats.regression)
@@ -121,6 +121,53 @@ Okay, this is quite a bit to go through, but the code also takes care of the lin
         [intercept slope]))))
 ~~~
 
-I've adapted the code from **[Statistical functions in Common Lisp. Version 1.04](http://compbio.ucdenver.edu/Hunter_lab/Hunter/cl-statistics.lisp)** and just removed the stuff I didn't need plus also created the functions ````square```` and ````mean```` for use in the ````linear-regression```` function. 
+I've adapted the code from **[Statistical functions in Common Lisp. Version 1.04](http://compbio.ucdenver.edu/Hunter_lab/Hunter/cl-statistics.lisp)** and just removed the stuff I didn't need. I also created the functions ````square```` and ````mean```` for use in the ````linear-regression```` function below.
+
+Why linear regression, you may ask? Linear regression allows us to fit a predictive model to individual data points, where in this simple case the model is a linear equation represented by a slope and the intercept with the y-axis. Here's an example from the **[Wikipedia-article](http://en.wikipedia.org/wiki/Linear_regression)**:
 
 ![](images/linear-regression.png)
+
+In this particular case, we're not using the model for specific predictions; instead, we're simply looking at the slope to determine if there's an upward or a downward trend overall for a specific word.
+
+~~~
+(def pos-trends (atom {}))
+(def pos-items (atom {}))
+(def ratio-trends (atom {}))
+(def ratio-items (atom {}))
+~~~
+
+
+~~~
+(defn update-words
+  "update wordcount chart"
+  [words]
+  (reset! items (vec (map-indexed vector words)))
+  (let [items @items
+        total-cnt (apply + (map (fn [[_[_ cnt]]] cnt) items))]
+    (doseq [[idx [text cnt]] items]
+      (swap! pos-items update-in [text] conj idx)
+      (swap! ratio-items update-in [text] conj (/ total-cnt cnt))
+      (swap! pos-trends assoc-in [text]
+             (get (reg/linear-regression (take 3 (get @pos-items text))) 1))
+      (swap! ratio-trends assoc-in [text]
+             (get (reg/linear-regression (take 1000 (get @ratio-items text))) 1)))))
+~~~
+
+
+Now let's have a look at the ````bar```` component:
+
+~~~
+(defn bar [text cnt y h w idx]
+  (let [pos-slope (get @pos-trends text)
+        ratio-slope (get @ratio-trends text)]
+    [:g {:on-click #(state/append-search-text text)}
+     [:text {:y (+ y 8) :x 138 :stroke "none" :fill "black" :dy ".35em" :textAnchor "end"} text]
+     [s/arrow 146 y (cond (pos? pos-slope)   :UP       (neg? pos-slope )   :DOWN       :else :RIGHT)]
+     [s/arrow 160 y (cond (pos? ratio-slope) :RIGHT-UP (neg? ratio-slope ) :RIGHT-DOWN :else :RIGHT)]
+     [:rect {:y y :x 168 :height 15 :width w :stroke "white" :fill "#428bca"}]
+     (if (> w 50)
+       [:text (merge text-defaults {:y (+ y 8) :x (+ w 160)}) cnt]
+       [:text (merge text-defaults {:y (+ y 8) :x (+ w 171) :fill "#666" :textAnchor "start"}) cnt])]))
+
+~~~
+
