@@ -27,7 +27,9 @@ Client-State.md
 Client-Channels.md
 Client-WebSockets.md
 Client-DataAggregation.md
-Client-UI.md
+Client-UI-Reagent-1.md
+Client-UI-Reagent-2.md
+Client-UI-Pure.md
 Client-Wordcount.md
 Client-Timeseries.md
 Client-Charts.md
