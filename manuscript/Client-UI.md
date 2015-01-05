@@ -14,9 +14,9 @@ For more information on Reagent, I can also recommend this **[blog post](http://
 
 I will not start with an introduction to Reagent here, the previously mentioned resources should have you covered. Instead, I will just explain the code, which you actually may find simple enough to learn Reagent from the code itself. If some of it looks to simple to be true, no worries, it is really not.
 
-You need to know one thing about rendering the application state from one or more atoms, and that is that you need to use Reagent's atom implementation, which allows it to re-render on changes to this atom. From Reagent's **[source](https://github.com/reagent-project/reagent/blob/master/src/reagent/core.cljs#L173): _"Like clojure.core/atom, except that it keeps track of derefs.
+You need to know one thing about rendering the application state from one or more atoms, and that is that you need to use Reagent's atom implementation, which allows it to re-render on changes to this atom. From Reagent's **[source](https://github.com/reagent-project/reagent/blob/master/src/reagent/core.cljs#L173)**: _"Like clojure.core/atom, except that it keeps track of derefs.
 Reagent components that derefs one of these are automatically
-re-rendered."_. Seems to be working fine for me.
+re-rendered."_. Seems to be working fine for me, I have not encountered any issues with this approach yet.
 
 #### Simple Reagent Components
 Let's start the exploration with the simpler components in the ````birdwatch.ui.elements```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/elements.cljs)**:
@@ -208,9 +208,27 @@ Before we dive into the code, here's how the ````pagination-view```` looks like 
 
 ![](images/pagination.png)
 
-Here, we first have a ````pag-item```` component for each page, which is used for switching the view to the particular page when clicked. Within the ````pagination-view````, we then include one ````pag-item```` for each one of the pages within the tweets loaded. This should be updated to use real numbers. But then, one would also need buttons for _first_ and _last_ if we don't want to render 500 pagination items or so. Pull request, anyone? Right now, instead we simply use 15 or, if the actual number of pages is lower, that number.
+Here, we first have a ````pag-item```` component for each page, which is used for switching the view to the particular page when clicked. In that case, the anonymous function literal ````#(swap! state/app assoc :page idx)```` is executed.
+
+Within the ````pagination-view````, we then include one ````pag-item```` for each one of the pages within the tweets loaded. This should be updated to use real numbers. But then, one would also need buttons for _first_ and _last_ if we don't want to render 500 pagination items or so. Pull request, anyone? Right now, instead we simply use 15 or, if the actual number of pages is lower, that number.
 
 Once again, a ````:key```` is assigned to each ````pag-item````. As mentioned, this is good practice to follow always with React. Don't adhere and at least you're reminded by a warning on the console.
+
+Finally in this namespace, we have some code for initializing the Reagent components on application startup:
+
+~~~
+(def views [[count-view "tweet-count"][search-view "search"][total-count-view "total-tweet-count"]
+            [users-count-view "users-count"][sort-view "sort-buttons"][pagination-view "pagination"]
+            [ui-tweets/tweets-view "tweet-frame"]])
+
+(defn init-views []
+  (doseq [[component id] views]
+    (r/render-component [component] (util/by-id id))))
+~~~
+
+First, we have the vector ````views```` which countains one vector per component, with the function defining it in the first position and the ID of the DOM element to render it into in the second position. 
+
+Next, we have the ````init-views```` function which renders each component of the ````views```` vector inside the ````doseq````. This function is called frome the ````core```` namespace when the application starts.
 
 
 #### Reagent Components for Tweets
