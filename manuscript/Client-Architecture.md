@@ -1,8 +1,6 @@
 # Client-side Architecture
 
-Currently, the client side is not nearly as well organized as the server-side code. However, that should change by the time all the parts of the client side have been described.
-
-Generally, as a constraint, there should be as few external JavaScript dependencies as possible. The following libraries have already been removed and replaced by ClojureScript code:
+The client-side application is a ClojureScript application. Generally, as a constraint, there should be as few external JavaScript dependencies as possible. The following libraries have already been removed and replaced by ClojureScript code recently:
 
 * **[Rickshaw](http://code.shutterstock.com/rickshaw/)** - time series chart library, replaced by directly manipulating SVG from ClojureScript
 * **[Regression.js](https://github.com/Tom-Alexander/regression-js)** - library for regression analysis, replaced by translating a Common Lisp library to Clojure.

@@ -16,7 +16,7 @@ Now when I come back to the UI code, I scratch my head a lot less than with the 
 
 For more information on Reagent I can also recommend this **[blog post](http://getprismatic.com/story/1405451329953)**, besides the decent-enough documentation of the project itself.
 
-I will not start with an introduction to Reagent here as the previously mentioned resources should have you covered. Instead, I will just explain the code, which you actually may find simple enough to learn Reagent from the code itself. If some of it looks too simple to be true, no worries, it really is not.
+I will not start with an introduction to Reagent here as the previously mentioned resources should have you covered. Instead, I will just explain the code, which you actually may find simple enough without consulting many other resources. If some of it looks too simple to be true, no worries, it really is not.
 
 You need to know one thing when it comes to rendering the application state from one or more atoms, and that is that you need to use Reagent's ````atom```` implementation, which allows it to detect changes to this atom and re-render accordingly. From Reagent's **[source](https://github.com/reagent-project/reagent/blob/master/src/reagent/core.cljs#L173)**: _"Like clojure.core/atom, except that it keeps track of derefs.
 Reagent components that derefs one of these are automatically
@@ -179,7 +179,7 @@ Above, ````for```` every item in ````sort-orders```` we destructure the vector a
                {:class btn-class :on-click #(swap! state/app assoc :sorted k)} text]
 ~~~
 
-All buttons share the ````.pure-button.not-rounded```` classes. In addition we set the class in the properties map of the button component: ````:class btn-class````. In that map we also define an ````:on-click```` function: ````#(swap! state/app assoc :sorted k)````. This resets the current sort order to the key associated with the clicked button. Finally, we pass the ````text```` label to the button. Note that we will also set metadata on the component where we use the ````text```` of the component as the ````:key````: ````^{:key text}````. This is good practice for ReactJS whenever we render a list of something. Here, it wouldn't hurt much to omit it as the list is neither dynamic nor large, but it would still result in a warning on the console. 
+All buttons share the ````.pure-button.not-rounded```` classes. In addition we set the class in the properties map of the button component: ````:class btn-class````. In that map we also define an ````:on-click```` function: ````#(swap! state/app assoc :sorted k)````. This resets the current sort order to the key associated with the clicked button. Finally, we pass the ````text```` label to the button. Note that we will also set metadata on the component where we use the ````text```` of the component as the key: ````^{:key text}````. This is good practice for ReactJS whenever we render a list of something. Here, it wouldn't hurt much to omit it as the list is neither dynamic nor large, but it would still result in a warning on the console. 
 
 Next, there's the ````search-view```` component:
 
@@ -195,7 +195,7 @@ Next, there's the ````search-view```` component:
      [:span {:class "glyphicon glyphicon-search"}]]]])
 ~~~
 
-Here, a ````:form```` of class ````pure-form```` is rendered with a ````:fieldset```` inside. This then contains an ````:input```` field and a ````:button````. The ````:value```` of the `````:input```` field is always determined by the value of the ````:search-text```` key of the application state map. Then, when the user changes the content of the input field, the function used ````:on-change```` of the input changes the state to the new content of the field. Then, either on ````ENTER```` inside the field or a press of the button, ````comm/start-search```` is run. Not surprisingly, you can see the search view on the left here:
+Here, a ````:form```` of class ````pure-form```` is rendered with a ````:fieldset```` inside. This then contains an ````:input```` field and a ````:button````. The ````:value```` of the ````:input```` field is always determined by the value of the ````:search-text```` key of the application state map. Then, when the user changes the content of the input field, the function used ````:on-change```` of the input changes the state to the new content of the field. Then, either on ````ENTER```` inside the field or a press of the button, ````comm/start-search```` is run. Not surprisingly, you can see the search view on the left here:
 
 ![](images/header.png)
 

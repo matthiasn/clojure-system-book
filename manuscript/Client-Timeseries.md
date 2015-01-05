@@ -73,3 +73,4 @@ In order to do that, tweets will have to be grouped into time intervals and then
   (reset! tsc/bars (vec (ts-data app))))
 ~~~
 
+**TODO**: code walkthrough

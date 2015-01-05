@@ -6,7 +6,7 @@ The timeseries chart and the wordcount trend bar chart are constructed as SVG by
 
 ### Timeseries Chart
 
-https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/charts/ts_chart.cljs
+We've already seen the timeseries chart in the last chapter to get an idea what the data represents. Let's have a look at the **[code](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/charts/ts_chart.cljs)**
 
 ~~~
 (ns birdwatch.charts.ts-chart
@@ -57,3 +57,5 @@ https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252b
 
 (r/render-component [ts-chart] ts-elem)
 ~~~
+
+**TODO**: code walkthrough

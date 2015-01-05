@@ -33,7 +33,7 @@ This namespace initializes the application on the client side. Here's the entire
 (swap! state/app assoc :search-text (util/search-hash))
 ~~~
 
-The first thing that happens is that the initial application state is set in the respective atom. There is a function named ````initial-state````in the ````state```` namespace that returns a "blank slate" application state; its result is used to populate the ````state/app```` atom.
+The first thing that happens is that the initial application state is set in the respective atom. There is a function named ````initial-state```` in the ````state```` namespace that returns a "blank slate" application state; its result is used to populate the ````state/app```` atom.
 
 Next, ````ui/init-views```` is called, a function that initializes all UI components. We will look at it later when we cover the ````ui```` namespace.
 
