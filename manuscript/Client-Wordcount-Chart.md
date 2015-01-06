@@ -1,6 +1,6 @@
 ### Wordcount Trends Chart (with Linear Regression)
 
-The word count trends chart shows the top 25 words within the body of tweets loaded in the application, as determined in the ````birdwatch.wordcount```` namespace we have discussed previously. The ranking is in descending order, with a bar and a count number allowing for comparison between different words. In addition, there are trend arrows that show how a word has developed recently and over time. Each bar is also clickable, whic adds the word to the search in the input field below the menu bar. Here's how it looks like:
+The word count trends chart shows the top 25 words within the body of tweets loaded in the application, as determined in the ````birdwatch.wordcount```` namespace we have discussed previously. The ranking is in descending order, with a bar and a count number allowing for comparison between different words. In addition, there are trend arrows that show how a word has developed recently and over time. Each bar is also clickable, which adds the word to the search in the input field below the menu bar. Here's how it looks like:
 
 ![](images/wordcount-chart.png)
 
@@ -92,7 +92,7 @@ The ````arrow```` component is used in the ````birdwatch.charts.wordcount-chart`
              (get (reg/linear-regression (take 1000 (get @ratio-items text))) 1)))))
 ~~~
 
-Okay, there is quite a bit to go through, but the code also takes care of the linear regression for the trend arrows. Before discuissing each function, let's have a look at the ````birdwatch.stats.regression```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/stats/regression.cljs)** first:
+Okay, there is quite a bit to go through, but the code also takes care of the linear regression for the trend arrows. Before discussing each function, let's have a look at the ````birdwatch.stats.regression```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/stats/regression.cljs)** first:
 
 ~~~
 (ns birdwatch.stats.regression)
@@ -154,9 +154,9 @@ We need a couple of ````atom````s in order to store data related to the intended
              (get (reg/linear-regression (take 1000 (get @ratio-items text))) 1)))))
 ~~~
 
-First of all, the function takes the parameter ````words````, which is the current top-n list from the application state. We use that to ````reset!```` the ````items```` atom, as a vector of indexed vectors, in which the index is in first position and a vector with ````text```` and ````count```` in the second position, as you can see in the ````do-seq```` below: ````[idx [text cnt]]````.
+First of all, the function takes the parameter ````words````, which is the current top-n list from the application state. We use that to ````reset!```` the ````items```` atom as a vector of indexed vectors, in which the index is in first position and a vector with ````text```` and ````count```` in the second position, as you can see in the ````do-seq```` below: ````[idx [text cnt]]````.
 
-Next, we dereference ````items```` and get ````total-cnt```` which is simply the total count of words within ````items````. Then, we do a couple of things with each item within ````items````, destructured as seen above. Within ````pos-items````, we add / ````conj```` the latest position to the sequence we keep for each word. We do the same for ````ratio-items````, only that here we use a ratio. With those updated, we determine the slope for each by running ````reg/linear-regression```` and store the result in the ````pos-trends```` and ````ratio-trends```` map for the particular word. These will later be dereferenced when determining the direction of the arrow.
+Next, we dereference ````items```` and get ````total-cnt````, which is simply the total count of words within ````items````. Then, we do a couple of things with each item within ````items````, destructured as seen above. Within ````pos-items````, we add / ````conj```` the latest position to the sequence we keep for each word. We do the same for ````ratio-items````, only that here we use a ratio. With those updated, we determine the slope for each by running ````reg/linear-regression```` and store the result in the ````pos-trends```` and ````ratio-trends```` map for the particular word. These will later be dereferenced when determining the direction of the arrow.
 
 Now let's have a look at the ````bar```` component:
 
@@ -176,7 +176,7 @@ Now let's have a look at the ````bar```` component:
 
 For every bar, we dereference ````pos-slope```` and ````ratio-slope````. With that, we create a ````:g```` element, which is a group in SVG. Within it, we position text, the arrows and the bar rectangle ````:rect````. Finally, depending on the width of the bar, we position the counter either inside the bar when it's wide enough or outside when it's too narrow.
 
-To put things together, we then have the ````wordcount-barchart```` component which renders a ````:div```` with the ````:svg```` inside, with one ````bar```` component for each item in ````indexeded````, which is the dereferenced ````items```` atom. In addition, there's some text plus a ````:select```` which is intended for choosing the number of recent items to choose for the regression analysis over the ratios. That's not actually implemented yet though. Pull request, anyone?
+To put things together, we then have the ````wordcount-barchart```` component which renders a ````:div```` with the ````:svg```` inside, with one ````bar```` component for each item in ````indexed````, which is the dereferenced ````items```` atom. In addition, there's some text plus a ````:select````, which is intended for choosing the number of recent items to include in the regression analysis over the ratios. That's not actually implemented yet, though. Pull request, anyone?
 
 ~~~
 (defn wordcount-barchart []

@@ -138,7 +138,7 @@ This is really straightforward, it just creates a ````div```` of class ````tweet
 }
 ~~~
 
-With these components in place, we can now look at the representation of a tweet, which looks like this:
+With these components in place we can now look at the representation of a tweet, which looks like this:
 
 ![](images/tweet.png)
 
@@ -160,7 +160,7 @@ Here's the same in code:
      [twitter-intents tweet]]))
 ~~~
 
-This component takes ````raw-tweet```` and formats it by calling ````util/format-tweet```` with it. Note how the result is ````memoize````d. This caches previous calls to the same, referentially transparent function. I'm not sure if **[memoize](https://clojuredocs.org/clojure.core/memoize)** really improves performance in this context, but since it's so simple to do, why not. A couple of other values are taken from the tweet map and with that, a ````:div```` is rendered, with the components you would expect when you look at the image above. No big surprises there, except maybe for only rendering the image view when there is media to render. Otherwise, the ````when-let```` would simply evaluate to ````nil```` and thus be ignored.
+This component takes ````raw-tweet```` and formats it by calling ````util/format-tweet```` with it. Note how the result is ````memoize````d. This caches previous calls to the same, referentially transparent function. I'm not sure if **[memoize](https://clojuredocs.org/clojure.core/memoize)** really improves performance in this context, but since it's so simple to do, why not. A couple of other values are taken from the tweet map and with that, a ````:div```` is rendered with the components you would expect when you look at the image above. No big surprises there, except maybe for only rendering the image view when there is media to render. Otherwise, the ````when-let```` would simply evaluate to ````nil```` and thus be ignored.
 
 With the ````tweet-view```` component in place, we can now render a list of them in the ````tweets-view```` component:
 

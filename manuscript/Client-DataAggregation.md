@@ -111,7 +111,7 @@ The ````swap-when-larger```` function only swaps items in the priority map when 
       (util/swap-pmap app :by-reach rt-id (+ (get (:by-reach state) rt-id 0) (:followers_count (:user tweet))))
       (when (> rt-count (:retweet_count (rt-id (:tweets-map state)))) (add-to-tweets-map! app :tweets-map rt)))))
 ~~~
-The ````add-rt-status!```` function takes care of adding retweeted tweets, which in the case that a tweet is a retweet, live in the ````:retweeted_status```` key.
+The ````add-rt-status!```` function takes care of adding retweeted tweets which, in the event that a tweet is a retweet, live in the ````:retweeted_status```` key.
 
 ~~~
 (defn add-tweet!
@@ -153,4 +153,4 @@ Finally in this namespace, we have a few ````go-loops````:
            (recur)))
 ~~~
 
-The first one takes a tweet from ````c/tweets-chan```` and calls ````add-tweet!```` with it, these are the tweets from the percolation matching. The next one takes a tweet from ````c/prev-tweets-chan```` and does the same thing, only for previous tweets. The third one processes missing tweets by simply adding them to ````tweets-map```` within the application state, without further processing. The last one takes a ````chunk```` off ````c/prev-chunks-chan```` and puts each item onto ````c/prev-tweets-chan````, with a short timeout after each chunk to keep the UI more responsive.
+The first one takes a tweet from ````c/tweets-chan```` and calls ````add-tweet!```` with it; these are the tweets from the percolation matching. The next one takes a tweet from ````c/prev-tweets-chan```` and does the same thing, only for previous tweets. The third one processes missing tweets by simply adding them to ````tweets-map```` within the application state without further processing. The last one takes a ````chunk```` off of ````c/prev-chunks-chan```` and puts each item onto ````c/prev-tweets-chan````, with a short timeout after each chunk to keep the UI more responsive.

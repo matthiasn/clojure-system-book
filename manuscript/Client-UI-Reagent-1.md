@@ -9,12 +9,12 @@ I wrote the first version of the ClojureScript client using **Om**, but I always
 
 I found the required code for a Reagent component to be much more succinct and legible so that I made a complete switch. A good part of the reason here is that I like its **[Hiccup](https://github.com/weavejester/hiccup)** syntax.
 
-Now when I come back to the UI code, I scratch my head a lot less than with the previous version. I share the experience I read in this **[blog post](http://diogo149.github.io/2014/10/19/om-no/)**, which made me give Reagent a shot. I haven't regretted it. Reagent exposes a lot less incidental complexity than Om, and that just works better with my tiny brain.
+Now when I come back to the UI code, I scratch my head a lot less than with the previous version. I shared the experience I read in this **[blog post](http://diogo149.github.io/2014/10/19/om-no/)**, which made me give Reagent a shot. I haven't regretted it. Reagent exposes a lot less incidental complexity than Om, and that just works better with my tiny brain.
 
 
 ### Reagent
 
-For more information on Reagent I can also recommend this **[blog post](http://getprismatic.com/story/1405451329953)**, besides the decent-enough documentation of the project itself.
+For more information on Reagent I can also recommend this **[blog post](http://getprismatic.com/story/1405451329953)**, besides the decent enough documentation of the project itself.
 
 I will not start with an introduction to Reagent here as the previously mentioned resources should have you covered. Instead, I will just explain the code, which you actually may find simple enough without consulting many other resources. If some of it looks too simple to be true, no worries, it really is not.
 
@@ -162,7 +162,7 @@ Then, in the ````sort-view```` component itself, we dereference our application 
 
 This assigns the classes ````pure-button````, ````not-rounded```` and ````sort-button```` to the button, resulting in this styling:
 
-![sort-view component](images/sort-by.png)
+![Sort-view Component](images/sort-by.png)
 
 Next, we want to create additional buttons for every element in the ````sort-orders```` vector.
 
@@ -220,9 +220,9 @@ Before we dive into the code, here's how the ````pagination-view```` looks like 
 
 Here, we first have a ````pag-item```` component for each page, which is used for switching the view to the particular page when clicked. In that case, the anonymous function literal ````#(swap! state/app assoc :page idx)```` is executed.
 
-Within the ````pagination-view````, we then include one ````pag-item```` for each one of the pages within the tweets loaded. This should be updated to use real numbers. But then, we would also need buttons for _first_ and _last_ if we don't want to render 500 pagination items or so. Pull request, anyone? Right now, we simply use 15 or, if the actual number of pages is lower, that number.
+Within the ````pagination-view````, we then include one ````pag-item```` for each of the pages within the tweets loaded. This should be updated to use actual numbers from the application. But then, we would also need buttons for _first_ and _last_ if we don't want to render 500 pagination items or so. Pull request, anyone? Right now, we will simply use 15 or, if the actual number of pages is lower, that number.
 
-Once again, a ````:key```` is assigned to each ````pag-item````. As mentioned, this is good practice to follow always with React. Don't adhere and at least you're reminded by a warning on the console.
+Once again, a ````:key```` is assigned to each ````pag-item````. As mentioned, this is good practice when working with React. Don't adhere and at least you're reminded by a warning on the console.
 
 Finally in this namespace, we have some code for initializing the Reagent components on application startup:
 

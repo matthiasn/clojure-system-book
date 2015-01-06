@@ -2,7 +2,7 @@
 
 The ````birdwatch.timeseries```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/3dd9d15a43db05c107001338c5ab0e4ef2730c83/Clojure-Websockets/MainApp/src/cljs/birdwatch/timeseries.cljs)** is responsible for aggregating tweet counts per time interval in order to see how a search has developed over time. The data generated here is used in the ````birdwatch.charts.ts-chart```` timeseries chart.
 
-![timeseries chart](images/ts_chart.png)
+![Timeseries Chart](images/ts_chart.png)
 
 In order to do that, tweets will have to be grouped into time intervals and then counted to see how many have occurred during each time interval.
 
@@ -101,7 +101,7 @@ Then, we have the ````grouping-interval```` function:
    :else                            m))  ;round by nearest minute
 ~~~
 
-Here, we figure out how long the duration of one bar is going to be, depending on the total timespan covered by the tweets loaded. Next, there's ````empty-ts-map```` function:
+Here, we figure out how long the duration of one bar is going to be, depending on the total time span covered by the tweets loaded. Next, there's ````empty-ts-map```` function:
 
 ~~~
 (defn empty-ts-map
@@ -112,7 +112,7 @@ Here, we figure out how long the duration of one bar is going to be, depending o
     (apply sorted-map-by < (flatten [(interpose 0 values) 0]))))
 ~~~
 
-The function above gives us a map to count tweets into. Here's an example how that looks like as a ````pprint```` output, (shortened to not take up a whole page):
+The function above gives us a map to count tweets into. Here's an example of how that looks like as a ````pprint```` output, (shortened to not take up a whole page):
 
 ~~~
 {1420505580 0,
@@ -145,7 +145,7 @@ Before we can do the actual timeseries mapping, we will need two helper function
 
 The ````count-into-map```` function simply takes a map ````ts-map```` and increments the counter at the key ````k````. The ````tweet-ts```` function is nothing more than a lightweight wrapper around **[moment.js](http://momentjs.com)** for retrieving the milliseconds since epoch. 
 
-With these in place, we can now look at the ````ts-data```` function, which is the main workhorse in this namespace:
+With these in place we can now look at the ````ts-data```` function, which is the main workhorse in this namespace:
 
 ~~~
 (defn ts-data
@@ -161,7 +161,7 @@ With these in place, we can now look at the ````ts-data```` function, which is t
               (map #(rounder (tweet-ts %)) tweets-by-id)))))
 ~~~
 
-This function takes the application state ````app````, gets ````tweets-by-id````, which as the name implies, gets the tweets sorted by ID, which is equivalent to them sorted by time. From these, we determine the ````oldest```` and ````newest```` tweets, from these again we determine the appropriate interval and construct the ````rounder```` function. With these, we can run ````reduce```` with ````count-into-map```` as the reducing function, the ````(empty-ts-map newest oldest interval)```` as the accumulator and ````(map #(rounder (tweet-ts %)) tweets-by-id)```` as the data structure to run over, which rounds each tweet in there to the correct interval so that in can be counted.
+This function takes the application state ````app````, gets ````tweets-by-id```` which, as the name implies, gets the tweets sorted by ID, which is equivalent to them sorted by time. From these, we determine the ````oldest```` and ````newest```` tweets, from which we determine the appropriate interval and construct the ````rounder```` function. With these, we can run ````reduce```` with ````count-into-map```` as the reducing function, the ````(empty-ts-map newest oldest interval)```` as the accumulator and ````(map #(rounder (tweet-ts %)) tweets-by-id)```` as the data structure to run over, which rounds each tweet in there to the correct interval so that it can be counted.
 
 Here's a truncated output of this function as an example, after running the ````reduce```` over actual tweets:
 
@@ -182,9 +182,9 @@ Here's a truncated output of this function as an example, after running the ````
 
 Let's take it one step further and use this truncated sample data as the actual output of the ````ts-data```` instead of the ````reduce```` over data to see how this translates into a bar chart:
 
-![timeseries chart with example data](images/ts-example.png)
+![Timeseries Chart with Example Data](images/ts-example.png)
 
-Finally in this namespace, we have the ````update-ts```` function:
+Finally, in this namespace we have the ````update-ts```` function:
 
 ~~~
 (defn update-ts

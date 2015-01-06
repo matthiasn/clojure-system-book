@@ -117,7 +117,7 @@ The ````query-string```` function is a simple helper to format a query before se
                   :query (str "(" (:search @state/app) ") AND lang:en")}})
 ~~~
 
-The ````start-percolator```` function tell the server to start the percolation process for the web client with the current search:
+The ````start-percolator```` function tells the server to start the percolation process for the web client with the current search:
 ~~~
 (defn start-percolator
   "trigger starting of percolation matching of new tweets"
@@ -161,7 +161,7 @@ This function takes care of loading chunks of previous tweets matching the searc
     (dotimes [n 4] (load-prev))))
 ~~~
 
-This function resets the application state ````state/app```` to ````(state/initial-state)````, the ````prev-chunks-loaded````, then sets the search on the new application state, sets the address in the browser and finally starts the percolator and also triggers ````(load-prev)````, with four requests running in parallel. Every time one of them comes back completed from the server, ````(load-prev)```` will be called again, as we can see in the ````event-handler```` below:
+This function resets the application state ````state/app```` to ````(state/initial-state)````, the ````prev-chunks-loaded````, then sets the search on the new application state, sets the address in the browser and finally starts the percolator and also triggers ````(load-prev)```` with four requests running in parallel. Every time one of them is completed and comes back from the server, ````(load-prev)```` will be called again as we can see in the ````event-handler```` below:
 
 ~~~
 (defn- event-handler [{:keys [event]}]
@@ -181,9 +181,9 @@ This function resets the application state ````state/app```` to ````(state/initi
 (defonce chsk-router (sente/start-chsk-router! ch-chsk event-handler))
 ~~~
 
-The ````event-handler```` function handles incoming messages from the server. Mostly, it just puts received payloads on the appropriate channels. Only in the case of a completed ````prev-chunk````, it also calls ````(load-prev)```` again, which only actually does something when there are more chunks to retrieve.
+The ````event-handler```` function handles incoming messages from the server. Mostly, it just puts received payloads on the appropriate channels. Only in the case of a completed ````prev-chunk````, it also calls ````(load-prev)````, which then only initiates another query when there are more chunks to retrieve.
 
-Then finally in this namespace, there's a ````go-loop```` which takes requests off the ````c/tweet-missing-chan```` channel and forwards them to the server:
+Then finally in this namespace, there's a ````go-loop```` which takes requests off of the ````c/tweet-missing-chan```` channel and forwards them to the server:
 ~~~
 ; loop for sending messages about missing tweet to server
 (go-loop [] (let [tid (<! c/tweet-missing-chan)]
