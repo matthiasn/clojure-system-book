@@ -161,6 +161,7 @@ This function takes care of loading chunks of previous tweets matching the searc
     (dotimes [n 4] (load-prev))))
 ~~~
 
+This function resets the application state ````state/app```` to ````(state/initial-state)````, the ````prev-chunks-loaded````, then sets the search on the new application state, sets the address in the browser and finally starts the percolator and also triggers ````(load-prev)````, with four requests running in parallel. Every time one of them comes back completed from the server, ````(load-prev)```` will be called again, as we can see in the ````event-handler```` below:
 
 ~~~
 (defn- event-handler [{:keys [event]}]
@@ -180,6 +181,7 @@ This function takes care of loading chunks of previous tweets matching the searc
 (defonce chsk-router (sente/start-chsk-router! ch-chsk event-handler))
 ~~~
 
+The ````event-handler```` function handles incoming messages from the server. Mostly, it just puts received payloads on the appropriate channels. Only in the case of a completed ````prev-chunk````, it also calls ````(load-prev)```` again, which only actually does something when there are more chunks to retrieve.
 
 Then finally in this namespace, there's a ````go-loop```` which takes requests off the ````c/tweet-missing-chan```` channel and forwards them to the server:
 ~~~
