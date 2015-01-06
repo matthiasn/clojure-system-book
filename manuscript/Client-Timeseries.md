@@ -73,4 +73,127 @@ In order to do that, tweets will have to be grouped into time intervals and then
   (reset! tsc/bars (vec (ts-data app))))
 ~~~
 
-**TODO**: code walkthrough
+First in the namespace, we have the ````date-round```` function, which is a helper for rounding dates to the nearest interval. Next, we define the possible time intervals _1m_, _15m_, _1h_, _6h_, _24h_:
+
+~~~
+(defn date-round
+  "return function that rounds the provided seconds since epoch down to the nearest time interval s
+  e.g. (date-round 60) creates a function that takes seconds t and rounds them to the nearest minute"
+  [s]
+  (fn [t] (* s (Math/floor (/ t s)))))
+
+(def m 60)
+(def qhr (* 15 m))
+(def hr (* 60 m))
+(def qday (* 6 hr))
+(def day (* 24 hr))
+~~~
+
+Then, we have the ````grouping-interval```` function:
+
+~~~
+(defn grouping-interval
+  "determine duration of individual intervals (bars) depending on duration of timespan between newest and oldest"
+  [newest oldest]
+  (cond
+   (> (- newest oldest) (* 20 day)) day  ;round by nearest day
+   (> (- newest oldest) (* 5 day))  qday ;round by nearest quarter day
+   (> (- newest oldest) (* 20 hr))  hr   ;round by nearest hour
+   (> (- newest oldest) (* 4 hr))   qhr  ;round by nearest quarter hour
+   :else                            m))  ;round by nearest minute
+~~~
+
+Here, we figure out how long the duration of one bar is going to be, depending on the total timespan covered by the tweets loaded. Next, there's ````empty-ts-map```` function:
+
+~~~
+(defn empty-ts-map
+  "generates map with all rounded intervals between oldest and newest, initialized to a count of 0"
+  [newest oldest interval]
+  (let [rounder (date-round interval)
+        values (range (rounder oldest) (rounder newest) interval)]
+    (apply sorted-map-by < (flatten [(interpose 0 values) 0]))))
+~~~
+
+The function above gives us a map to count tweets into. Here's an example how that looks like as a ````pprint```` output, (shortened to not take up a whole page):
+
+~~~
+{1420505580 0,
+ 1420505340 0,
+ 1420505100 0,
+ 1420506000 0,
+ 1420505400 0,
+ 1420505880 0,
+ 1420505520 0,
+ 1420506120 0,
+ 1420505460 0,
+ 1420506180 0,
+ 1420505760 0,
+ 1420504980 0}
+~~~
+
+Before we can do the actual timeseries mapping, we will need two helper functions:
+
+~~~
+(defn count-into-map
+  "increment count for time interval"
+  [ts-map k]
+  (update-in ts-map [k] inc))
+
+(defn tweet-ts
+  "retrieve seconds since epoch from tweet using moment.js"
+  [t]
+  (.unix (js/moment. (:created_at t))))
+~~~
+
+The ````count-into-map```` function simply takes a map ````ts-map```` and increments the counter at the key ````k````. The ````tweet-ts```` function is nothing more than a lightweight wrapper around **[moment.js](http://momentjs.com)** for retrieving the milliseconds since epoch. 
+
+With these in place, we can now look at the ````ts-data```` function, which is the main workhorse in this namespace:
+
+~~~
+(defn ts-data
+  "perform time series analysis by counting tweets in even intervals"
+  [app]
+  (let [tweets-by-id ((util/tweets-by-order :tweets-map :by-id) @app 100000)]
+    (if (> (count tweets-by-id) 100)
+      (let [oldest (tweet-ts (last tweets-by-id))
+            newest (tweet-ts (first tweets-by-id))
+            interval (grouping-interval newest oldest)
+            rounder (date-round interval)]
+        (reduce count-into-map
+                (empty-ts-map newest oldest interval)
+                (map #(rounder (tweet-ts %)) tweets-by-id)))
+      (empty-ts-map 0 0 9))))
+~~~
+
+
+Here's a truncated output of this function as an example:
+
+~~~
+{1420501500 66,
+ 1420502940 63,
+ 1420501620 68,
+ 1420505580 43,
+ 1420501680 72,
+ 1420505340 73,
+ 1420502820 58,
+ 1420505100 64,
+ 1420506000 38,
+ 1420501980 59,
+ 1420506300 23,
+ 1420503360 93}
+~~~
+
+Let's take it one step further and use this truncated sample data as the actual output of the ````ts-data```` to see how this translates into a bar chart:
+
+![timeseries chart with example data](images/ts-example.png)
+
+Finally in this namespace, we have the ````update-ts```` function:
+
+~~~
+(defn update-ts
+  "update time series chart"
+  [app]
+  (reset! tsc/bars (vec (ts-data app))))
+~~~
+
+This function gets called with new data every so often in the ````core```` namespace (currently once every second). It takes ````app```` resets the ````tsc/bars```` atom with a vector derived from the result of the ````ts-data```` function.
