@@ -1,6 +1,6 @@
 ## Timeseries
 
-The ````birdwatch.timeseries```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/timeseries.cljs)** is responsible for aggregating tweet counts per time interval in order to see how a search has developed over time. The data generated here is used in the ````birdwatch.charts.ts-chart```` timeseries chart.
+The ````birdwatch.timeseries```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/3dd9d15a43db05c107001338c5ab0e4ef2730c83/Clojure-Websockets/MainApp/src/cljs/birdwatch/timeseries.cljs)** is responsible for aggregating tweet counts per time interval in order to see how a search has developed over time. The data generated here is used in the ````birdwatch.charts.ts-chart```` timeseries chart.
 
 ![timeseries chart](images/ts_chart.png)
 
@@ -57,15 +57,13 @@ In order to do that, tweets will have to be grouped into time intervals and then
   "perform time series analysis by counting tweets in even intervals"
   [app]
   (let [tweets-by-id ((util/tweets-by-order :tweets-map :by-id) @app 100000)]
-    (if (> (count tweets-by-id) 100)
-      (let [oldest (tweet-ts (last tweets-by-id))
-            newest (tweet-ts (first tweets-by-id))
-            interval (grouping-interval newest oldest)
-            rounder (date-round interval)]
-        (reduce count-into-map
-                (empty-ts-map newest oldest interval)
-                (map #(rounder (tweet-ts %)) tweets-by-id)))
-      (empty-ts-map 0 0 9))))
+    (let [oldest (tweet-ts (last tweets-by-id))
+          newest (tweet-ts (first tweets-by-id))
+          interval (grouping-interval newest oldest)
+          rounder (date-round interval)]
+      (reduce count-into-map
+              (empty-ts-map newest oldest interval)
+              (map #(rounder (tweet-ts %)) tweets-by-id)))))
 
 (defn update-ts
   "update time series chart"
@@ -154,19 +152,18 @@ With these in place, we can now look at the ````ts-data```` function, which is t
   "perform time series analysis by counting tweets in even intervals"
   [app]
   (let [tweets-by-id ((util/tweets-by-order :tweets-map :by-id) @app 100000)]
-    (if (> (count tweets-by-id) 100)
-      (let [oldest (tweet-ts (last tweets-by-id))
-            newest (tweet-ts (first tweets-by-id))
-            interval (grouping-interval newest oldest)
-            rounder (date-round interval)]
-        (reduce count-into-map
-                (empty-ts-map newest oldest interval)
-                (map #(rounder (tweet-ts %)) tweets-by-id)))
-      (empty-ts-map 0 0 9))))
+    (let [oldest (tweet-ts (last tweets-by-id))
+          newest (tweet-ts (first tweets-by-id))
+          interval (grouping-interval newest oldest)
+          rounder (date-round interval)]
+      (reduce count-into-map
+              (empty-ts-map newest oldest interval)
+              (map #(rounder (tweet-ts %)) tweets-by-id)))))
 ~~~
 
+This function takes the application state ````app````, gets ````tweets-by-id````, which as the name implies, gets the tweets sorted by ID, which is equivalent to them sorted by time. From these, we determine the ````oldest```` and ````newest```` tweets, from these again we determine the appropriate interval and construct the ````rounder```` function. With these, we can run ````reduce```` with ````count-into-map```` as the reducing function, the ````(empty-ts-map newest oldest interval)```` as the accumulator and ````(map #(rounder (tweet-ts %)) tweets-by-id)```` as the data structure to run over, which rounds each tweet in there to the correct interval so that in can be counted.
 
-Here's a truncated output of this function as an example:
+Here's a truncated output of this function as an example, after running the ````reduce```` over actual tweets:
 
 ~~~
 {1420501500 66,
