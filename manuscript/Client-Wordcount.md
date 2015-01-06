@@ -8,11 +8,12 @@ The ````birdwatch.wordcount```` **[namespace](https://github.com/matthiasn/BirdW
             [birdwatch.util :as util]))
             
 ;; shortened to fit the page better, see link for full set
-(def stop-words #{"use" "good" "want" "amp" "just" "now" "like" "til" "new" "get" "one" "i" 
-                  "us" "our" "ours" "ourselves" "you" "your" "yours" "yourself" "yourselves"
-                  "she" "her" "hers" "herself" "it" "its" "itself" "they" "them" "their" 
-                  "which" "who" "whom" "whose" "this" "that" "these" "those" "am" "is" 
-                  "being" "have" "has" "had" "having" "do" "does" "did" "doing" "will"})
+(def stop-words
+  #{"use" "good" "want" "amp" "just" "now" "like" "til" "new" "get" "one" "i" 
+    "us" "our" "ours" "ourselves" "you" "your" "yours" "yourself" "yourselves"
+    "she" "her" "hers" "herself" "it" "its" "itself" "they" "them" "their" 
+    "which" "who" "whom" "whose" "this" "that" "these" "those" "am" "is" 
+    "being" "have" "has" "had" "having" "do" "does" "did" "doing" "will"})
 
 (defn get-words
   "get vector of maps with word as :key and count as :value"
