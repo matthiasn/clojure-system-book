@@ -167,20 +167,20 @@ Here's a truncated output of this function as an example, after running the ````
 
 ~~~
 {1420501500 66,
- 1420502940 63,
  1420501620 68,
- 1420505580 43,
  1420501680 72,
- 1420505340 73,
- 1420502820 58,
- 1420505100 64,
- 1420506000 38,
  1420501980 59,
- 1420506300 23,
- 1420503360 93}
+ 1420502820 58,
+ 1420502940 63,
+ 1420503360 93,
+ 1420505100 64,
+ 1420505340 73,
+ 1420505580 43,
+ 1420506000 38,
+ 1420506300 23}
 ~~~
 
-Let's take it one step further and use this truncated sample data as the actual output of the ````ts-data```` to see how this translates into a bar chart:
+Let's take it one step further and use this truncated sample data as the actual output of the ````ts-data```` instead of the ````reduce```` over data to see how this translates into a bar chart:
 
 ![timeseries chart with example data](images/ts-example.png)
 

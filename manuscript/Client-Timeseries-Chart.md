@@ -95,7 +95,7 @@ Next, we have the ````barchart```` function:
 
 This first of all determines the ````gap```` between the bars. It then renders the ````:svg```` with all bars inside a group ````:g````. Once again, we are setting the key so React can reuse elements and be more efficient.
 
-
+Then, we have the ````labels```` component. Let's first see how that looks like, with the sample data from when we discussed the ````birdwatch.timeseries```` namespace:
 
 ![](images/ts-example-label.png)
 
@@ -112,7 +112,7 @@ This first of all determines the ````gap```` between the bars. It then renders t
        [:div.dot.active {:style {:top top :border-color "steelblue"}}]])))
 ~~~
 
-
+As you can see above, the ````labels```` component consists of two parts. On top, it shows how many tweets were encountered in the interval and at the bottom it shows us the start of the interval.
 
 Finally in this namespace, we have another component named ````ts-chart```` and render it into ````ts-elem````:
 
@@ -130,4 +130,4 @@ Finally in this namespace, we have another component named ````ts-chart```` and 
 (r/render-component [ts-chart] ts-elem)
 ~~~
 
-This component creates the ````:div```` that holds both the ````barchart```` SVG and ````labels````. Note that I've removed the Rickshaw library from the project, but for now I'm still using some of its CSS, e.g. the ````rickshaw_graph```` class. 
+This component creates the ````:div```` that holds both the ````barchart```` SVG and ````labels````. Note that I've removed the Rickshaw library from the project, but for now I'm still using some of its CSS, e.g. the ````rickshaw_graph```` class, or the classes used in the ````labels```` component. 
