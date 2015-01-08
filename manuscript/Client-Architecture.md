@@ -14,3 +14,6 @@ The following libraries are still required, however should also be replaced wher
 * **[wordcloud.js](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/MainApp/resources/public/js/wordcloud.js)** - own JavaScript implementation for interacting with d3.layout.cloud.js
 
 In the following chapter about the client side, I will walk you through the code as it currently exists. I am not completely happy with how the code is structured at the moment, particularly in comparison to the server side, but we can look at ways of refactoring the codebase later on. I'd love to get some feedback from you, the readers, and then work on the architecture some more with your feedback in mind.
+
+**Thursday, Jan 8th, 2015**
+Actually, I changed my mind on that. When trying to draw the current architecture, I realized how much I disliked it, so I went back to the drawing board and designed what I want instead. The code alterations won't take terribly long, I expect to finish that over the weekend. Check back next week. Thanks.
