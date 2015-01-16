@@ -1,5 +1,8 @@
 Intro.md
 HowToUse.md
+
+JournalStatus.md
+
 Architecture-Overview.md
 
 Code-Initialization.md
