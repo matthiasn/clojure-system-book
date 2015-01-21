@@ -31,6 +31,11 @@ I want the same kind of conceptual protection for my application's state. This i
 
 
 
+Image sources:
+
+* Receiving antenna (**[wikimedia](http://commons.wikimedia.org/wiki/File:Gizmotchy.svg)**)
+
+
 
 
 [^tv]: Unless, of course, you're the owner of the channel and make stupid decisions on which TV shows and films to buy.
