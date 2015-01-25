@@ -28,10 +28,9 @@ Ownership of the application state did not seem like a big deal when I first sta
 
 All changes to the application state are then broadcast using a core.async Pub/Sub, but only as the dereferenced application state it was at the time of dereferencing it. The application state messages broadcasted this way are immutable, so no subscriber can accidentally mutate or mutilate them in any way. You can think of it like a TV station, broadcasting moving images over the air. An arbitrary number of viewers can then tune in and watch. What you'll watch is usually immutable, except for some kind of backchannel like the telephone, email, or an actual letter. But then it is completely up to the TV station of how to deal with these messages. No ordinary viewer can just mess the experience up for all the other viewers. [^tv] 
 
-I want the same kind of conceptual protection for my application's state. This is handled nicely by encapsulating it inside a function and only interacting via channels, where the control on how to deal with incoming messages lies entirely with the state's owner. Here's a simple drawing for that:
+I want the same kind of conceptual protection for my application's state. This is handled nicely by encapsulating it inside a function and only interacting via channels, where the control on how to deal with incoming messages lies entirely with the state's owner. Here's an architectural overview:
 
-
-
+![](images/client-overview.png)
 
 [^tv]: Unless, of course, you're the owner of the channel and make stupid decisions as to what TV shows and films to buy.
 

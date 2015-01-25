@@ -2,6 +2,11 @@
 This section of the book will allow you to keep track of what I'm working on at any moment, what's going well (or not) and what to expect next. I will keep it updated frequently.
 
 ## Journal
+
+**Jan 25th:** Architectural drawing for client-side architecture.
+
+**Jan 21th:** Proofreading of client intro.
+
 **Jan 20th:** New introduction for the client-side chapter, including introduction to managing and protecting application state. The text is not proofread yet, so it hasn't made its way into the book yet, but if you're interested, you can already read it on **[GitHub](https://github.com/matthiasn/clojure-system-book/blob/master/manuscript/Client-Architecture.md).
 
 **Jan 16th to Jan 19th:** Refactoring of the *state* namespace. It is now split up to have each involved namespace only handle a distinct aspect of state management. The subscribers to state updates, such as UI elements, do not have access to the atom that keeps the application state any longer, instead they will only be provided with the dereferenced state, which is immutable. Thus, the application state cannot be erroneously mutilated from parts of the system that do not have anything to do with managing application state. Drawings and a rewritten client side chapter are expected soon. Only read the current version when you want to get to know the not-so-great client code first in order to compare it with the better version later.
