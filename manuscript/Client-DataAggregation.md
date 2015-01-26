@@ -1,4 +1,4 @@
-## Data Aggregation
+## Data Aggregation - outdated
 
 The ````birdwatch.tweets```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/tweets.cljs)** is responsible for ingesting new tweets coming in from the server over the WebSocket connection.
 

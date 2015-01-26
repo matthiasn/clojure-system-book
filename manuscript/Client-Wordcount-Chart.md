@@ -1,4 +1,4 @@
-### Wordcount Trends Chart (with Linear Regression)
+### Wordcount Trends Chart (with Linear Regression) - outdated
 
 The word count trends chart shows the top 25 words within the body of tweets loaded in the application, as determined in the ````birdwatch.wordcount```` namespace we have discussed previously. The ranking is in descending order, with a bar and a count number allowing for comparison between different words. In addition, there are trend arrows that show how a word has developed recently and over time. Each bar is also clickable, which adds the word to the search in the input field below the menu bar. Here's how it looks like:
 

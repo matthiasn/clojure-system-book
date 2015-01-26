@@ -1,4 +1,4 @@
-#### Reagent Components for Tweets
+### Reagent Components for Tweets - outdated
 
 Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/d35684c599c169faa38daf0043a8d6f05848c4a9/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/tweets.cljs)**:
 

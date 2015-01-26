@@ -1,4 +1,4 @@
-## SVG Manipulation with ClojureScript
+## SVG Manipulation with ClojureScript - outdated
 
 Two of the three charts in the application are constructed using ClojureScript alone with no need for JavaScript interop. Only the word cloud chart uses D3.js as an external library plus some interop code.
 

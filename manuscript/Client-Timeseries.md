@@ -1,4 +1,4 @@
-## Timeseries
+## Timeseries - outdated
 
 The ````birdwatch.timeseries```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/3dd9d15a43db05c107001338c5ab0e4ef2730c83/Clojure-Websockets/MainApp/src/cljs/birdwatch/timeseries.cljs)** is responsible for aggregating tweet counts per time interval in order to see how a search has developed over time. The data generated here is used in the ````birdwatch.charts.ts-chart```` timeseries chart.
 

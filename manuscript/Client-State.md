@@ -1,4 +1,6 @@
-## Application State
+## Application State - outdated
+
+In the last chapter, we have seen how different parts of the application are wired together. Since they don't depend on each other but only on the channels, it doesn't really matter in which order we discuss them, so why .
 
 The entire application state is held in atoms, mostly in one large map, and stored in one namespace that all other namespaces in the application can import. Here's the **[code](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/state.cljs)**:
 
