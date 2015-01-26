@@ -44,7 +44,7 @@ The namespace starts with a couple of imports, mostly of other namespaces from t
 
 Next, we create the channels that provide the communication backbone of this application. All communication between the major building blocks of this application take place via putting messages on conveyor belts, as Rich Hickey likes to call channels. These channels provide for a great abstraction. Just like a conveyor belt, we can put data on them, without having to worry where the conveyor belt will take them. In fact, even if a component in the system would like to know where the channel lead, it has no way of finding out.
 
-In addition to a couple of regular channels, there is also a ````pub````, which is a ````core.async```` construct for implementing a **[Publish–subscribe pattern](http://en.wikipedia.org/wiki/Publish–subscribe_pattern)**:
+In addition to a couple of regular channels, there is also a ````pub````, which is a ````core.async```` construct for implementing the **[Publish-subscribe pattern](http://en.wikipedia.org/wiki/Publish–subscribe_pattern)**:
 
 ~~~
 (def state-pub-chan (chan)) ; Publication of state changes.

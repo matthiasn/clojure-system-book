@@ -51,6 +51,3 @@ The following libraries are still required, however should also be replaced wher
 * **[D3.js](http://d3js.org)** - required for the word cloud
 * **[d3.layout.cloud.js](https://github.com/jasondavies/d3-cloud)**
 * **[wordcloud.js](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/MainApp/resources/public/js/wordcloud.js)** - own JavaScript implementation for interacting with d3.layout.cloud.js
-
-## Code Walkthrough
-In the following chapter about the client side, I will walk you through the client-side code base. While the restructuring I mentioned above is complete in **[master](https://github.com/matthiasn/BirdWatch)**, the following chapters still reflect the previous version. I am actively working on the rewrite.
