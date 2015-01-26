@@ -1,6 +1,6 @@
 ## Core Namespace
 
-This namespace initializes the application on the client side. Here's the entire **[code](https://github.com/matthiasn/BirdWatch/blob/7475ec0ea39dd8449ad892deb9d21f4b760afb0b/Clojure-Websockets/MainApp/src/cljs/birdwatch/core.cljs)**, with the explanation below.
+This namespace initializes the application on the client side. Here's the entire **[code](https://github.com/matthiasn/BirdWatch/blob/d88d191ccad1c921a7fa318ef23e10508d725182/Clojure-Websockets/MainApp/src/cljs/birdwatch/core.cljs)**, with the explanation below.
 
 ~~~
 (ns birdwatch.core
@@ -24,7 +24,7 @@ This namespace initializes the application on the client side. Here's the entire
 (def qry-chan   (chan)) ; Queries that will be forwarded to the server.
 (def cmd-chan   (chan)) ; Web-client internal command messages (e.g. state modification).
 (def state-pub-chan (chan)) ; Publication of state changes.
-(def state-pub (pub state-pub-chan #(first %))) ; Pub for subscribing to
+(def state-pub (pub state-pub-chan first)) ; Pub for subscribing to
 
 ;;; Initialize application state (atom in state namespace) and wire channels.
 (state/init-state data-chan qry-chan stats-chan cmd-chan state-pub-chan)
@@ -48,10 +48,10 @@ In addition to a couple of regular channels, there is also a ````pub````, which 
 
 ~~~
 (def state-pub-chan (chan)) ; Publication of state changes.
-(def state-pub (pub state-pub-chan #(first %))) ; Pub for subscribing to
+(def state-pub (pub state-pub-chan first)) ; Pub for subscribing to
 ~~~
 
-Here, the ````state-pub```` is a publisher that takes all items off the ````state-pub-chan```` and that uses the function ````#(first %)```` to determine the topic of a message. In order for that to work, it expects a data structure where the topic is the first element in a sequence or a vector. In this application, we will use vectors for such messages. One might wonder if sending the entire dereferenced application state on a channel wasn't too expensive. But it is not expensive at all since we are dealing with an immutable data structure that exists already and which can be passed around cheaply.
+Here, the ````state-pub```` is a publisher that takes all items off the ````state-pub-chan```` and that uses the function ````first```` to determine the topic of a message. In order for that to work, it expects a data structure where the topic is the first element in a sequence or a vector. In this application, we will use vectors for such messages. One might wonder if sending the entire dereferenced application state on a channel wasn't too expensive. But it is not expensive at all since we are dealing with an immutable data structure that exists already and which can be passed around cheaply.
 
 Then, with the channels and the pub created, we instantiate different components of the system and pass the channels to the components as needed. 
 
