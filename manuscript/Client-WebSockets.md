@@ -1,94 +1,66 @@
 ## WebSocket Communication 
 
-The ````birdwatch.communicator```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/communicator.cljs)** handles the interaction with the server-side application through the use of a WebSocket connection provided by the **[sente](https://github.com/ptaoussanis/sente)** library. Conceptually, the bi-directional WebSocket connection is similar to two **core.async** channels, one for sending and one for receiving. Since there are no different channels for different message types, all messages on the WebSocket connection need to be marked with their type. This is done by wrapping the payload in a vector where the message type is represented by a **[namespaced keyword](https://clojuredocs.org/clojure.core/keyword)** in the first position and the payload in the second position. With this convention it is really easy to pattern match using **[core.match](https://github.com/clojure/core.match)** as we will see below. It is just as easy to add new message types.
+The ````birdwatch.communicator```` namespace handles the interaction with the server-side application through the use of a WebSocket connection provided by the **[sente](https://github.com/ptaoussanis/sente)** library.
+
+Conceptually, the bi-directional WebSocket connection is somewhat similar to two **core.async** channels, one for sending and one for receiving. Since there are no different channels for different message types, all messages on the WebSocket connection need to be marked with their type. This is done by wrapping the payload in a vector where the message type is represented by a **[namespaced keyword](https://clojuredocs.org/clojure.core/keyword)** in the first position and the payload in the second position. 
+
+With this convention it is really easy to pattern match using **[core.match](https://github.com/clojure/core.match)** as we will see below. It is just as easy to add new message types. In fact, this convention of a vector with two items in it, where the first one is a namespaced keyword that denotes the payload type and a second item with the payload is so useful because of pattern matching that we will be using it in other parts of the application as well.
+
+This component interacts with the rest of the application through four channels, ````cmd-chan````, ````data-chan````, ````stats-chan````, and ````qry-chan````:
+
+![](images/client-communicator.png)
+
+Here's the entire **[namespace](https://github.com/matthiasn/BirdWatch/blob/54a03b1a5d1324075ca4e75451a2bc752a2ab9e3/Clojure-Websockets/MainApp/src/cljs/birdwatch/communicator.cljs)**:
 
 ~~~
 (ns birdwatch.communicator
-  (:require-macros [cljs.core.match.macros :refer (match)]
-                   [cljs.core.async.macros :refer [go-loop go]])
-  (:require [birdwatch.channels :as c]
-            [birdwatch.util :as util]
-            [birdwatch.state :as state]
-            [cljs.core.match]
+  (:require-macros [cljs.core.async.macros :refer [go-loop]])
+  (:require [cljs.core.match :refer-macros [match]]
             [taoensso.sente  :as sente  :refer (cb-success?)]
             [taoensso.sente.packers.transit :as sente-transit]
-            [cljs.core.async :as async :refer [<! >! chan put! alts! timeout]]))
-
-(enable-console-print!)
+            [cljs.core.async :as async :refer [<! chan put!]]))
 
 (def packer
   "Defines our packing (serialization) format for client<->server comms."
   (sente-transit/get-flexi-packer :json))
 
-(let [{:keys [chsk ch-recv send-fn state]} (sente/make-channel-socket! "/chsk" {:packer packer :type :auto})]
-  (def chsk       chsk)
-  (def ch-chsk    ch-recv) ; ChannelSocket's receive channel
-  (def chsk-send! send-fn) ; ChannelSocket's send API fn
-  (def chsk-state state))  ; Watchable, read-only atom
+(defn make-handler
+  "Create handler function for messages from WebSocket connection, wire channels and the
+   start-function to call when the socket is established."
+  [cmd-chan data-chan stats-chan]
+  (fn [{:keys [event]}]
+    (match event
+           [:chsk/state {:first-open? true}] (do
+                                               (print "WS connected")
+                                               (put! cmd-chan [:start-search]))
+           [:chsk/recv  payload]
+           (let [[msg-type msg] payload]
+             (case (keyword (namespace msg-type))
+               :tweet   (put! data-chan payload)
+               :stats   (put! stats-chan payload)
+               :default (print "unmatched message" payload)))
+           :else (print "Unmatched event: %s" event))))
 
-(defn query-string
-  "format and modify query string"
-  []
-  {:query_string {:default_field "text"
-                  :default_operator "AND"
-                  :query (str "(" (:search @state/app) ") AND lang:en")}})
+(defn query-loop
+  "Take command / query message off of channel, enrich payload with :uid of current
+   WebSocket connection and send to server. Channel is injected when loop is started."
+  [channel send-fn chsk-state]
+  (go-loop []
+           (let [[cmd-type payload] (<! channel)]
+             (send-fn [cmd-type (assoc payload :uid (:uid @chsk-state))])
+             (recur))))
 
-(defn start-percolator
-  "trigger starting of percolation matching of new tweets"
-  []
-  (chsk-send! [:cmd/percolate {:query (query-string)
-                               :uid (:uid @chsk-state)}]))
-
-(def prev-chunks-loaded (atom 0))
-
-(defn load-prev
-  "load previous tweets matching the current search"
-  []
-  (let [chunks-to-load 10
-        chunk-size 500]
-    (when (< @prev-chunks-loaded chunks-to-load)
-      (chsk-send! [:cmd/query {:query (query-string)
-                               :n chunk-size
-                               :uid (:uid @chsk-state)
-                               :from (* chunk-size @prev-chunks-loaded)}])
-      (swap! prev-chunks-loaded inc))))
-
-(defn start-search
-  "initiate new search by starting SSE stream"
-  []
-  (let [search (:search-text @state/app)
-        s (if (= search "") "*" search)]
-    (reset! state/app (state/initial-state))
-    (reset! prev-chunks-loaded 0)
-    (swap! state/app assoc :search-text search)
-    (swap! state/app assoc :search s)
-    (aset js/window "location" "hash" (js/encodeURIComponent s))
-    (start-percolator)
-    (dotimes [n 4] (load-prev))))
-
-(defn- event-handler [{:keys [event]}]
-  (match event
-         [:chsk/state {:first-open? true}] (do (print "Socket established!") (start-search))
-         [:chsk/state new-state]           (print "Chsk state change:" new-state)
-         [:chsk/recv  payload]
-         (let [[msg-type msg] payload]
-           (match [msg-type msg]
-                  [:tweet/new             tweet] (put! c/tweets-chan tweet)
-                  [:tweet/missing-tweet   tweet] (put! c/missing-tweet-found-chan tweet)
-                  [:tweet/prev-chunk prev-chunk] (do (put! c/prev-chunks-chan prev-chunk)(load-prev))
-                  [:stats/users-count        uc] (put! c/user-count-chan uc)
-                  [:stats/total-tweet-count ttc] (put! c/total-tweets-count-chan ttc)))
-         :else (print "Unmatched event: %s" event)))
-
-(defonce chsk-router (sente/start-chsk-router! ch-chsk event-handler))
-
-; loop for sending messages about missing tweet to server
-(go-loop [] (let [tid (<! c/tweet-missing-chan)]
-              (chsk-send! [:cmd/missing {:id_str tid :uid (:uid @chsk-state)}])
-              (recur)))
+(defn start-communicator
+  "Start communicator by wiring channels."
+  [cmd-chan data-chan stats-chan qry-chan]
+  (let [ws (sente/make-channel-socket! "/chsk" {:packer packer :type :auto})
+        {:keys [ch-recv send-fn state]} ws
+        handler (make-handler cmd-chan data-chan stats-chan)]
+    (sente/start-chsk-router! ch-recv handler)
+    (query-loop qry-chan send-fn state)))
 ~~~
 
-Let's go through this function by function.
+Let's go through this def by def, function by function.
 
 ~~~
 (def packer
@@ -96,97 +68,67 @@ Let's go through this function by function.
   (sente-transit/get-flexi-packer :json))
 ~~~
 
-This defines the packer for sente, we're using **[transit](http://blog.cognitect.com/blog/2014/7/22/transit)** here. Next, we ````def```` a few functions that we get in the returned map from calling ````sente/make-channel-socket! ````:
+This defines the packer for sente, we're using **[transit](http://blog.cognitect.com/blog/2014/7/22/transit)** here. 
+
+Next, we have the ````make-handler```` function, which, as the name suggests, creates a handler function for handling incoming messages on the websocket connected. The returned handler function then already knows the channels to put messages onto, as these were specified in the initial call to the ````make-handler```` function.
 
 ~~~
-(let [{:keys [chsk ch-recv send-fn state]} (sente/make-channel-socket! "/chsk" {:packer packer :type :auto})]
-  (def chsk       chsk)
-  (def ch-chsk    ch-recv) ; ChannelSocket's receive channel
-  (def chsk-send! send-fn) ; ChannelSocket's send API fn
-  (def chsk-state state))  ; Watchable, read-only atom
+(defn make-handler
+  "Create handler function for messages from WebSocket connection, wire channels and the
+   start-function to call when the socket is established."
+  [cmd-chan data-chan stats-chan]
+  (fn [{:keys [event]}]
+    (match event
+           [:chsk/state {:first-open? true}] (do
+                                               (print "WS connected")
+                                               (put! cmd-chan [:start-search]))
+           [:chsk/recv  payload]
+           (let [[msg-type msg] payload]
+             (case (keyword (namespace msg-type))
+               :tweet   (put! data-chan payload)
+               :stats   (put! stats-chan payload)
+               :default (print "unmatched message" payload)))
+           :else (print "Unmatched event: %s" event))))
 ~~~
 
-The ````query-string```` function is a simple helper to format a query before sending it on the wire:
+The event received by the handler function above is pattern matched using ````core.match````, where we always have a vector with two elements. The first match is triggered when ````event```` contains ````:chsk/state```` with ````:first-open?```` set to ````true````, which happens when the connection to the server has been established. In that case, ````"WS connected"```` is printed on the browser console and a ````[:start-search]```` message is put onto the ````cmd-chan```` in order to start a search.
+
+Next, when a vector is received that contains ````:chsk/recv```` in the first position, we further destructure the payload, which also contains a two-item vector ````(let [[msg-type msg] payload]````. In the next line, we use ````case```` to match on the namespace of the namespaced keyword in ````msg-type````. If the namespace of the message type is ````:tweet````, the message is put on the ````data-chan````, if it is ````stats````, the message is put onto ````stats-chan```` and otherwise the payload is printed with a warning that the event could not be matched.
+
+Next, we have the ````query-loop```` function. This function starts a ````go-loop```` that takes messages from the specified channel and then uses the specified send-fn to send an item to the server.
 
 ~~~
-(defn query-string
-  "format and modify query string"
-  []
-  {:query_string {:default_field "text"
-                  :default_operator "AND"
-                  :query (str "(" (:search @state/app) ") AND lang:en")}})
+(defn query-loop
+  "Take command / query message off of channel, enrich payload with :uid of current
+   WebSocket connection and send to server. Channel is injected when loop is started."
+  [channel send-fn chsk-state]
+  (go-loop []
+           (let [[cmd-type payload] (<! channel)]
+             (send-fn [cmd-type (assoc payload :uid (:uid @chsk-state))])
+             (recur))))
 ~~~
 
-The ````start-percolator```` function tells the server to start the percolation process for the web client with the current search:
-~~~
-(defn start-percolator
-  "trigger starting of percolation matching of new tweets"
-  []
-  (chsk-send! [:cmd/percolate {:query (query-string)
-                               :uid (:uid @chsk-state)}]))
-~~~
+Not surprisingly, this function also expects items on the channel to be two-item vectors, as we can see in the destructuring when taking an item off the channel: ````(let [[cmd-type payload] (<! channel)]````. The function also takes ````chsk-state````, which is the atom associated with the sente connection to the server. Here, the ````:uid```` from the map held in ````chsk-state```` is used so that the server has information about the client ID and can thus return responses to the correct client. 
 
-Then, there's the ````load-prev```` function:
+Finally, we have the ````start-communicator```` function. This function fires up the WebSocket connection, calls the ````make-handler```` function and starts the ````query-loop````.
 
 ~~~
-(def prev-chunks-loaded (atom 0))
-
-(defn load-prev
-  "load previous tweets matching the current search"
-  []
-  (let [chunks-to-load 10
-        chunk-size 500]
-    (when (< @prev-chunks-loaded chunks-to-load)
-      (chsk-send! [:cmd/query {:query (query-string)
-                               :n chunk-size
-                               :uid (:uid @chsk-state)
-                               :from (* chunk-size @prev-chunks-loaded)}])
-      (swap! prev-chunks-loaded inc))))
+(defn start-communicator
+  "Start communicator by wiring channels."
+  [cmd-chan data-chan stats-chan qry-chan]
+  (let [ws (sente/make-channel-socket! "/chsk" {:packer packer :type :auto})
+        {:keys [ch-recv send-fn state]} ws
+        handler (make-handler cmd-chan data-chan stats-chan)]
+    (sente/start-chsk-router! ch-recv handler)
+    (query-loop qry-chan send-fn state)))
 ~~~
 
-This function takes care of loading chunks of previous tweets matching the search. The ````prev-chunks-loaded```` atom keeps track of how many have been loaded already, this is incremented each time a ````:cmd/query```` is sent to the server. If all are completed, this function won't do anything. It is initially triggered by the ````start-search```` function:
+This function takes the four channels we saw in the architectural drawing above and wires them accordingly. Before that can happen, ````sente/make-channel-socket!```` is called with a route for the connection and the packer. Obviously, the route needs to match the one used on the server side. This function returns a map, from which we require three keys ````{:keys [ch-recv send-fn state]}````. 
 
-~~~
-(defn start-search
-  "initiate new search by starting SSE stream"
-  []
-  (let [search (:search-text @state/app)
-        s (if (= search "") "*" search)]
-    (reset! state/app (state/initial-state))
-    (reset! prev-chunks-loaded 0)
-    (swap! state/app assoc :search-text search)
-    (swap! state/app assoc :search s)
-    (aset js/window "location" "hash" (js/encodeURIComponent s))
-    (start-percolator)
-    (dotimes [n 4] (load-prev))))
-~~~
+Then, the handler is created. ````data-chan```` and ````stats-chan```` are used by the handler for forwarding received messages. The ````cmd-chan```` allows the handler to trigger a new search when the connection to the client is up, as we saw when we discussed the handler above. 
 
-This function resets the application state ````state/app```` to ````(state/initial-state)````, the ````prev-chunks-loaded````, then sets the search on the new application state, sets the address in the browser and finally starts the percolator and also triggers ````(load-prev)```` with four requests running in parallel. Every time one of them is completed and comes back from the server, ````(load-prev)```` will be called again as we can see in the ````event-handler```` below:
+With the ````handler```` and ````ch-recv```` from the map that was returned by ````sente/make-channel-socket!````, we can now start the router by calling ````(sente/start-chsk-router! ch-recv handler)````.
 
-~~~
-(defn- event-handler [{:keys [event]}]
-  (match event
-         [:chsk/state {:first-open? true}] (do (print "Socket established!") (start-search))
-         [:chsk/state new-state]           (print "Chsk state change:" new-state)
-         [:chsk/recv  payload]
-         (let [[msg-type msg] payload]
-           (match [msg-type msg]
-                  [:tweet/new             tweet] (put! c/tweets-chan tweet)
-                  [:tweet/missing-tweet   tweet] (put! c/missing-tweet-found-chan tweet)
-                  [:tweet/prev-chunk prev-chunk] (do (put! c/prev-chunks-chan prev-chunk)(load-prev))
-                  [:stats/users-count        uc] (put! c/user-count-chan uc)
-                  [:stats/total-tweet-count ttc] (put! c/total-tweets-count-chan ttc)))
-         :else (print "Unmatched event: %s" event)))
+Finally, ````qry-chan```` is used when calling the ````query-loop```` function.
 
-(defonce chsk-router (sente/start-chsk-router! ch-chsk event-handler))
-~~~
-
-The ````event-handler```` function handles incoming messages from the server. Mostly, it just puts received payloads on the appropriate channels. Only in the case of a completed ````prev-chunk````, it also calls ````(load-prev)````, which then only initiates another query when there are more chunks to retrieve.
-
-Then finally in this namespace, there's a ````go-loop```` which takes requests off of the ````c/tweet-missing-chan```` channel and forwards them to the server:
-~~~
-; loop for sending messages about missing tweet to server
-(go-loop [] (let [tid (<! c/tweet-missing-chan)]
-              (chsk-send! [:cmd/missing {:id_str tid :uid (:uid @chsk-state)}])
-              (recur)))
-~~~
+This is all there is to the **Communicator** component. Most notably, any state is contained inside an atom that lives inside the let-binding of the ````start-communicator```` function and is not reachable from the outside. This may not seem terribly important here but we will see that this is valuable when discussing the application state in the **State** component. Also, this namespace does not depend on any other namespace inside our application and interacts entirely through channels that are passed in when the ````start-communicator```` function is called.
