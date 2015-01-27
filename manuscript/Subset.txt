@@ -1,9 +1,7 @@
 Client-Architecture.md
 Client-Core.md
-Client-State.md
-Client-Channels.md
 Client-WebSockets.md
-Client-DataAggregation.md
+Client-State.md
 Client-UI-Reagent-1.md
 Client-UI-Reagent-2.md
 Client-UI-Pure.md

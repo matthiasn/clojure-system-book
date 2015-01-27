@@ -27,9 +27,8 @@ Serverside-Conclusion.md
 Client-Architecture.md
 Client-Core.md
 Client-WebSockets.md
-
 Client-State.md
-Client-DataAggregation.md
+
 Client-UI-Reagent-1.md
 Client-UI-Reagent-2.md
 Client-UI-Pure.md
