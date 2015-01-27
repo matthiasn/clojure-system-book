@@ -266,3 +266,12 @@ But wait! Isn't that terribly inefficient? It depends. First of all, the applica
 
 There is one potential point of contention though. Especially when loading thousands of previous tweets, there are a lot of changes within a short time. On my Retina Macbook, roughly 1000 tweets are processed per second. That amounts to tens of thousands of times that the function above would be triggered. One could think about some kind of rate limiting, but **core.async** has a better tool in its toolbox: the **[sliding-buffer](https://clojure.github.io/core.async/#clojure.core.async/sliding-buffer)**.
 
+The way a ````sliding-buffer```` works is as follows: when more messages are put on a channel than can be taken off the channel on the other side, a buffer is filled. When that buffer is full, the oldest element in the buffer is dropped. This is perfect for our use case here. We can even use a buffer as small as 1 element that will be buffered. When the element can be consumed off the channel, fine. When there's a new element coming it, it is the newer application state, and the latest state is the only one we're ever interested in for rendering, so the slightly older application state can safely be dropped.
+
+Accordingly, we're creating a channel named ````sliding-channel```` with such a ````sliding-buffer```` of size 1. Then, the ````sliding-chan```` is ````pipe````d into the ````pub-chan```` which has been provided as an argument to the ````broadcast-state```` function, which just means that every message from the channel provided as the first argument to ````pipe```` is put onto the channel that is provided as the second argument.
+
+Now with the explanations in this chapter, I hope you will have a much better understanding of what's going on in this drawing:
+
+![](images/client-state.png)
+
+What I particularly like about this architecture is the complete encapsulation of the the State component from other parts of the application. In fact, other parts of the application do not even know that this mechanism exists at all. All they see are channels they interact with. That makes it much easier to change parts of the application without having it blow up in unexpected other parts.
