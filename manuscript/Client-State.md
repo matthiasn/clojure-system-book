@@ -270,6 +270,118 @@ The way a ````sliding-buffer```` works is as follows: when more messages are put
 
 Accordingly, we're creating a channel named ````sliding-channel```` with such a ````sliding-buffer```` of size 1. Then, the ````sliding-chan```` is ````pipe````d into the ````pub-chan```` which has been provided as an argument to the ````broadcast-state```` function, which just means that every message from the channel provided as the first argument to ````pipe```` is put onto the channel that is provided as the second argument.
 
+### The birdwatch.state.search namespace
+
+The ````birdwatch.state.search```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/4b686d2d3c378082fb3c2e860e05125c15768791/Clojure-Websockets/MainApp/src/cljs/birdwatch/state/search.cljs)** is concerned with starting new realtime searches and also loading previous tweets matching the search criteria:
+
+~~~
+(ns birdwatch.state.search
+  (:require [birdwatch.util :as util]
+            [cljs.core.async :as async :refer [put!]]))
+
+(defn append-search-text
+  "Appends string s to search-text in app, separated by space."
+  [app s]
+  (swap! app assoc :search-text (str (:search-text @app) " " s)))
+
+(defn- load-prev
+  "Loads previous tweets matching the current search. Search is contructed
+   by calling the util/query-string function with dereferenced app state."
+  [app qry-chan]
+  (let [chunks-to-load 10
+        chunk-size 500
+        prev-chunks-loaded (:prev-chunks-loaded @app)]
+    (when (< prev-chunks-loaded chunks-to-load)
+      (put! qry-chan [:cmd/query {:query (util/query-string @app)
+                                  :n chunk-size
+                                  :from (* chunk-size prev-chunks-loaded)}])
+      (swap! app update-in [:prev-chunks-loaded] inc))))
+
+(defn- start-percolator
+  "Triggers percolation matching of new tweets on the server side so that
+   future matches will be delivered to the client."
+  [app qry-chan]
+  (put! qry-chan [:cmd/percolate {:query (util/query-string @app)}]))
+
+(defn start-search
+  "Initiates a new search."
+  [app initial-state qry-chan]
+  (let [search (:search-text @app)
+        s (if (= search "") "*" search)]
+    (reset! app initial-state)
+    (swap! app assoc :search-text search)
+    (swap! app assoc :search s)
+    (aset js/window "location" "hash" (js/encodeURIComponent s))
+    (start-percolator app qry-chan)
+    (dotimes [n 2] (load-prev app qry-chan))))
+~~~
+
+
+### The birdwatch.state.proc namespace
+
+Finally, we have the ````birdwatch.state.proc```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/4b686d2d3c378082fb3c2e860e05125c15768791/Clojure-Websockets/MainApp/src/cljs/birdwatch/state/proc.cljs)**. This namespace is concerned with processing incoming tweets and adding them to the appropriate sort orders:
+
+~~~
+(ns birdwatch.state.proc
+  (:require [birdwatch.stats.wordcount :as wc]))
+
+(defn swap-pmap
+  "swaps item in priority-map"
+  [app priority-map id n]
+  (swap! app assoc priority-map (assoc (priority-map @app) id n)))
+
+(defn- add-to-tweets-map!
+  "adds tweet to tweets-map"
+  [app tweets-map tweet]
+  (swap! app
+         assoc-in [tweets-map (keyword (:id_str tweet))]
+         tweet))
+
+(defn- swap-when-larger
+  "Swaps item in priority-map when new value is larger than old value."
+  [app priority-map rt-id n]
+  (when (> n (rt-id (priority-map @app))) (swap-pmap app priority-map rt-id n)))
+
+(defn add-words
+  "Add words to the words map and the sorted set with the counts (while discarding old entry)."
+  [app words]
+  (doseq [word words]
+    (swap-pmap app :words-sorted-by-count word (inc (get (:words-sorted-by-count @app) word 0)))))
+
+(defn add-rt-status!
+  "Process original, retweeted tweet."
+  [app tweet]
+  (if (contains? tweet :retweeted_status)
+    (let [state @app
+          rt (:retweeted_status tweet)
+          rt-id (keyword (:id_str rt))
+          rt-count (:retweet_count rt)]
+      (swap-when-larger app :by-retweets rt-id rt-count)
+      (swap-when-larger app :by-favorites rt-id (:favorite_count rt))
+      (swap-pmap app :by-rt-since-startup rt-id (inc (get (:by-rt-since-startup state) rt-id 0)))
+      (swap-pmap app :by-reach rt-id (+ (get (:by-reach state) rt-id 0) (:followers_count (:user tweet))))
+      (when (> rt-count (:retweet_count (rt-id (:tweets-map state))))
+        (add-to-tweets-map! app :tweets-map rt)))))
+
+(defn add-tweet!
+  "Increment counter, add tweet to tweets map and to sorted sets by id and by followers. Modifies
+   application state."
+  [tweet app]
+  (let [state @app
+        id-str (:id_str tweet)
+        id-key (keyword id-str)]
+    (swap! app assoc :count (inc (:count state)))
+    (add-to-tweets-map! app :tweets-map tweet)
+    (swap-pmap app :by-followers id-key (:followers_count (:user tweet)))
+    (swap-pmap app :by-id id-key id-str)
+    (swap-pmap app :by-reach id-key (+ (get (:by-reach state) id-key 0) (:followers_count (:user tweet))))
+    (add-rt-status! app tweet)
+    (add-words app (wc/words-in-tweet (:text tweet)))))
+~~~
+
+The code above still needs some refactoring. I don't like the way it looks. Let me get back to that before trying to walk you through.
+
+### State summary
 Now with the explanations in this chapter, I hope you will have a much better understanding of what's going on in this drawing:
 
 ![](images/client-state.png)
