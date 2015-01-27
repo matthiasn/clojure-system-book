@@ -272,17 +272,12 @@ Accordingly, we're creating a channel named ````sliding-channel```` with such a 
 
 ### The birdwatch.state.search namespace
 
-The ````birdwatch.state.search```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/4b686d2d3c378082fb3c2e860e05125c15768791/Clojure-Websockets/MainApp/src/cljs/birdwatch/state/search.cljs)** is concerned with starting new realtime searches and also loading previous tweets matching the search criteria:
+The ````birdwatch.state.search```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/30836e475517e60291783fb2ea2d85aabf79a6b1/Clojure-Websockets/MainApp/src/cljs/birdwatch/state/search.cljs)** is concerned with starting new realtime searches and also loading previous tweets matching the search criteria:
 
 ~~~
 (ns birdwatch.state.search
   (:require [birdwatch.util :as util]
             [cljs.core.async :as async :refer [put!]]))
-
-(defn append-search-text
-  "Appends string s to search-text in app, separated by space."
-  [app s]
-  (swap! app assoc :search-text (str (:search-text @app) " " s)))
 
 (defn- load-prev
   "Loads previous tweets matching the current search. Search is contructed
@@ -316,6 +311,54 @@ The ````birdwatch.state.search```` **[namespace](https://github.com/matthiasn/Bi
     (dotimes [n 2] (load-prev app qry-chan))))
 ~~~
 
+In the namespace above, we have three function that are concerned with different angles of getting results of a realtime search to the client. First, there's the ````load-prev```` function:
+
+~~~
+(defn- load-prev
+  "Loads previous tweets matching the current search. Search is contructed
+   by calling the util/query-string function with dereferenced app state."
+  [app qry-chan]
+  (let [chunks-to-load 10
+        chunk-size 500
+        prev-chunks-loaded (:prev-chunks-loaded @app)]
+    (when (< prev-chunks-loaded chunks-to-load)
+      (put! qry-chan [:cmd/query {:query (util/query-string @app)
+                                  :n chunk-size
+                                  :from (* chunk-size prev-chunks-loaded)}])
+      (swap! app update-in [:prev-chunks-loaded] inc))))
+~~~
+
+This function is concerned with loading previous tweets up to the desired amount, in chunks of a defined size. Specifically, as it currently stands, ````10```` chunks of size ````500```` will be loaded. First, these two values are defined in the ````let```` binding, together with ````prev-chunks-loaded````, which is derived from the application state. Then, if less chunks have previously been loaded than desired, a query is put on the ````qry-chan```` for the next chunk to load. Then, finally, the application state is modified to reflect that the loading of an additional chunk is on its way.
+
+Next, there's the ````start-percolator```` function. This function is responsible for triggering a percolation query for the current search on the server side:
+
+~~~
+(defn- start-percolator
+  "Triggers percolation matching of new tweets on the server side so that
+   future matches will be delivered to the client."
+  [app qry-chan]
+  (put! qry-chan [:cmd/percolate {:query (util/query-string @app)}]))
+~~~
+
+We've already covered the topic of percolation queries on the server side, so there's no reason to go into detail here. What you need to know is that a percolation query matches (and in our case delivers) all future matches to the specified query.
+
+Finally, we have the ````start-search```` function which, as the name suggests, triggers all aspects of a search:
+
+~~~
+(defn start-search
+  "Initiates a new search."
+  [app initial-state qry-chan]
+  (let [search (:search-text @app)
+        s (if (= search "") "*" search)]
+    (reset! app initial-state)
+    (swap! app assoc :search-text search)
+    (swap! app assoc :search s)
+    (aset js/window "location" "hash" (js/encodeURIComponent s))
+    (start-percolator app qry-chan)
+    (dotimes [n 2] (load-prev app qry-chan))))
+~~~
+
+First of all, it determines the current text, and replaces it with ````*```` if it's empty. Then, it resets the application state to an empty slate. Next, within the shiny new application state, it resets the values for the ````:search-text```` and the ````:search```` keys within the application state atom. It then also sets the hash location within the browser to reflect the new search so that this new search can be properly bookmarked. This is followed by calling the ````start-percolator```` function and finally calling the ````load-prev```` function. This determines the parallelity factor. By sending two searches right away, the server can process these in parallel. Then, once any result comes back, ````load-prev```` is called again as we've seen when discussing the ````birdwatch.state.comm```` namespace, triggering the dispatch of another query iff there remain searches to be performed.
 
 ### The birdwatch.state.proc namespace
 
