@@ -202,6 +202,45 @@ This function follows the same pattern we have already seen with the ````stats-l
              (recur))))
 ~~~
 
+Here in this ````go-loop````, chunks are taken off the ````prev-chunks-chan```` and then every tweet in this chunk is added to the application state, in a similar fashion to what we've seen previously for messages of type ````:tweet/new```` by calling the ````add-tweet!```` function in the ````birdwatch.state.proc```` namespace. Then, after each chunk, ````(<! (timeout 50))```` is used. This is done to give control back to the JavaScript event loop instead of blocking until the ````prev-chunks-chan```` is empty. Without this, the UI became unresponsive until all previous tweets were loaded.
+
+Next, we have the ````cmd-loop```` function, its purpose is to take command messages off the ````cmd-chan```` and process them as required:
+~~~
+(defn- cmd-loop
+  "Process command messages, e.g. those that alter application state."
+  [cmd-chan pub-chan qry-chan app]
+  (go-loop []
+           (let [msg (<! cmd-chan)]
+             (match msg
+                    [:toggle-live            ] (swap! app update :live not)
+                    [:set-search-text    text] (swap! app assoc :search-text text)
+                    [:set-current-page   page] (swap! app assoc :page page)
+                    [:set-page-size         n] (swap! app assoc :n n)
+                    [:start-search           ] (s/start-search app (i/initial-state) qry-chan)
+                    [:set-sort-order by-order] (swap! app assoc :sorted by-order)
+                    [:retrieve-missing id-str] (put! qry-chan [:cmd/missing {:id_str id-str}])
+                    [:append-search-text text] (s/append-search-text text app)
+                    :else (prn "unknown msg in cmd-loop" msg))
+             (recur))))
+~~~
+
+The mechanism at play in the ````cmd-loop```` function above should be familiar to you by now. 
+
+
+~~~
+(defn- broadcast-state
+  "Broadcast state changes on the specified channel. Internally uses a sliding
+   buffer of size one in order to not overwhelm the rest of the system with too
+   frequent updates. The only one that matters next is the latest state anyway.
+   It doesn't harm to drop older ones on the channel."
+  [pub-channel app]
+  (let [sliding-chan (chan (sliding-buffer 1))]
+    (pipe sliding-chan pub-channel)
+    (add-watch app :watcher
+               (fn [_ _ _ new-state]
+                 (put! sliding-chan [:app-state new-state])))))
+~~~
+
 
 
 **From here on: Outdated**
