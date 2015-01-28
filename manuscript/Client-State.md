@@ -65,12 +65,12 @@ Before instantiating the "business logic", the state needs to be initialized. Th
   (swap! app assoc :search-text (util/search-hash)))
 ~~~
 
-This ````init```` function only takes the ````app```` atom passed as its only parameter and resets it with the result of a call to the ````initial-state```` function. Next, it also swaps the ````:search-text```` key of the application state with a call to ````util/search-hash````. This function gets the URL hash, which is also set whenever a new search is started. This allows bookmarking of specific searches. Next time a bookmark is opened, the same search will load as last time.
+This ````init```` function takes the ````app```` atom passed as its only parameter and resets it with the result of a call to the ````initial-state```` function. Next, it also swaps the ````:search-text```` key of the application state with a call to ````util/search-hash````. This function gets the URL hash, which is also set whenever a new search is started. This allows bookmarking of specific searches. The next time a bookmark is opened, the same search as last time will load.
 
 With the application state properly initialized in our little excursion to the ````birdwatch.state.initial```` namespace, we can now fire up the "business logic" of the application which is realized as a number of functions in the ````birdwatch.state.comm```` namespace. These functions start up behavior such as taking messages off channels and reacting according to the received message and adding a listener to state changes that are then put on a channel for broadcasting on a ````pub````.
 
 ### The birdwatch.state.comm namespace
-Let's have a look at the ````birdwatch.state.comm```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/4b686d2d3c378082fb3c2e860e05125c15768791/Clojure-Websockets/MainApp/src/cljs/birdwatch/state/comm.cljs)** in detail in order to see what the functions are that get initialized in the body of the ````init-state```` function:
+Let's have a look at the ````birdwatch.state.comm```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/4b686d2d3c378082fb3c2e860e05125c15768791/Clojure-Websockets/MainApp/src/cljs/birdwatch/state/comm.cljs)** in detail in order to see what functions get initialized in the body of the ````init-state```` function:
 
 ~~~
 (ns birdwatch.state.comm
@@ -170,7 +170,7 @@ First, we have the ````stats-loop````:
              (recur))))
 ~~~
 
-This function starts up an infinitely running ````go-loop```` that takes messages off the ````stats-chan````, and then matches the messages against the two following patterns using **[core.match](https://github.com/clojure/core.match)**. When the message matches one of the two patterns, the application state is updated to reflect the data coming from the server. If the message doesn't match, a warning is printed to the browser console.
+This function starts up an infinitely running ````go-loop```` that takes messages off the ````stats-chan```` and then matches the messages against the two following patterns using **[core.match](https://github.com/clojure/core.match)**. When the message matches one of the two patterns, the application state is updated to reflect the data coming from the server. If the message doesn't match, a warning is printed to the browser console.
 
 Next, let's have a look at the ````data-loop```` function:
 
@@ -194,7 +194,7 @@ Next, let's have a look at the ````data-loop```` function:
                (recur)))))
 ~~~
 
-This function follows the same pattern we have already seen with the ````stats-loop```` function, only that there are more patterns to match on. Also, the messages do not contain stats but tweet data. In the case that a new tweet is received, which is detected by the ````:tweet/new```` keyword in the first position of the message vector, the ````add-tweet!```` function from the ````birdwatch.state.proc```` namespace is called with the payload. We will look at the mechanisms in that namespace later. When a missing tweet is encountered, the ````add-to-tweets-map!```` function from the same namespace is called. Finally, when a ````:tweet/prev-chunk```` message is encountered, two functions are called. First of all, the ````prev-chunk```` is put on a channel for processing these chunks. We'll look at that next. Then, also the ````load-prev```` function from the ````birdwatch.state.search```` namespace is called. We'll have a look at that in detail later. As a short description for now, a number of previous chunks are loaded, currently with 500 tweets each, and in order to not flood the server with too many queries at the same time, subsequent queries are only fired when another chunk has been retrieved. 
+This function follows the same pattern as the ````stats-loop```` function, only that there are more patterns to match on. Also, the messages do not contain stats but tweet data. In the case that a new tweet is received, which is detected by the ````:tweet/new```` keyword in the first position of the message vector, the ````add-tweet!```` function from the ````birdwatch.state.proc```` namespace is called with the payload. We will look at the mechanisms in that namespace later. When a missing tweet is encountered, the ````add-to-tweets-map!```` function from the same namespace is called. Finally, when a ````:tweet/prev-chunk```` message is encountered, two functions are called. First of all, the ````prev-chunk```` is put on a channel for processing these chunks. We'll look at that next. Then, also the ````load-prev```` function from the ````birdwatch.state.search```` namespace is called. We'll have a look at that in detail later. As a short description for now, a number of previous chunks are loaded, currently with 500 tweets each, and in order not to flood the server with too many queries at the same time, subsequent queries are only fired when another chunk has been retrieved. 
 
 Next, let's have a look at the ````prev-chunks-loop```` function which processes chunks of previous tweets as mentioned above:
 
@@ -211,7 +211,7 @@ Next, let's have a look at the ````prev-chunks-loop```` function which processes
              (recur))))
 ~~~
 
-Here in this ````go-loop````, chunks are taken off the ````prev-chunks-chan```` and then every tweet in this chunk is added to the application state, in a similar fashion to what we've seen previously for messages of type ````:tweet/new```` by calling the ````add-tweet!```` function in the ````birdwatch.state.proc```` namespace. Then, after each chunk, ````(<! (timeout 50))```` is used. This is done to give control back to the JavaScript event loop instead of blocking until the ````prev-chunks-chan```` is empty. Without this, the UI became unresponsive until all previous tweets were loaded.
+Here in this ````go-loop````, chunks are taken off the ````prev-chunks-chan```` and then every tweet in this chunk is added to the application state, in a similar fashion to what we've seen previously for messages of type ````:tweet/new```` by calling the ````add-tweet!```` function in the ````birdwatch.state.proc```` namespace. Then, after each chunk, ````(<! (timeout 50))```` is used. This is done to give control back to the JavaScript event loop instead of blocking until the ````prev-chunks-chan```` is empty. Without this, the UI would become unresponsive up until all previous tweets are loaded.
 
 Next, we have the ````cmd-loop```` function, its purpose is to take command messages off the ````cmd-chan```` and process them as required:
 
@@ -234,11 +234,11 @@ Next, we have the ````cmd-loop```` function, its purpose is to take command mess
              (recur))))
 ~~~
 
-The mechanism at play in the ````cmd-loop```` function above should be familiar to you by now. There's a ````go-loop```` inside a function that has access to the application state and that either alters the application state, calls a function like ````start-search```` or puts a message on a channel such as ````qry-chan```` above. All control over how to alter the application state from user input lies entirely with this ````cmd-loop```` function. It would be very easy to add additional message patterns for new functionality and then dispatch the message accordingly from this single point on.
+The mechanism at play in the ````cmd-loop```` function above should be familiar to you by now. There's a ````go-loop```` inside a function that has access to the application state and that either alters the application state or calls a function like ````start-search```` or puts a message on a channel such as ````qry-chan```` above. All control over how to alter the application state from user input lies entirely with this ````cmd-loop```` function. It would be very easy to add additional message patterns for new functionality and then dispatch the message accordingly from this single point on.
 
-Finally in this namespace, we have the mechanism for broadcasting application state changes inside the ````broadcast-state```` function. When you look at the samples for **[Reagent](http://reagent-project.github.io)**, you will notice that the UI components interact directly with the application state. While that may be fine for small samples, I don't like this approach for larger applications. When I'm working in the UI context, I want it to be strictly impossible to mess up application state by accidentally replacing a key in the application state with an unexpected or invalid value. We've already seen above that we can handle any kind of UI interaction easily by putting messages that represent our intent on the ````cmd-chan````, which, as we'll see later, is available to all UI elements in our application. So that solves the problem of where state is altered.
+Finally in this namespace, we have the mechanism for broadcasting application state changes inside the ````broadcast-state```` function. When you look at the samples for **[Reagent](http://reagent-project.github.io)**, you will notice that the UI components interact directly with the application state. While that may be fine for small samples, I don't like this approach for larger applications. Whenever I work in the UI context, I want it to be absolutely impossible to mess up application state by accidentally replacing a key in the application state with an unexpected or invalid value. We've already seen above that we can handle any kind of UI interaction easily by putting messages that represent our intent on the ````cmd-chan````, which, as we'll see later, is available to all UI elements in our application. So that solves the problem of where state is altered.
 
-But I want to take it a little bit further and not even hand the application state to **Reagent** as an atom that can be modified. Conventions to not use something in a bad way are nice and all, but when you're working in a team on a larger application, the only way to keep anyone from directly modifying application state from a UI component is by completely hiding it.
+But I want to take it a little bit further and not even hand the application state to **Reagent** as an atom that can be modified. Conventions not to use something in a bad way are nice and all, but when you're working in a team on a larger application, the only way to keep anyone from directly modifying application state from a UI component is by completely hiding it.
 
 So how could we achieve this? After scratching my head for a moment, I came up with the following solution inside the ````broadcast-state```` function:
 
@@ -256,19 +256,19 @@ So how could we achieve this? After scratching my head for a moment, I came up w
                  (put! sliding-chan [:app-state new-state])))))
 ~~~
 
-Here, we're adding a watcher to the application state atom using ````add-watch````. This calls an arity-4 function every time the application state changes. We're only interested in the new application state after the modification, which is the last argument to the function to call on state changes, so we ignore there first three arguments. Then, we put the ````new-state```` on a channel.
+Here, we're adding a watcher to the application state atom using ````add-watch````. This calls an arity-4 function every time the application state changes. We're only interested in the new application state after the modification, which is the last argument to the function to call on state changes, so we ignore their first three arguments. Then, we put the ````new-state```` on a channel.
 
-But wait! Isn't that terribly inefficient? It depends. First of all, the application state inside the atom is an immutable data structure. Because of this feature, it does not need to be copied but can be shared freely, as it cannot be mutated. So that is nothing to worry about.
+But wait! Isn't that terribly inefficient? It depends. First of all, the application state inside the atom is an immutable data structure. Because of this feature, it does not have to be copied but can be shared freely, as it cannot be mutated. So that is nothing to worry about.
 
-There is one potential point of contention though. Especially when loading thousands of previous tweets, there are a lot of changes within a short time. On my Retina Macbook, roughly 1000 tweets are processed per second. That amounts to tens of thousands of times that the function above would be triggered per second. One could think about some kind of rate limiting, but **core.async** has a better tool in its toolbox: the **[sliding-buffer](https://clojure.github.io/core.async/#clojure.core.async/sliding-buffer)**.
+There is one potential point of contention though. Especially when loading thousands of previous tweets, there are a lot of changes within a short time. On my i7 Retina MacBook, roughly 1000 tweets are processed per second. That amounts to tens of thousands of times that the function above would be triggered per second. One could think about some kind of rate limiting, but **core.async** has a better tool in its toolbox: the **[sliding-buffer](https://clojure.github.io/core.async/#clojure.core.async/sliding-buffer)**.
 
-The way a ````sliding-buffer```` works is as follows: when more messages are put on a channel than can be taken off the channel on the other side, a buffer is filled. When that buffer is full, the oldest element in the buffer is dropped. This is perfect for our use case here. We can even use a buffer as small as 1 element that will be buffered. When the element can be consumed off the channel, fine. When there's a new element coming it, it is the newer application state, and the latest state is the only one we're ever interested in for rendering, so the slightly older application state can safely be dropped.
+The way a ````sliding-buffer```` works is as follows: when more messages are put on a channel than can be taken off the channel on the other side, a buffer is filled. When that buffer is full, the oldest element in the buffer is dropped. This is perfect for our use case here. We can even use a buffer as small as 1 element that will be buffered. When the element can be consumed off the channel, fine. When there's a new element coming it, it is the newer application state, and the latest state is the only one we've ever been interested in for rendering, so the slightly older application state can safely be dropped.
 
 Accordingly, we're creating a channel named ````sliding-channel```` with such a ````sliding-buffer```` of size 1. Then, the ````sliding-chan```` is ````pipe````d into the ````pub-chan```` which has been provided as an argument to the ````broadcast-state```` function. This just means that every message from the channel provided as the first argument to ````pipe```` is put onto the channel that is provided as the second argument to ````pipe````.
 
 ### The birdwatch.state.search namespace
 
-The ````birdwatch.state.search```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/30836e475517e60291783fb2ea2d85aabf79a6b1/Clojure-Websockets/MainApp/src/cljs/birdwatch/state/search.cljs)** is concerned with starting new realtime searches and also loading previous tweets matching the search criteria:
+The ````birdwatch.state.search```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/30836e475517e60291783fb2ea2d85aabf79a6b1/Clojure-Websockets/MainApp/src/cljs/birdwatch/state/search.cljs)** is concerned with starting new real-time searches and loading previous tweets matching the search criteria:
 
 ~~~
 (ns birdwatch.state.search
@@ -307,7 +307,7 @@ The ````birdwatch.state.search```` **[namespace](https://github.com/matthiasn/Bi
     (dotimes [n 2] (load-prev app qry-chan))))
 ~~~
 
-In the namespace above, we have three function that are concerned with different angles of getting results of a realtime search to the client. First, there's the ````load-prev```` function:
+In the namespace above, we have three function that are concerned with different angles of getting results of a real-time search to the client. First, there's the ````load-prev```` function:
 
 ~~~
 (defn- load-prev
@@ -324,7 +324,7 @@ In the namespace above, we have three function that are concerned with different
       (swap! app update-in [:prev-chunks-loaded] inc))))
 ~~~
 
-This function is concerned with loading previous tweets up to the desired number, in chunks of a defined size. Specifically, as it currently stands, ````10```` chunks of size ````500```` each will be loaded. First, these two values are defined in the ````let```` binding, together with ````prev-chunks-loaded````, which is derived from the application state. Then, if less chunks have previously been loaded than desired, a query is put on the ````qry-chan```` for the next chunk to be retrieved. Then, finally, the application state is modified to reflect that the loading of an additional chunk is on its way.
+This function is concerned with loading previous tweets up to the desired number, in chunks of a defined size. Specifically, as it currently stands, ````10```` chunks of size ````500```` each will be loaded. First, these two values are defined in the ````let```` binding, together with ````prev-chunks-loaded````, which is derived from the application state. Then, if fewer chunks have previously been loaded than desired, a query is put on the ````qry-chan```` for the next chunk to be retrieved. Then, finally, the application state is modified to reflect that the loading of an additional chunk is on its way.
 
 Next, there's the ````start-percolator```` function. This function is responsible for triggering a percolation query for the current search on the server side:
 
@@ -356,7 +356,7 @@ Finally, we have the ````start-search```` function which, as the name suggests, 
 
 First of all, it determines the current ````:search-text```` and replaces it with ````*```` if it's empty. Then, it resets the application state to an empty slate. Next, within the shiny new application state, it resets the values for the ````:search-text```` and the ````:search```` keys within the application state atom. It then also sets the hash location within the browser to reflect the new search so that this new search can be bookmarked properly. 
 
-This is followed by calling the ````start-percolator```` function and finally calling the ````load-prev```` function multiple times. Here, ````n```` determines the parallelity factor. By sending two searches right away, the server can process these in parallel. Then, once any result comes back, ````load-prev```` is called again as we've seen when discussing the ````birdwatch.state.comm```` namespace, triggering the dispatch of another query iff there remain searches to be performed.
+This is followed by calling the ````start-percolator```` function and finally calling the ````load-prev```` function multiple times. Here, ````n```` determines the parallelity factor. By sending two searches right away, the server can process them in parallel. Then, once a result comes back, ````load-prev```` is called again as we've seen when discussing the ````birdwatch.state.comm```` namespace, triggering the dispatch of another query iff there remain searches to be performed.
 
 ### The birdwatch.state.proc namespace
 
@@ -427,4 +427,4 @@ Now with the explanations in this chapter, I hope you will have a much better un
 
 ![](images/client-state.png)
 
-What I particularly like about this architecture is the complete encapsulation of the the State component from other parts of the application. In fact, other parts of the application do not even know that this mechanism exists at all. All they see are channels they interact with. That makes it much easier to change parts of the application without having it blow up in unexpected other parts.
+What I particularly like about this architecture is the complete encapsulation of the State component from other parts of the application. In fact, other parts of the application do not even know that this mechanism exists at all. All they see are channels they interact with. That makes it much easier to change parts of the application without having it blow up in unexpected other parts.

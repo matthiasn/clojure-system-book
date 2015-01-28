@@ -1,10 +1,10 @@
 ## WebSocket Communication 
 
-The ````birdwatch.communicator```` namespace handles the interaction with the server-side application through the use of a WebSocket connection provided by the **[sente](https://github.com/ptaoussanis/sente)** library.
+The ````birdwatch.communicator```` namespace handles the interaction with the server-side application by using a WebSocket connection provided by the **[sente](https://github.com/ptaoussanis/sente)** library.
 
 Conceptually, the bi-directional WebSocket connection is somewhat similar to two **core.async** channels, one for sending and one for receiving. Since there are no different channels for different message types, all messages on the WebSocket connection need to be marked with their type. This is done by wrapping the payload in a vector where the message type is represented by a **[namespaced keyword](https://clojuredocs.org/clojure.core/keyword)** in the first position and the payload in the second position. 
 
-With this convention it is really easy to pattern match using **[core.match](https://github.com/clojure/core.match)** as we will see below. It is just as easy to add new message types. In fact, this convention of a vector with two items in it, where the first one is a namespaced keyword that denotes the payload type and a second item with the payload is so useful because of pattern matching that we will be using it in other parts of the application as well.
+With this convention it is really easy to pattern match using **[core.match](https://github.com/clojure/core.match)** as we will see below. It is just as easy to add new message types. In fact, this convention of a vector with two items in it, where the first one is a namespaced keyword that denotes the payload type and a second item with the payload, is so useful because of pattern matching that we will be using it in other parts of the application as well.
 
 This component interacts with the rest of the application through four channels, ````cmd-chan````, ````data-chan````, ````stats-chan````, and ````qry-chan````:
 
@@ -70,7 +70,7 @@ Let's go through this def by def, function by function.
 
 This defines the packer for sente, we're using **[transit](http://blog.cognitect.com/blog/2014/7/22/transit)** here. 
 
-Next, we have the ````make-handler```` function, which, as the name suggests, creates a handler function for handling incoming messages on the WebSocket connection. The returned handler function then already knows the channels to put messages onto, as these were specified in the initial call to the ````make-handler```` function that constructed the handler function.
+Next, we have the ````make-handler```` function, which, as the name suggests, creates a handler function for handling incoming messages on the WebSocket connection. The returned handler function then already knows what channels to put messages onto, as these were specified in the initial call to the ````make-handler```` function that constructed the handler function.
 
 ~~~
 (defn make-handler
@@ -93,7 +93,7 @@ Next, we have the ````make-handler```` function, which, as the name suggests, cr
 
 The event received by the handler function above is pattern matched using ````core.match````, where we always have a vector with two elements. The first match is triggered when ````event```` contains ````:chsk/state```` with ````:first-open?```` set to ````true````, which happens when the connection to the server has been established. In that case, ````"WS connected"```` is printed on the browser console and a ````[:start-search]```` message is put onto the ````cmd-chan```` in order to start a search.
 
-Next, when a vector is received that contains ````:chsk/recv```` in the first position, we further destructure the payload, which also contains a two-item vector: ````(let [[msg-type msg] payload]````. In the following line, we use ````case```` to match on the namespace of the namespaced keyword in ````msg-type````. If the namespace of the message type is ````:tweet````, the message is put on the ````data-chan````, if it is ````:stats````, the message is put onto ````stats-chan```` and otherwise the payload is printed with a warning that the event could not be matched.
+Next, when a vector is received that contains ````:chsk/recv```` in the first position, we further destructure the payload, which also contains a two-item vector: ````(let [[msg-type msg] payload]````. In the following line, we use ````case```` to match on the namespace of the namespaced keyword in ````msg-type````. If the namespace of the message type is ````:tweet````, the message is put on the ````data-chan````; if it is ````:stats````, the message is put onto ````stats-chan```` and otherwise the payload is printed with a warning that the event could not be matched.
 
 Next, we have the ````query-loop```` function. This function starts a ````go-loop```` that takes messages from the specified channel and then uses the specified send-fn to send an item to the server.
 
@@ -131,4 +131,4 @@ With the ````handler```` and ````ch-recv```` from the map that was returned by `
 
 Finally, ````qry-chan```` is used when calling the ````query-loop```` function.
 
-This is all there is to the **Communicator** component. Most notably, any **state is contained** inside an atom that lives **inside the let-binding** of the ````start-communicator```` function and is not reachable from the outside. This may not seem terribly important here but we will see that this is valuable when discussing the application state in the **State** component. Also, this namespace does not depend on any other namespace inside our application and interacts entirely through channels that are passed in when the ````start-communicator```` function is called.
+This is all there is to the **Communicator** component. Most notably, any **state is contained** inside an atom that lives **inside the let-binding** of the ````start-communicator```` function and is not reachable from the outside. This may not seem terribly important here but we will see that this is valuable when we discuss the application state in the **State** component. Also, this namespace does not depend on any other namespace inside our application and interacts entirely through channels that are passed in when the ````start-communicator```` function is called.
