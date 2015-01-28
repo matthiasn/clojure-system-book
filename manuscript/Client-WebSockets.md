@@ -93,7 +93,7 @@ Next, we have the ````make-handler```` function, which, as the name suggests, cr
 
 The event received by the handler function above is pattern matched using ````core.match````, where we always have a vector with two elements. The first match is triggered when ````event```` contains ````:chsk/state```` with ````:first-open?```` set to ````true````, which happens when the connection to the server has been established. In that case, ````"WS connected"```` is printed on the browser console and a ````[:start-search]```` message is put onto the ````cmd-chan```` in order to start a search.
 
-Next, when a vector is received that contains ````:chsk/recv```` in the first position, we further destructure the payload, which also contains a two-item vector ````(let [[msg-type msg] payload]````. In the next line, we use ````case```` to match on the namespace of the namespaced keyword in ````msg-type````. If the namespace of the message type is ````:tweet````, the message is put on the ````data-chan````, if it is ````stats````, the message is put onto ````stats-chan```` and otherwise the payload is printed with a warning that the event could not be matched.
+Next, when a vector is received that contains ````:chsk/recv```` in the first position, we further destructure the payload, which also contains a two-item vector: ````(let [[msg-type msg] payload]````. In the following line, we use ````case```` to match on the namespace of the namespaced keyword in ````msg-type````. If the namespace of the message type is ````:tweet````, the message is put on the ````data-chan````, if it is ````:stats````, the message is put onto ````stats-chan```` and otherwise the payload is printed with a warning that the event could not be matched.
 
 Next, we have the ````query-loop```` function. This function starts a ````go-loop```` that takes messages from the specified channel and then uses the specified send-fn to send an item to the server.
 
@@ -123,12 +123,12 @@ Finally, we have the ````start-communicator```` function. This function fires up
     (query-loop qry-chan send-fn state)))
 ~~~
 
-This function takes the four channels we saw in the architectural drawing above and wires them accordingly. Before that can happen, ````sente/make-channel-socket!```` is called with a route for the connection and the packer. Obviously, the route needs to match the one used on the server side. This function returns a map, from which we require three keys ````{:keys [ch-recv send-fn state]}````. 
+This function takes the four channels we saw in the architectural drawing above and wires them accordingly. Before that can happen, ````sente/make-channel-socket!```` is called with a route for the connection and the packer. Obviously, the route needs to match the one used on the server side. This function returns a map, from which we require three keys: ````{:keys [ch-recv send-fn state]}````. 
 
-Then, the handler is created. ````data-chan```` and ````stats-chan```` are used by the handler for forwarding received messages. The ````cmd-chan```` allows the handler to trigger a new search when the connection to the client is up, as we saw when we discussed the handler above. 
+Then, the ````handler```` is created. ````data-chan```` and ````stats-chan```` are used by the ````handler```` for forwarding received messages. The ````cmd-chan```` allows the ````handler```` to trigger a new search when the connection to the client is up, as we saw when we discussed the ````handler```` above. 
 
 With the ````handler```` and ````ch-recv```` from the map that was returned by ````sente/make-channel-socket!````, we can now start the router by calling ````(sente/start-chsk-router! ch-recv handler)````.
 
 Finally, ````qry-chan```` is used when calling the ````query-loop```` function.
 
-This is all there is to the **Communicator** component. Most notably, any state is contained inside an atom that lives inside the let-binding of the ````start-communicator```` function and is not reachable from the outside. This may not seem terribly important here but we will see that this is valuable when discussing the application state in the **State** component. Also, this namespace does not depend on any other namespace inside our application and interacts entirely through channels that are passed in when the ````start-communicator```` function is called.
+This is all there is to the **Communicator** component. Most notably, any **state is contained** inside an atom that lives **inside the let-binding** of the ````start-communicator```` function and is not reachable from the outside. This may not seem terribly important here but we will see that this is valuable when discussing the application state in the **State** component. Also, this namespace does not depend on any other namespace inside our application and interacts entirely through channels that are passed in when the ````start-communicator```` function is called.
