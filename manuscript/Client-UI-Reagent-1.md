@@ -43,6 +43,17 @@ Using this approach has an additional advantage. If the UI is a function of the 
 
 First in this example, there's a Reagent component called ````count-view````. It only renders a simple ````:span```` with the value of the ````count```` key inside the application state. Next, there's the ````init-count-view```` function which subscribes to the ````state-pub````, creates a local atom, starts a ````go-loop```` that updates the local atom when changes occur and finally initializes the view with the local atom. Notice the usage of the ````sliding-buffer````. Once again, only the latest state change is kept. In addition to that, a ````timeout```` of 10 milliseconds occurs inside the ````go-loop````, which effectively limits the number of updates to a maximum of 100 per second. If more updates occur, the ````go-loop```` will be busy, causing the ````sliding-buffer```` to accept the latest update and drop older ones. Then, when the timeout is up, the ````go-loop```` will always have the newest state message at the time. In this simple case, the ````timeout```` may not be necessary at all, but it becomes more useful when we only want to update the UI every second or even less often when more expensive statistical reasoning needs to be performed before actually rendering the UI.
 
+For completeness, in order to render this component into the DOM, we need some HTML, with an ````id```` where the element can be rendered:
+
+{lang=html}
+~~~
+<div id="count">Tweets: <span id="tweet-count"></span></div>
+~~~
+
+The result of this can be seen on the right side of this screenshot:
+
+![](images/header.png)
+
 ### Simple Reagent Components
 In the previous chapter, we've learned how to initialize UI elements while also subscribing to the ````state-pub````. This may seem a little excessive for some very small UI components, so I've decided to put all the small UI elements such as the ````search-view````, the ````pagination-view````, the ````sort-view````, the ````count-view ````, the ````total-count-view````, and the ````users-count-view```` together in a single namespace and let them share one function called ````init-views```` for initializing and wiring them altogether. Here's the ````birdwatch.ui.elements```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/2cfa1c68d911418e57fad7a6fa363a868b24b65a/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/elements.cljs)**:
 
@@ -50,7 +61,6 @@ In the previous chapter, we've learned how to initialize UI elements while also 
 (ns birdwatch.ui.elements
   (:require-macros [cljs.core.async.macros :refer [go-loop]])
   (:require [birdwatch.util :as util]
-            [birdwatch.ui.tweets :as ui-tweets]
             [cljs.core.async :as async :refer [put! pipe chan sub timeout sliding-buffer]]
             [reagent.core :as r :refer [atom]]))
 
@@ -131,39 +141,22 @@ In the previous chapter, we've learned how to initialize UI elements while also 
     (doseq [[component id] views] (r/render-component [component app] (util/by-id id)))))
 ~~~
 
-from here on: **outdated**
-
-The first Reagent component above is also the simplest one, it only defines a simple ````:span```` in **[Hiccup syntax](https://github.com/weavejester/hiccup)**:
+Okay, let's start in the beginning, shall we? First of all, there are the imports. When looking at those, you will notice that this namespace only depends on a single other namespace from this application, ````birdwatch.util````. This utility namespace only contains a couple of utility functions, all of which are pure, so that's fine in terms of encapsulation. Then, we create a local ````cmd-chan````:
 
 ~~~
-(defn count-view []
-  [:span (:count @state/app)])
+(def cmd-chan (chan))
+(defn- put-cmd [msg] (put! cmd-chan msg))
+
+(defn- count-view [app] [:span (:count @app)])
 ~~~
 
-All this does is populate a ````<span>```` with the current value of the ````:count```` key in our application state which is updated whenever that value changes.
+We could just as well pass the ````cmd-chan```` from the arguments to the ````init-views```` function around, but I found this approach a little simpler here where not all components need the ````cmd-chan````. Next, there's the ````put-cmd```` utility function which simply shortens the amount of effort required to put something on the local channel. We will later have to ````pipe```` this local channel into the application-wide command channel, but we'll get to that. Next, there's the ````count-view```` function. We've already seen this one in the simple example in the last chapter.
 
-Using this component is also very easy. We need some HTML, with an ````id```` where the element can be rendered:
-
-{lang=html}
-~~~
-<div id="count">Tweets: <span id="tweet-count"></span></div>
-~~~
-
-Then, we can tell **Reagent** to render the component in this ````<span>````:
+Next, there is the ````users-count-view```` component which is only slightly more involved:
 
 ~~~
-(r/render-component [count-view] (util/by-id "tweet-count"))
-~~~
-
-![](images/header.png)
-
-You can see the result on the right side of the partial screenshot above.
-
-The ````users-count-view```` component is only slightly more involved:
-
-~~~
-(defn users-count-view []
-  (let [users (:users-count @state/app)]
+(defn users-count-view [app]
+  (let [users (:users-count @app)]
     [:span "Connected: " [:strong users] (if (= users 1) " user" " users")]))
 ~~~
 
@@ -178,8 +171,8 @@ Otherwise, we use the plural "users":
 After seeing the two components above, the ````total-count-view```` component should not contain any surprises:
 
 ~~~
-(defn total-count-view []
-  [:span "Indexed: " [:strong (:total-tweet-count @state/app)] " tweets"])
+(defn total-count-view [app]
+  [:span "Indexed: " [:strong (:total-tweet-count @app)] " tweets"])
 ~~~
 
 This renders the number of tweets indexed in total. As mentioned in the server-side chapter, the ````Persistence```` component sends a message with an updated total every so many seconds, which is then distributed to all connected clients.
@@ -187,19 +180,28 @@ This renders the number of tweets indexed in total. As mentioned in the server-s
 The ````sort-view```` component is a little more involved. We need a couple of buttons for different sort orders, each of which needs a keyword that will be set as the application's current sort order and a label string. In order not to repeat ourselves, we use a vector named ````sort-orders```` for all the buttons, each of which we can represent as a two-item vector, with the key in the first position and the label string in the second position:
 
 ~~~
-(def sort-orders [[:by-id "latest"][:by-followers "followers"][:by-retweets "retweets"]
-                  [:by-rt-since-startup "retweets2"][:by-reach "reach"][:by-favorites "favorites"]])
+(def sort-orders [[:by-id "latest"][:by-followers "followers"]
+                  [:by-retweets "retweets"][:by-rt-since-startup "retweets2"]
+                  [:by-reach "reach"][:by-favorites "favorites"]])
 
-(defn sort-view []
-  (let [curr-order (:sorted @state/app)]
+(defn- btn-class? [p] (if p " pure-button-primary" " sort-button"))
+
+(defn- sort-view [app]
+  (let [curr-order (:sorted @app)]
     [:div
-     [:button.pure-button.not-rounded.sort-button "Sort by"]
-     (for [[k text] sort-orders :let [btn-class (if (= k curr-order) " pure-button-primary" " sort-button")]]
+     [:button.pure-button.not-rounded
+      {:class (btn-class? (:live @app)) :on-click #(put-cmd [:toggle-live])} "Live"]
+     [:button.pure-button.not-rounded.sort-button "Sort by:"]
+     (for [[k text] sort-orders :let [btn-class (btn-class? (= k curr-order))]]
        ^{:key text} [:button.pure-button.not-rounded
-                     {:class btn-class :on-click #(swap! state/app assoc :sorted k)} text])]))
+                     {:class btn-class :on-click #(put-cmd [:set-sort-order k])} text])]))
 ~~~
 
-Then, in the ````sort-view```` component itself, we dereference our application state and use ````(:sorted @state/app)```` as ````curr-order```` in the ````let````-binding. With that, we can start constructing the markup generated by this component, starting with a ````:div```` and a first static button with the label ````"Sort By"````. Note that with Hiccup, we can simply assign classes to the button, like so:
+
+
+Then, in the ````sort-view```` component itself, we dereference our application state and use ````(:sorted @app)```` as ````curr-order```` in the ````let````-binding. With that, we can start constructing the markup generated by this component, starting with a ````:div```` 
+
+and a first static button with the label ````"Sort By"````. Note that with Hiccup, we can simply assign classes to the button, like so:
 
 ~~~
 [:button.pure-button.not-rounded.sort-button "Sort by"]
