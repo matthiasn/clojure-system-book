@@ -18,7 +18,7 @@ There has been a **[series of articles](http://matthiasnehlsen.com/blog/2014/09/
 
 Please join me on this journey as I explore the problem further and at the same time write a book about it. The book will begin with a description of the current architecture, both on the server and the client side. Later on, we will put the design to the test, come up with a load testing strategy and look at ways of improving performance. Most likely, we will also go through some refactoring of the current architecture and add some functionality.
 
-During the first couple of days, I made this content freely available. If you received this book for free and you realize that you like the content, please consider paying the suggested price. I guarantee you that any additional revenue will allow me to finish this book earlier.
+During the first couple of days, I made this content freely available for review. Any feedback from readers is welcome, but I'd like to specifically ask you to put in an extra effort to provide feedback and suggestions for improvement if you got this book for free. If that sounds like too much work but you realize that you like the content, please consider paying the suggested price.
 
 I am looking forward to a fun project and a lively discussion about all aspects of building a system in Clojure.
 
