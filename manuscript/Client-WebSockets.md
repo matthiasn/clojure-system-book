@@ -70,7 +70,7 @@ Let's go through this def by def, function by function.
 
 This defines the packer for sente, we're using **[transit](http://blog.cognitect.com/blog/2014/7/22/transit)** here. 
 
-Next, we have the ````make-handler```` function, which, as the name suggests, creates a handler function for handling incoming messages on the websocket connected. The returned handler function then already knows the channels to put messages onto, as these were specified in the initial call to the ````make-handler```` function.
+Next, we have the ````make-handler```` function, which, as the name suggests, creates a handler function for handling incoming messages on the WebSocket connection. The returned handler function then already knows the channels to put messages onto, as these were specified in the initial call to the ````make-handler```` function that constructed the handler function.
 
 ~~~
 (defn make-handler

@@ -2,10 +2,3 @@ Client-Architecture.md
 Client-Core.md
 Client-WebSockets.md
 Client-State.md
-Client-UI-Reagent-1.md
-Client-UI-Reagent-2.md
-Client-UI-Pure.md
-Client-Wordcount.md
-Client-Timeseries.md
-Client-Timeseries-Chart.md
-Client-Wordcount-Chart.md

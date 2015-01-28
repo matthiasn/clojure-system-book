@@ -42,7 +42,7 @@ This namespace initializes the application on the client side. Here's the entire
 
 The namespace starts with a couple of imports, mostly of other namespaces from this application itself. Other than that, only ````chan```` and ````pub```` from ````core.async```` are needed.
 
-Next, we create the channels that provide the communication backbone of this application. All communication between the major building blocks of this application take place via putting messages on conveyor belts, as Rich Hickey likes to call channels. These channels provide for a great abstraction. Just like a conveyor belt, we can put data on them, without having to worry where the conveyor belt will take them. In fact, even if a component in the system would like to know where the channel lead, it has no way of finding out.
+Next, we create the channels that provide the communication backbone of this application. All communication between the major building blocks of this application take place via putting messages on conveyor belts, as Rich Hickey likes to call channels. These channels provide for a great abstraction. Just like conveyor belts, we can put data on them, without having to worry where the conveyor belts will take them. In fact, even if a component in the system would like to know where the channel lead, it has no way of finding out.
 
 In addition to a couple of regular channels, there is also a ````pub````, which is a ````core.async```` construct for implementing the **[Publish-subscribe pattern](http://en.wikipedia.org/wiki/Publish–subscribe_pattern)**:
 
@@ -51,7 +51,9 @@ In addition to a couple of regular channels, there is also a ````pub````, which 
 (def state-pub (pub state-pub-chan first)) ; Pub for subscribing to
 ~~~
 
-Here, the ````state-pub```` is a publisher that takes all items off the ````state-pub-chan```` and that uses the function ````first```` to determine the topic of a message. In order for that to work, it expects a data structure where the topic is the first element in a sequence or a vector. In this application, we will use vectors for such messages. One might wonder if sending the entire dereferenced application state on a channel wasn't too expensive. But it is not expensive at all since we are dealing with an immutable data structure that exists already and which can be passed around cheaply.
+Here, the ````state-pub```` is a publisher that takes all items off the ````state-pub-chan```` and that uses the function ````first```` to determine the topic of a message. In order for that to work, it expects a data structure where the topic is the first element in a sequence or a vector. In this application, we will use vectors for such messages. The ````pub```` will then apply the function ````first```` to each element, so whatever is in the first position of that vector will be the topic of the message. **Namespaced keywords*** are particularly useful for this purpose.
+
+One might wonder if sending the entire dereferenced application state on a channel wasn't too expensive. But it is not expensive at all since we are dealing with an immutable data structure that exists already and which can be passed around cheaply because they don't need to be copied.
 
 Then, with the channels and the pub created, we instantiate different components of the system and pass the channels to the components as needed. 
 
