@@ -1,6 +1,6 @@
 ### Reagent Components for Tweets
 
-Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/d59897863fccc22b092880c34ff57c8e604c3d9d/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/tweets.cljs)**:
+Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/468f523bbb7a7cb9a56001d8752a3eeb08bc91c9/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/tweets.cljs)**:
 
 ~~~
 (ns birdwatch.ui.tweets
@@ -9,34 +9,53 @@ Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https:/
             [cljs.core.async :as async :refer [put! chan sub <! timeout sliding-buffer]]
             [reagent.core :as r :refer [atom]]))
 
-(defn twitter-intent [tweet intent icon]
+(defn twitter-intent
+  "Renders a twitter intent as a clickable image, for example for retweeting directly
+   from inside the application."
+  [tweet intent icon]
   [:a {:href (str "https://twitter.com/intent/" intent (:id_str tweet))}
    [:img {:src (str "/images/" icon)}]])
 
-(defn twitter-intents [tweet]
+(defn twitter-intents
+  "Renders the three relevant twitter intents using the component above."
+  [tweet]
   [:div.intent
    [twitter-intent tweet "tweet?in_reply_to=" "reply.png"]
    [twitter-intent tweet "retweet?tweet_id=" "retweet.png"]
    [twitter-intent tweet "favorite?tweet_id=" "favorite.png"]])
 
-(defn missing-tweet [tweet cmd-chan]
+(defn missing-tweet
+  "Renders the view for a missing tweet, which in ideal cases should only
+   be shown for fractions of a second until the tweet that should have
+   been displayed instead is loaded over the WebSockets connection."
+  [tweet cmd-chan]
   (let [id-str (:id_str tweet)]
     (put! cmd-chan [:retrieve-missing id-str])
     [:div.tweet "loading... " (:id_str tweet)]))
 
-(defn tweet-text [tweet user state]
+(defn tweet-text
+  "Renders the text of a tweet including followers count plus retweet,
+   favorites and retweeted-within-loaded-tweets count."
+  [tweet user state]
   [:div.tweettext
    [:div {:dangerouslySetInnerHTML #js {:__html (:html-text tweet)}}]
    [:div.pull-left.timeInterval (str (util/number-format (:followers_count user)) " followers")]
    [:div.pull-right.timeInterval (str (util/rt-count tweet state) (util/fav-count tweet state))
     [:br] (util/rt-count-since-startup tweet state)]])
 
-(defn image-view [media]
+(defn image-view
+  "Renders the first image inside the media vector as its only argument.
+   The assumption is that the interesting image is always contained at
+   that position, which appears to be the case."
+  [media]
   [:div.tweet-image
    [:a {:href (:url (get media 0)) :target "_blank"}
     [:img.pure-img-responsive {:src (str (:media_url (get media 0)) ":small")}]]])
 
-(defn tweet-view [raw-tweet state]
+(defn tweet-view
+  "Renders a tweet with all the elements it contains. Takes the raw (unformatted)
+   tweet and the dereferenced application state as arguments."
+  [raw-tweet state]
   (let [tweet ((memoize util/format-tweet) raw-tweet)
         user (:user tweet)
         screen-name (:screen_name user)
@@ -50,14 +69,24 @@ Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https:/
      (when-let [media (:media (:entities tweet))] (pos? (count media)) [image-view media])
      [twitter-intents tweet]]))
 
-(defn tweets-view [app tweets cmd-chan]
+(defn tweets-view
+  "Renders a list of tweets. Takes two atoms app and tweets plus the cmd-chan
+   as arguments. Dereferences both and passes down dereferenced data structures
+   so that so that the tweet-view component and all components down the hierarchy
+   can be implemented as pure functions.
+   Rerenders the entire list whenever one (or both) of the atoms change."
+  [app tweets cmd-chan]
   (let [state @app]
     [:div (for [t @tweets] (if (:user t)
                              ^{:key (:id_str t)} [tweet-view t state]
                              ^{:key (:id_str t)} [missing-tweet t cmd-chan]))]))
 
 (defn mount-tweets
-  "Mount tweet component, keep local state, update when new state comes in on channel."
+  "Mounts tweet component and sets up the mechanism for subscribing to application
+   state changes that are broadcast on state-pub passed in as an argument.
+   Also takes the cmd-chan in order to wire component up with the backchannel
+   to the application state publisher. Not currently used, only for same signature
+   as birdwatch.ui.elements/init-views."
   [state-pub cmd-chan]
   (let [app (atom {})
         tweets (atom [])
@@ -72,13 +101,15 @@ Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https:/
                (<! (timeout 20)))
              (recur))
     (sub state-pub :app-state state-chan)
-    (r/render-component [tweets-view app tweets cmd-chan] (util/by-id "tweet-frame"))))
-~~~
+    (r/render-component [tweets-view app tweets cmd-chan] (util/by-id "tweet-frame"))))~~~
 
 The first component here is ````twitter-intent````:
 
 ~~~
-(defn twitter-intent [tweet intent icon]
+(defn twitter-intent
+  "Renders a twitter intent as a clickable image, for example for retweeting directly
+   from inside the application."
+  [tweet intent icon]
   [:a {:href (str "https://twitter.com/intent/" intent (:id_str tweet))}
    [:img {:src (str "/images/" icon)}]])
 ~~~
@@ -86,7 +117,9 @@ The first component here is ````twitter-intent````:
 This renders a link to Twitter for the specified intent (e.g. retweet) with the correct icon and for the specified tweet. When clicking on this link, you can for example retweet a tweet. Here's how ````twitter-intent```` is used:
 
 ~~~
-(defn twitter-intents [tweet]
+(defn twitter-intents
+  "Renders the three relevant twitter intents using the component above."
+  [tweet]
   [:div.intent
    [twitter-intent tweet "tweet?in_reply_to=" "reply.png"]
    [twitter-intent tweet "retweet?tweet_id=" "retweet.png"]
@@ -98,7 +131,11 @@ In the ````twitter-intents```` component, we create a ````div```` with three ```
 ![](images/intents.png)
 
 ~~~
-(defn missing-tweet [tweet cmd-chan]
+(defn missing-tweet
+  "Renders the view for a missing tweet, which in ideal cases should only
+   be shown for fractions of a second until the tweet that should have
+   been displayed instead is loaded over the WebSockets connection."
+  [tweet cmd-chan]
   (let [id-str (:id_str tweet)]
     (put! cmd-chan [:retrieve-missing id-str])
     [:div.tweet "loading... " (:id_str tweet)]))
@@ -109,7 +146,10 @@ The ````missing-tweet```` component is rendered for a short while if a tweet is 
 The ````tweet-text```` component is responsible for rendering the tweet text plus the followers, the retweet and favorite count as well as the count of how often the tweet has been retweeted within the tweets currently loaded in the application.
 
 ~~~
-(defn tweet-text [tweet user state]
+(defn tweet-text
+  "Renders the text of a tweet including followers count plus retweet,
+   favorites and retweeted-within-loaded-tweets count."
+  [tweet user state]
   [:div.tweettext
    [:div {:dangerouslySetInnerHTML #js {:__html (:html-text tweet)}}]
    [:div.pull-left.timeInterval (str (util/number-format (:followers_count user)) " followers")]
@@ -145,7 +185,11 @@ The ````.timeInterval```` naming is probably not ideal, but I'm just re-using it
 Next, we have the ````image-view```` component:
 
 ~~~
-(defn image-view [media]
+(defn image-view
+  "Renders the first image inside the media vector as its only argument.
+   The assumption is that the interesting image is always contained at
+   that position, which appears to be the case."
+  [media]
   [:div.tweet-image
    [:a {:href (:url (get media 0)) :target "_blank"}
     [:img.pure-img-responsive {:src (str (:media_url (get media 0)) ":small")}]]])
@@ -167,7 +211,10 @@ With these components in place we can now look at the representation of a tweet,
 Here's the same in code:
 
 ~~~
-(defn tweet-view [raw-tweet state]
+(defn tweet-view
+  "Renders a tweet with all the elements it contains. Takes the raw (unformatted)
+   tweet and the dereferenced application state as arguments."
+  [raw-tweet state]
   (let [tweet ((memoize util/format-tweet) raw-tweet)
         user (:user tweet)
         screen-name (:screen_name user)
@@ -187,7 +234,13 @@ This component takes ````raw-tweet```` and also the entire local ```state```` an
 With the ````tweet-view```` component in place, we can now render a list of them in the ````tweets-view```` component:
 
 ~~~
-(defn tweets-view [app tweets cmd-chan]
+(defn tweets-view
+  "Renders a list of tweets. Takes two atoms app and tweets plus the cmd-chan
+   as arguments. Dereferences both and passes down dereferenced data structures
+   so that so that the tweet-view component and all components down the hierarchy
+   can be implemented as pure functions.
+   Rerenders the entire list whenever one (or both) of the atoms change."
+  [app tweets cmd-chan]
   (let [state @app]
     [:div (for [t @tweets] (if (:user t)
                              ^{:key (:id_str t)} [tweet-view t state]
@@ -200,7 +253,11 @@ Finally, the tweets view needs to be rendered and mounted, which happens inside 
 
 ~~~
 (defn mount-tweets
-  "Mount tweet component, keep local state, update when new state comes in on channel."
+  "Mounts tweet component and sets up the mechanism for subscribing to application
+   state changes that are broadcast on state-pub passed in as an argument.
+   Also takes the cmd-chan in order to wire component up with the backchannel
+   to the application state publisher. Not currently used, only for same signature
+   as birdwatch.ui.elements/init-views."
   [state-pub cmd-chan]
   (let [app (atom {})
         tweets (atom [])
