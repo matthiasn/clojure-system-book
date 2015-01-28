@@ -55,7 +55,11 @@ The result of this can be seen on the right side of this screenshot:
 ![](images/header.png)
 
 ### Simple Reagent Components
-In the previous chapter, we've learned how to initialize UI elements while also subscribing to the ````state-pub````. This may seem a little excessive for some very small UI components, so I've decided to put all the small UI elements such as the ````search-view````, the ````pagination-view````, the ````sort-view````, the ````count-view ````, the ````total-count-view````, and the ````users-count-view```` together in a single namespace and let them share one function called ````init-views```` for initializing and wiring them altogether. Here's the ````birdwatch.ui.elements```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/2cfa1c68d911418e57fad7a6fa363a868b24b65a/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/elements.cljs)**:
+In the previous chapter, we've learned how to initialize UI elements while also subscribing to the ````state-pub````. This may seem a little excessive for some very small UI components, so I've decided to put all the small UI elements such as the ````search-view````, the ````pagination-view````, the ````sort-view````, the ````count-view ````, the ````total-count-view````, and the ````users-count-view```` together in a single namespace and let them share one function called ````init-views```` for initializing and wiring them altogether. Here's a screenshot with the elements circled in red that are rendered by the ````birdwatch.ui.elements```` namespace:
+
+![](images/client-elements.png)
+
+And here's how that looks like in **[code](https://github.com/matthiasn/BirdWatch/blob/2cfa1c68d911418e57fad7a6fa363a868b24b65a/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/elements.cljs)**:
 
 ~~~
 (ns birdwatch.ui.elements
@@ -283,16 +287,15 @@ Before we dive into the code, here's how the ````pagination-view```` looks like 
 
 ![](images/pagination.png)
 
+Here, we first have a ````pag-item```` component for each page, which is used for switching the view to the particular page when clicked. In that case, a message of type ````:set-current-page```` with the index ````idx```` of the clicked button is put onto the ````cmd-chan````: ````[:set-current-page idx])````.
 
-
-from here on: **outdated**
-
-
-Here, we first have a ````pag-item```` component for each page, which is used for switching the view to the particular page when clicked. In that case, the anonymous function literal ````#(swap! state/app assoc :page idx)```` is executed.
+Next, we have the same kind of button is used for different page sizes for the tweet view as you saw on the right in the screenshot of the ````pagination-view```` above. Only that this time, the message sets the page size: ````[:set-page-size n]````.
 
 Within the ````pagination-view````, we then include one ````pag-item```` for each of the pages within the tweets loaded. This should be updated to use actual numbers from the application. But then, we would also need buttons for _first_ and _last_ if we don't want to render 500 pagination items or so. Pull request, anyone? Right now, we will simply use 15 or, if the actual number of pages is lower, that number.
 
 Once again, a ````:key```` is assigned to each ````pag-item````. As mentioned, this is good practice when working with React. Don't adhere and at least you're reminded by a warning on the console.
+
+Below, we repeat the process for the ````pag-size````, which we also use as a string for the prefix to the React key. Here, we are simply using 4 different page sizes as the options: ````[5 10 25 100]````.
 
 Finally in this namespace, we have some code for initializing the Reagent components on application startup:
 
