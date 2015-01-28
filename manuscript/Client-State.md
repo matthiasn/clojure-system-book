@@ -3,7 +3,7 @@
 ![](images/client-state.png)
 
 ### The birdwatch.state.data namespace
-The application state of the application is held inside the _let-binding_ of the ````init-state```` function within the ````birdwatch.state.data```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/4b686d2d3c378082fb3c2e860e05125c15768791/Clojure-Websockets/MainApp/src/cljs/birdwatch/state/data.cljs)**: 
+The application state of the application is held inside the _let-binding_ of the ````init-state```` function within the ````birdwatch.state.data```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/2cfa1c68d911418e57fad7a6fa363a868b24b65a/Clojure-Websockets/MainApp/src/cljs/birdwatch/state/data.cljs)**: 
 
 ~~~
 (ns birdwatch.state.data
@@ -14,7 +14,7 @@ The application state of the application is held inside the _let-binding_ of the
   "Init app state and wire all channels required in the state namespace. The app
    atom is held inside the let binding of this function and thus protected from
    outside access / alteration. The only way to interact with it is by sending
-   messages on channels, such the provided data channel for adding new data or
+   messages on channels, such as the provided data channel for adding new data or
    sending commands on the cmd-chan."
   [data-chan qry-chan stats-chan cmd-chan state-pub-chan]
   (let [app (atom {})]
@@ -25,7 +25,7 @@ The application state of the application is held inside the _let-binding_ of the
     (c/broadcast-state state-pub-chan app)))
 ~~~
 
-This function first of all keeps an atom named ````app```` in a let-binding. 
+After creating an atom named ````app```` in the aforementioned let-binding, this atom is initialized. Let's look at the initialization process quickly before covering the rest of the function.
 
 ### The birdwatch.state.initial namespace
 Before instantiating the "business logic", the state needs to be initialized. This is done by calling the ````init```` function inside the ````birdwatch.state.initial```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/c10fd4ecf7e2d763a5f6476fb4be6605d51123e7/Clojure-Websockets/MainApp/src/cljs/birdwatch/state/initial.cljs)**:
@@ -65,12 +65,12 @@ Before instantiating the "business logic", the state needs to be initialized. Th
   (swap! app assoc :search-text (util/search-hash)))
 ~~~
 
-This ````init```` function only takes the ````app```` atom passed as its only paramater and resets it with the result of a call to the ````initial-state```` function. Next, it also swaps the ````:search-text```` key of the application state with a call to ````util/search-hash````. This function gets the URL hash, which is also set whenever a new search is started. This allows bookmarking of specific searches. Next time a bookmark is open, the same search will load as last time.
+This ````init```` function only takes the ````app```` atom passed as its only parameter and resets it with the result of a call to the ````initial-state```` function. Next, it also swaps the ````:search-text```` key of the application state with a call to ````util/search-hash````. This function gets the URL hash, which is also set whenever a new search is started. This allows bookmarking of specific searches. Next time a bookmark is opened, the same search will load as last time.
 
-With the application state properly initialized, we can now fire up the "business logic" of the application which is realized as a number of functions in the ````birdwatch.state.comm```` namespace. These functions start up behavior such as taking messages off channels and reacting according to the received message and adding a listener to state changes that are then put on a channel for broadcasting on a ````pub````.
+With the application state properly initialized in our little excursion to the ````birdwatch.state.initial```` namespace, we can now fire up the "business logic" of the application which is realized as a number of functions in the ````birdwatch.state.comm```` namespace. These functions start up behavior such as taking messages off channels and reacting according to the received message and adding a listener to state changes that are then put on a channel for broadcasting on a ````pub````.
 
 ### The birdwatch.state.comm namespace
-Let's have a look at the ````birdwatch.state.comm```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/4b686d2d3c378082fb3c2e860e05125c15768791/Clojure-Websockets/MainApp/src/cljs/birdwatch/state/comm.cljs)** in detail in order to see what gets initialized in the body of the ````init-state```` function:
+Let's have a look at the ````birdwatch.state.comm```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/4b686d2d3c378082fb3c2e860e05125c15768791/Clojure-Websockets/MainApp/src/cljs/birdwatch/state/comm.cljs)** in detail in order to see what the functions are that get initialized in the body of the ````init-state```` function:
 
 ~~~
 (ns birdwatch.state.comm
@@ -155,7 +155,6 @@ Let's have a look at the ````birdwatch.state.comm```` **[namespace](https://gith
 
 Let's go through this namespace function by function. 
 
-#### stats-loop function
 First, we have the ````stats-loop````:
 
 ~~~
@@ -173,7 +172,6 @@ First, we have the ````stats-loop````:
 
 This function starts up an infinitely running ````go-loop```` that takes messages off the ````stats-chan````, and then matches the messages against the two following patterns using **[core.match](https://github.com/clojure/core.match)**. When the message matches one of the two patterns, the application state is updated to reflect the data coming from the server. If the message doesn't match, a warning is printed to the browser console.
 
-#### data-loop function
 Next, let's have a look at the ````data-loop```` function:
 
 ~~~
@@ -198,7 +196,6 @@ Next, let's have a look at the ````data-loop```` function:
 
 This function follows the same pattern we have already seen with the ````stats-loop```` function, only that there are more patterns to match on. Also, the messages do not contain stats but tweet data. In the case that a new tweet is received, which is detected by the ````:tweet/new```` keyword in the first position of the message vector, the ````add-tweet!```` function from the ````birdwatch.state.proc```` namespace is called with the payload. We will look at the mechanisms in that namespace later. When a missing tweet is encountered, the ````add-to-tweets-map!```` function from the same namespace is called. Finally, when a ````:tweet/prev-chunk```` message is encountered, two functions are called. First of all, the ````prev-chunk```` is put on a channel for processing these chunks. We'll look at that next. Then, also the ````load-prev```` function from the ````birdwatch.state.search```` namespace is called. We'll have a look at that in detail later. As a short description for now, a number of previous chunks are loaded, currently with 500 tweets each, and in order to not flood the server with too many queries at the same time, subsequent queries are only fired when another chunk has been retrieved. 
 
-#### prev-chunks-loop function
 Next, let's have a look at the ````prev-chunks-loop```` function which processes chunks of previous tweets as mentioned above:
 
 ~~~
@@ -216,8 +213,8 @@ Next, let's have a look at the ````prev-chunks-loop```` function which processes
 
 Here in this ````go-loop````, chunks are taken off the ````prev-chunks-chan```` and then every tweet in this chunk is added to the application state, in a similar fashion to what we've seen previously for messages of type ````:tweet/new```` by calling the ````add-tweet!```` function in the ````birdwatch.state.proc```` namespace. Then, after each chunk, ````(<! (timeout 50))```` is used. This is done to give control back to the JavaScript event loop instead of blocking until the ````prev-chunks-chan```` is empty. Without this, the UI became unresponsive until all previous tweets were loaded.
 
-#### cmd-loop function
 Next, we have the ````cmd-loop```` function, its purpose is to take command messages off the ````cmd-chan```` and process them as required:
+
 ~~~
 (defn- cmd-loop
   "Process command messages, e.g. those that alter application state."
@@ -239,10 +236,9 @@ Next, we have the ````cmd-loop```` function, its purpose is to take command mess
 
 The mechanism at play in the ````cmd-loop```` function above should be familiar to you by now. There's a ````go-loop```` inside a function that has access to the application state and that either alters the application state, calls a function like ````start-search```` or puts a message on a channel such as ````qry-chan```` above. All control over how to alter the application state from user input lies entirely with this ````cmd-loop```` function. It would be very easy to add additional message patterns for new functionality and then dispatch the message accordingly from this single point on.
 
-#### broadcast-state function
-Finally in this namespace, we have the mechanism for broadcasting application state changes. When you look at the samples for **[Reagent](http://reagent-project.github.io)**, you will notice that the UI components interact directly with the application state. While that may be fine for small samples, I don't like this approach for larger applications. When I'm working in the UI context, I want it to be strictly impossible to mess up application state by accidentally replacing a key in the application state with an unexpected or invalid value. We've already seen above that we can handle any kind of UI interaction easily by putting messages that represent our intent on the ````cmd-chan````, which, as we'll see later, is available to all UI elements in our application. So that solves the problem of where state is altered.
+Finally in this namespace, we have the mechanism for broadcasting application state changes inside the ````broadcast-state```` function. When you look at the samples for **[Reagent](http://reagent-project.github.io)**, you will notice that the UI components interact directly with the application state. While that may be fine for small samples, I don't like this approach for larger applications. When I'm working in the UI context, I want it to be strictly impossible to mess up application state by accidentally replacing a key in the application state with an unexpected or invalid value. We've already seen above that we can handle any kind of UI interaction easily by putting messages that represent our intent on the ````cmd-chan````, which, as we'll see later, is available to all UI elements in our application. So that solves the problem of where state is altered.
 
-But I want to take it a little bit further and not even hand the application state to **Reagent** as an atom that can be modified at all. Conventions to not use something are nice and all, but when you're working in a team on a larger application, the only way to keep anyone from directly modifying application state from a UI component is by completely hiding it.
+But I want to take it a little bit further and not even hand the application state to **Reagent** as an atom that can be modified. Conventions to not use something in a bad way are nice and all, but when you're working in a team on a larger application, the only way to keep anyone from directly modifying application state from a UI component is by completely hiding it.
 
 So how could we achieve this? After scratching my head for a moment, I came up with the following solution inside the ````broadcast-state```` function:
 

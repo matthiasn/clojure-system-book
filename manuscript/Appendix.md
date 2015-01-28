@@ -2,8 +2,7 @@
 
 ## Chapter Status History
 
-
-## Client-side Chapters
+**Client Side (Jan 27th, 2015):** The client-side application is rewritten to reflect the changes mentioned in the new introduction. The chapters about the ````core```` and ````communicator```` namespaces have been rewritten. Approach the remaining chapters with care, they are about to change a lot.
 
 **Client Side (Jan 21, 2015):** The client-side application is rewritten to reflect the changes mentioned in the new introduction. The new introduction will now undergo proofreading before landing in the book. For now, read it on  **[GitHub](https://github.com/matthiasn/clojure-system-book/blob/master/manuscript/Client-Architecture.md) instead. Approach the existing chapters about the client side with care, they are about to change a lot.
 
