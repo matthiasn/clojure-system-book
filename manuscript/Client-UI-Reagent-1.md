@@ -22,72 +22,116 @@ All that any of the UI components has to do now is subscribe to this **pub** and
 
 Now using this atom locally is safe, whatever anyone decided to do with it does not affect the state of the application. In order to change the application, the UI component will have to send the state owner a message on the ````cmd-chan````.
 
-Using this approach has an additional advantage. If the UI is a function of the data that involves complex statistical reasoning, we do not necessarily want to trigger a re-render every single time the application state changes as this can easily become too expensive. Instead, I would like to have a way to throttle how often an update occurs. We've already seen a part of the solution to that when we sent the dereferenced application state on the ````state-pub-chan````. There, we were using a ````sliding-buffer```` and we can use the same mechanism here again, with the addition of a ````timeout```` inside the ````go-loop```` receiving messages from subscribing to state changes. Let's have a look at this mechanism with the simplest possible example.
+Using this approach has an additional advantage. If the UI is a function of the data that involves complex statistical reasoning, we do not necessarily want to trigger a re-render every single time the application state changes as this can easily become too expensive. Instead, I would like to have a way to throttle how often an update occurs. We've already seen a part of the solution to that when we sent the dereferenced application state on the ````state-pub-chan````. There, we were using a ````sliding-buffer```` and we can use the same mechanism here again, with the addition of a ````timeout```` inside the ````go-loop```` receiving messages from subscribing to state changes. Let's have a look at this mechanism with a simple example:
 
-#### Simple Reagent Components - outdated
+~~~
+(defn count-view [app] [:span (:count @app)])
 
-Let's start the exploration with the simpler components in the ````birdwatch.ui.elements```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/elements.cljs)**:
+(defn init-count-view
+  "Initialize count view view and wire state"
+  [state-pub]
+  (let [app (atom {})
+        state-chan (chan (sliding-buffer 1))]
+    (go-loop []
+             (let [[_ state] (<! state-chan)]
+               (reset! app state)
+               (<! (timeout 10))
+               (recur)))
+    (sub state-pub :app-state state-chan)
+    (r/render-component [count-view app] (util/by-id "tweet-count"))))
+~~~
+
+First in this example, there's a Reagent component called ````count-view````. It only renders a simple ````:span```` with the value of the ````count```` key inside the application state. Next, there's the ````init-count-view```` function which subscribes to the ````state-pub````, creates a local atom, starts a ````go-loop```` that updates the local atom when changes occur and finally initializes the view with the local atom. Notice the usage of the ````sliding-buffer````. Once again, only the latest state change is kept. In addition to that, a ````timeout```` of 10 milliseconds occurs inside the ````go-loop````, which effectively limits the number of updates to a maximum of 100 per second. If more updates occur, the ````go-loop```` will be busy, causing the ````sliding-buffer```` to accept the latest update and drop older ones. Then, when the timeout is up, the ````go-loop```` will always have the newest state message at the time. In this simple case, the ````timeout```` may not be necessary at all, but it becomes more useful when we only want to update the UI every second or even less often when more expensive statistical reasoning needs to be performed before actually rendering the UI.
+
+### Simple Reagent Components
+In the previous chapter, we've learned how to initialize UI elements while also subscribing to the ````state-pub````. This may seem a little excessive for some very small UI components, so I've decided to put all the small UI elements such as the ````search-view````, the ````pagination-view````, the ````sort-view````, the ````count-view ````, the ````total-count-view````, and the ````users-count-view```` together in a single namespace and let them share one function called ````init-views```` for initializing and wiring them altogether. Here's the ````birdwatch.ui.elements```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/2cfa1c68d911418e57fad7a6fa363a868b24b65a/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/elements.cljs)**:
 
 ~~~
 (ns birdwatch.ui.elements
+  (:require-macros [cljs.core.async.macros :refer [go-loop]])
   (:require [birdwatch.util :as util]
-            [birdwatch.communicator :as comm]
-            [birdwatch.state :as state]
             [birdwatch.ui.tweets :as ui-tweets]
-            [reagent.core :as r]))
+            [cljs.core.async :as async :refer [put! pipe chan sub timeout sliding-buffer]]
+            [reagent.core :as r :refer [atom]]))
 
-(enable-console-print!)
+(def cmd-chan (chan))
+(defn- put-cmd [msg] (put! cmd-chan msg))
 
-(defn count-view []
-  [:span (:count @state/app)])
+(defn- count-view [app] [:span (:count @app)])
 
-(defn users-count-view []
-  (let [users (:users-count @state/app)]
+(defn- users-count-view [app]
+  (let [users (:users-count @app)]
     [:span "Connected: " [:strong users] (if (= users 1) " user" " users")]))
 
-(defn total-count-view []
-  [:span "Indexed: " [:strong (:total-tweet-count @state/app)] " tweets"])
+(defn- total-count-view [app]
+  [:span "Indexed: " [:strong (:total-tweet-count @app)] " tweets"])
 
-(def sort-orders [[:by-id "latest"][:by-followers "followers"][:by-retweets "retweets"]
-                  [:by-rt-since-startup "retweets2"][:by-reach "reach"][:by-favorites "favorites"]])
+(def sort-orders [[:by-id "latest"][:by-followers "followers"]
+                  [:by-retweets "retweets"][:by-rt-since-startup "retweets2"]
+                  [:by-reach "reach"][:by-favorites "favorites"]])
 
-(defn sort-view []
-  (let [curr-order (:sorted @state/app)]
+(defn- btn-class? [p] (if p " pure-button-primary" " sort-button"))
+
+(defn- sort-view [app]
+  (let [curr-order (:sorted @app)]
     [:div
-     [:button.pure-button.not-rounded.sort-button "Sort by"]
-     (for [[k text] sort-orders :let [btn-class (if (= k curr-order) " pure-button-primary" " sort-button")]]
+     [:button.pure-button.not-rounded
+      {:class (btn-class? (:live @app)) :on-click #(put-cmd [:toggle-live])} "Live"]
+     [:button.pure-button.not-rounded.sort-button "Sort by:"]
+     (for [[k text] sort-orders :let [btn-class (btn-class? (= k curr-order))]]
        ^{:key text} [:button.pure-button.not-rounded
-                     {:class btn-class :on-click #(swap! state/app assoc :sorted k)} text])]))
+                     {:class btn-class :on-click #(put-cmd [:set-sort-order k])} text])]))
 
-(defn search-view []
+(defn- search-view [app]
   [:form.pure-form
    [:fieldset
-    [:input {:type "text" :value (:search-text @state/app)
-             :on-key-press #(when (== (.-keyCode %) 13) (comm/start-search))
-             :on-change #(swap! state/app assoc :search-text (.. % -target -value))
+    [:input {:type "text" :value (:search-text @app)
+             :on-key-press #(when (== (.-keyCode %) 13) (put-cmd [:start-search]))
+             :on-change #(put-cmd [:set-search-text (.. % -target -value)])
              :placeholder "Example search: java (job OR jobs OR hiring)"}]
-    [:button.pure-button.pure-button-primary {:on-click #(comm/start-search)}
+    [:button.pure-button.pure-button-primary {:on-click #(put-cmd [:start-search])}
      [:span {:class "glyphicon glyphicon-search"}]]]])
 
-(defn pag-item [idx]
+(defn- pag-item [idx app]
   [:button.pure-button.not-rounded.button-xsmall
-   {:class (if (= idx (:page @state/app)) " pure-button-primary" "")
-    :on-click #(swap! state/app assoc :page idx)} idx])
+   {:class (when (= idx (:page @app)) " pure-button-primary")
+    :on-click #(put-cmd [:set-current-page idx])} idx])
 
-(defn pagination-view []
+(defn- pag-size-item [n app]
+  [:button.pure-button.not-rounded.button-xsmall
+   {:class (when (= n (:n @app)) " pure-button-primary")
+    :on-click #(put-cmd [:set-page-size n])} n])
+
+(defn- pagination-view [app]
   [:div
-   [:button.pure-button.not-rounded.button-xsmall "Page"]
-   (for [idx (take 15 (range 1 (Math/floor (/ (:count @state/app) (:n @state/app)))))]
-     ^{:key idx} [pag-item idx])])
+   [:button.pure-button.not-rounded.button-xsmall [:strong "Page:"]]
+   (for [idx (take 15 (range 1 (Math/floor (/ (:count @app) (:n @app)))))]
+     ^{:key idx} [pag-item idx app])
+   [:button.pure-button.not-rounded.button-xsmall [:strong "per Page:"]]
+   (for [n [5 10 25 100]]
+     ^{:key (str "pag-size" n)} [pag-size-item n app])])
 
-(def views [[count-view "tweet-count"][search-view "search"][total-count-view "total-tweet-count"]
-            [users-count-view "users-count"][sort-view "sort-buttons"][pagination-view "pagination"]
-            [ui-tweets/tweets-view "tweet-frame"]])
+(def views [[count-view "tweet-count"][total-count-view "total-tweet-count"]
+            [search-view "search"][users-count-view "users-count"]
+            [sort-view "sort-buttons"][pagination-view "pagination"]])
 
-(defn init-views []
-  (doseq [[component id] views]
-    (r/render-component [component] (util/by-id id))))
+(defn init-views
+  "Initialize all views contained in the vector above and connect channel for
+   outgoing command messages (e.g. for altering state)"
+  [state-pub cmd-out-chan]
+  (let [app (atom {})
+        state-chan (chan (sliding-buffer 1))]
+    (pipe cmd-chan cmd-out-chan)
+    (go-loop []
+             (let [[_ state] (<! state-chan)]
+               (reset! app state)
+               (<! (timeout 10))
+               (recur)))
+    (sub state-pub :app-state state-chan)
+    (doseq [[component id] views] (r/render-component [component app] (util/by-id id)))))
 ~~~
+
+from here on: **outdated**
 
 The first Reagent component above is also the simplest one, it only defines a simple ````:span```` in **[Hiccup syntax](https://github.com/weavejester/hiccup)**:
 
