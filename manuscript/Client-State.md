@@ -260,11 +260,11 @@ Here, we're adding a watcher to the application state atom using ````add-watch``
 
 But wait! Isn't that terribly inefficient? It depends. First of all, the application state inside the atom is an immutable data structure. Because of this feature, it does not need to be copied but can be shared freely, as it cannot be mutated. So that is nothing to worry about.
 
-There is one potential point of contention though. Especially when loading thousands of previous tweets, there are a lot of changes within a short time. On my Retina Macbook, roughly 1000 tweets are processed per second. That amounts to tens of thousands of times that the function above would be triggered. One could think about some kind of rate limiting, but **core.async** has a better tool in its toolbox: the **[sliding-buffer](https://clojure.github.io/core.async/#clojure.core.async/sliding-buffer)**.
+There is one potential point of contention though. Especially when loading thousands of previous tweets, there are a lot of changes within a short time. On my Retina Macbook, roughly 1000 tweets are processed per second. That amounts to tens of thousands of times that the function above would be triggered per second. One could think about some kind of rate limiting, but **core.async** has a better tool in its toolbox: the **[sliding-buffer](https://clojure.github.io/core.async/#clojure.core.async/sliding-buffer)**.
 
 The way a ````sliding-buffer```` works is as follows: when more messages are put on a channel than can be taken off the channel on the other side, a buffer is filled. When that buffer is full, the oldest element in the buffer is dropped. This is perfect for our use case here. We can even use a buffer as small as 1 element that will be buffered. When the element can be consumed off the channel, fine. When there's a new element coming it, it is the newer application state, and the latest state is the only one we're ever interested in for rendering, so the slightly older application state can safely be dropped.
 
-Accordingly, we're creating a channel named ````sliding-channel```` with such a ````sliding-buffer```` of size 1. Then, the ````sliding-chan```` is ````pipe````d into the ````pub-chan```` which has been provided as an argument to the ````broadcast-state```` function, which just means that every message from the channel provided as the first argument to ````pipe```` is put onto the channel that is provided as the second argument.
+Accordingly, we're creating a channel named ````sliding-channel```` with such a ````sliding-buffer```` of size 1. Then, the ````sliding-chan```` is ````pipe````d into the ````pub-chan```` which has been provided as an argument to the ````broadcast-state```` function. This just means that every message from the channel provided as the first argument to ````pipe```` is put onto the channel that is provided as the second argument to ````pipe````.
 
 ### The birdwatch.state.search namespace
 
@@ -324,7 +324,7 @@ In the namespace above, we have three function that are concerned with different
       (swap! app update-in [:prev-chunks-loaded] inc))))
 ~~~
 
-This function is concerned with loading previous tweets up to the desired amount, in chunks of a defined size. Specifically, as it currently stands, ````10```` chunks of size ````500```` will be loaded. First, these two values are defined in the ````let```` binding, together with ````prev-chunks-loaded````, which is derived from the application state. Then, if less chunks have previously been loaded than desired, a query is put on the ````qry-chan```` for the next chunk to load. Then, finally, the application state is modified to reflect that the loading of an additional chunk is on its way.
+This function is concerned with loading previous tweets up to the desired number, in chunks of a defined size. Specifically, as it currently stands, ````10```` chunks of size ````500```` each will be loaded. First, these two values are defined in the ````let```` binding, together with ````prev-chunks-loaded````, which is derived from the application state. Then, if less chunks have previously been loaded than desired, a query is put on the ````qry-chan```` for the next chunk to be retrieved. Then, finally, the application state is modified to reflect that the loading of an additional chunk is on its way.
 
 Next, there's the ````start-percolator```` function. This function is responsible for triggering a percolation query for the current search on the server side:
 
@@ -354,7 +354,9 @@ Finally, we have the ````start-search```` function which, as the name suggests, 
     (dotimes [n 2] (load-prev app qry-chan))))
 ~~~
 
-First of all, it determines the current text, and replaces it with ````*```` if it's empty. Then, it resets the application state to an empty slate. Next, within the shiny new application state, it resets the values for the ````:search-text```` and the ````:search```` keys within the application state atom. It then also sets the hash location within the browser to reflect the new search so that this new search can be properly bookmarked. This is followed by calling the ````start-percolator```` function and finally calling the ````load-prev```` function. This determines the parallelity factor. By sending two searches right away, the server can process these in parallel. Then, once any result comes back, ````load-prev```` is called again as we've seen when discussing the ````birdwatch.state.comm```` namespace, triggering the dispatch of another query iff there remain searches to be performed.
+First of all, it determines the current ````:search-text```` and replaces it with ````*```` if it's empty. Then, it resets the application state to an empty slate. Next, within the shiny new application state, it resets the values for the ````:search-text```` and the ````:search```` keys within the application state atom. It then also sets the hash location within the browser to reflect the new search so that this new search can be bookmarked properly. 
+
+This is followed by calling the ````start-percolator```` function and finally calling the ````load-prev```` function multiple times. Here, ````n```` determines the parallelity factor. By sending two searches right away, the server can process these in parallel. Then, once any result comes back, ````load-prev```` is called again as we've seen when discussing the ````birdwatch.state.comm```` namespace, triggering the dispatch of another query iff there remain searches to be performed.
 
 ### The birdwatch.state.proc namespace
 
