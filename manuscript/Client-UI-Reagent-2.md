@@ -1,17 +1,13 @@
-### Reagent Components for Tweets - outdated
+### Reagent Components for Tweets
 
-Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/d35684c599c169faa38daf0043a8d6f05848c4a9/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/tweets.cljs)**:
+Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/2cfa1c68d911418e57fad7a6fa363a868b24b65a/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/tweets.cljs)**:
 
 ~~~
 (ns birdwatch.ui.tweets
-  (:require [birdwatch.util :as util]
-            [birdwatch.channels :as c]
-            [birdwatch.communicator :as comm]
-            [birdwatch.state :as state]
-            [cljs.core.async :as async :refer [put!]]
-            [reagent.core :as r]))
-
-(enable-console-print!)
+  (:require-macros [cljs.core.async.macros :refer [go-loop]])
+  (:require [birdwatch.ui.util :as util]
+            [cljs.core.async :as async :refer [put! chan sub <! timeout sliding-buffer]]
+            [reagent.core :as r :refer [atom]]))
 
 (defn twitter-intent [tweet intent icon]
   [:a {:href (str "https://twitter.com/intent/" intent (:id_str tweet))}
@@ -23,24 +19,24 @@ Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https:/
    [twitter-intent tweet "retweet?tweet_id=" "retweet.png"]
    [twitter-intent tweet "favorite?tweet_id=" "favorite.png"]])
 
-(defn missing-tweet [tweet]
-  (put! c/tweet-missing-chan (:id_str tweet))
-  (print "retrieving tweet" (:id_str tweet))
-  [:div.tweet "loading..." (:id_str tweet)])
+(defn missing-tweet [tweet cmd-chan]
+  (let [id-str (:id_str tweet)]
+    (put! cmd-chan [:retrieve-missing id-str])
+    [:div.tweet "loading... " (:id_str tweet)]))
 
-(defn tweet-text [tweet user]
+(defn tweet-text [tweet user app]
   [:div.tweettext
    [:div {:dangerouslySetInnerHTML #js {:__html (:html-text tweet)}}]
    [:div.pull-left.timeInterval (str (util/number-format (:followers_count user)) " followers")]
-   [:div.pull-right.timeInterval (str (util/rt-count tweet) (util/fav-count tweet))
-    [:br] (util/rt-count-since-startup tweet)]])
+   [:div.pull-right.timeInterval (str (util/rt-count tweet app) (util/fav-count tweet app))
+    [:br] (util/rt-count-since-startup tweet app)]])
 
 (defn image-view [media]
   [:div.tweet-image
    [:a {:href (:url (get media 0)) :target "_blank"}
     [:img.pure-img-responsive {:src (str (:media_url (get media 0)) ":small")}]]])
 
-(defn tweet-view [raw-tweet]
+(defn tweet-view [raw-tweet app]
   (let [tweet ((memoize util/format-tweet) raw-tweet)
         user (:user tweet)
         screen-name (:screen_name user)
@@ -50,16 +46,33 @@ Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https:/
      [:a {:href href :target "_blank"} [:span.username {:src (:profile_image_url user)} (:name user)]]
      [:span.username_screen (str " @" screen-name)]
      [:div.pull-right.timeInterval (util/from-now (:created_at tweet))]
-     [tweet-text tweet user]
+     [tweet-text tweet user app]
      (when-let [media (:media (:entities tweet))] (pos? (count media)) [image-view media])
      [twitter-intents tweet]]))
 
-(defn tweets-view []
-  (let [app @state/app
-        tweets (util/tweets-by-order2 (:sorted app) app (:n app) (dec (:page app)))]
-    [:div (for [t tweets] (if (:user t)
-                            ^{:key (:id_str t)} [tweet-view t]
-                            ^{:key (:id_str t)} [missing-tweet t]))]))
+(defn tweets-view [app tweets cmd-chan]
+  (let [state @app]
+    [:div (for [t @tweets] (if (:user t)
+                             ^{:key (:id_str t)} [tweet-view t state]
+                             ^{:key (:id_str t)} [missing-tweet t cmd-chan]))]))
+
+(defn mount-tweets
+  "Mount tweet component, keep local state, update when new state comes in on channel."
+  [state-pub cmd-chan]
+  (let [app (atom {})
+        tweets (atom [])
+        state-chan (chan (sliding-buffer 1))]
+    (go-loop []
+             (let [[_ state] (<! state-chan)
+                   order (:sorted state)
+                   n (:n state)
+                   page (dec (:page state))]
+               (when (:live state) (reset! app state))
+               (reset! tweets (util/tweets-by-order order @app n page))
+               (<! (timeout 20)))
+             (recur))
+    (sub state-pub :app-state state-chan)
+    (r/render-component [tweets-view app tweets cmd-chan] (util/by-id "tweet-frame"))))
 ~~~
 
 The first component here is ````twitter-intent````:
@@ -84,18 +97,27 @@ In the ````twitter-intents```` component, we create a ````div```` with three ```
 
 ![](images/intents.png)
 
+~~~
+(defn missing-tweet [tweet cmd-chan]
+  (let [id-str (:id_str tweet)]
+    (put! cmd-chan [:retrieve-missing id-str])
+    [:div.tweet "loading... " (:id_str tweet)]))
+~~~
+
 The ````missing-tweet```` component is rendered for a short while if a tweet is not found locally. Not only does it show a text that the tweet is loading, it also ````put!````s a message on the channel requesting the tweet from the server. Then, once the server delivers the tweet back, the actual tweet instead of this placeholder is rendered immediately. This component is not really used at the moment but it should become useful soon.
 
 The ````tweet-text```` component is responsible for rendering the tweet text plus the followers, the retweet and favorite count as well as the count of how often the tweet has been retweeted within the tweets currently loaded in the application.
 
 ~~~
-(defn tweet-text [tweet user]
+(defn tweet-text [tweet user app]
   [:div.tweettext
    [:div {:dangerouslySetInnerHTML #js {:__html (:html-text tweet)}}]
    [:div.pull-left.timeInterval (str (util/number-format (:followers_count user)) " followers")]
-   [:div.pull-right.timeInterval (str (util/rt-count tweet) (util/fav-count tweet))
-    [:br] (util/rt-count-since-startup tweet)]])
+   [:div.pull-right.timeInterval (str (util/rt-count tweet app) (util/fav-count tweet app))
+    [:br] (util/rt-count-since-startup tweet app)]])
 ~~~
+
+The ````tweet-text```` component also takes the ````app```` argument, which is the locally cached application state that is reset every so often with updates it gets by subscribing to the ````state-pub````.
 
 There's one surprise here. Inside the first child ````div````, ````:dangerouslySetInnerHTML```` is used, which is React's way of rendering already formatted HTML inside a component. The tweet text, which contains links, has already been formatted as HTML in a previous processing step, and here we simply use that HTML string.
 
@@ -124,9 +146,9 @@ Next, we have the ````image-view```` component:
 
 ~~~
 (defn image-view [media]
-   [:div.tweet-image
-        [:a {:href (:url (get media 0)) :target "_blank"}
-         [:img.pure-img-responsive {:src (str (:media_url (get media 0)) ":small")}]]])
+  [:div.tweet-image
+   [:a {:href (:url (get media 0)) :target "_blank"}
+    [:img.pure-img-responsive {:src (str (:media_url (get media 0)) ":small")}]]])
 ~~~
 
 This is really straightforward, it just creates a ````div```` of class ````tweet-image```` that contains a link that opens in a new tab. This link also contains an image with the source URL set to load the image from Twitter. Here's the CSS for the ````tweet-image```` class:
@@ -145,7 +167,7 @@ With these components in place we can now look at the representation of a tweet,
 Here's the same in code:
 
 ~~~
-(defn tweet-view [raw-tweet]
+(defn tweet-view [raw-tweet app]
   (let [tweet ((memoize util/format-tweet) raw-tweet)
         user (:user tweet)
         screen-name (:screen_name user)
@@ -155,10 +177,13 @@ Here's the same in code:
      [:a {:href href :target "_blank"} [:span.username {:src (:profile_image_url user)} (:name user)]]
      [:span.username_screen (str " @" screen-name)]
      [:div.pull-right.timeInterval (util/from-now (:created_at tweet))]
-     [tweet-text tweet user]
+     [tweet-text tweet user app]
      (when-let [media (:media (:entities tweet))] (pos? (count media)) [image-view media])
      [twitter-intents tweet]]))
 ~~~
+
+
+from here on: **outdated**
 
 This component takes ````raw-tweet```` and formats it by calling ````util/format-tweet```` with it. Note how the result is ````memoize````d. This caches previous calls to the same, referentially transparent function. I'm not sure if **[memoize](https://clojuredocs.org/clojure.core/memoize)** really improves performance in this context, but since it's so simple to do, why not. A couple of other values are taken from the tweet map and with that, a ````:div```` is rendered with the components you would expect when you look at the image above. No big surprises there, except maybe for only rendering the image view when there is media to render. Otherwise, the ````when-let```` would simply evaluate to ````nil```` and thus be ignored.
 
