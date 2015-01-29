@@ -116,7 +116,7 @@ The first component here is ````twitter-intent````:
    [:img {:src (str "/images/" icon)}]])
 ~~~
 
-This renders a link to Twitter for the specified intent (e.g. retweet) with the correct icon and for the specified tweet. When clicking on this link, you can for example retweet a tweet. Here's how ````twitter-intent```` is used:
+This renders a link to Twitter for the specified intent (e.g. retweet) with the correct icon and for the specified tweet. When clicking on this link, you can, for example, retweet a tweet. Here's how ````twitter-intent```` is used:
 
 ~~~
 (defn twitter-intents
