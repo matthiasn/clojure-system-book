@@ -1,5 +1,5 @@
 ### The birdwatch.ui.util namespace
-In the code for the Reagent components, we have used a couple of helpers from the ````birdwatch.ui.util```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/730f445eaacf415d8ee8d22dc92e606b6d23efb6/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/util.cljs)**, all of which are pure functions:
+In the code for the Reagent components, we have used a couple of helpers from the ````birdwatch.ui.util```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/aae1a7313211f26946ae55278fb8d3c484060c70/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/util.cljs)**, all of which are pure functions:
 
 ~~~
 (ns birdwatch.ui.util
@@ -70,12 +70,12 @@ In the code for the Reagent components, we have used a couple of helpers from th
 
 (defn entity-count
   "Gets count of specified entity from either tweet, or, when exists, original (retweeted) tweet."
-  [tweet state sym s]
+  [tweet state k s]
   (let [rt-id (if (contains? tweet :retweeted_status)
                 (:id_str (:retweeted_status tweet))
                 (:id_str tweet))
-        count (sym ((keyword rt-id) (:tweets-map state)))]
-    (if (not (nil? count)) (str (number-format count) s) "")))
+        count (k ((keyword rt-id) (:tweets-map state)))]
+    (if count (str (number-format count) s) "")))
 
 (defn rt-count
   "Gets the formatted string for the :retweet_count if exists, otherwise yields empty string."
@@ -150,7 +150,15 @@ The result of the ````from-now```` function should be equally familiar. It shows
   (str "<a href='" url "' target='_blank'>" text "</a>"))
 ~~~
 
+The ````a-blank```` returns an HTML string for a link that opens in a new tab. The tweet text is constructed as an HTML string as a whole and passed into the ````tweet-text```` component's div. Remember from the last chapter? Here's a reminder, it involved dangerously setting something:
 
+~~~
+[:div {:dangerouslySetInnerHTML #js {:__html (:html-text tweet)}}]
+~~~
+
+One could likely implement this in pure Reagent, without this "dangerous" behavior. I don't mind it as injections of malicious code don't seem to be an issue in this application. However, it would be more elegant. Anyone interested in solving this? Maybe that could be a task to solve during a meetup or so. If you're interested, knock yourself out.
+
+The ````a-blank```` function we've seen a moment ago is then used by the ````url-replacer````, ````hashtags-replacer````, and ````mentions-replacer```` functions:
 
 ~~~
 (defn- url-replacer
@@ -177,12 +185,16 @@ The result of the ````from-now```` function should be equally familiar. It shows
     (s/replace acc f-screen-name (a-blank (str twitter-url screen-name) f-screen-name))))
 ~~~
 
+The three _replacer_ functions we just looked at obviously need to be called from somewhere. I wanted to use the **[thread-first macro](http://clojuredocs.org/clojure.core/-%3E)** and pass the result from one ````reduce```` into the next ````reduce```` until all replacements have been performed. However, the signature of ````reduce```` did not match. Not to worry, I can just write a function for that:
+
 ~~~
 (defn- reducer
   "Generic reducer, allows calling specified function for each item in provided collection."
   [text coll fun]
   (reduce fun text coll))
 ~~~
+
+In the ````reducer```` function above, reduce is called internally, while providing the signature I need to work with either the ````thread-first```` or the ````thread-last```` macro. This ````reducer```` can now be called from inside the function that formats the entire tweet text HTML string:
 
 ~~~
 (defn format-tweet
@@ -198,16 +210,20 @@ The result of the ````from-now```` function should be equally familiar. It shows
           (s/replace , "RT " "<strong>RT </strong>")))))
 ~~~
 
+So much for the tweet text. But we have more to discuss. We need to get the counts of multiple entities, such as the _followers_, _retweet_, _favorites_, or also the _retweets within the loaded tweets_:
+
 ~~~
 (defn entity-count
   "Gets count of specified entity from either tweet, or, when exists, original (retweeted) tweet."
-  [tweet state sym s]
+  [tweet state k s]
   (let [rt-id (if (contains? tweet :retweeted_status)
                 (:id_str (:retweeted_status tweet))
                 (:id_str tweet))
-        count (sym ((keyword rt-id) (:tweets-map state)))]
-    (if (not (nil? count)) (str (number-format count) s) "")))
+        count (k ((keyword rt-id) (:tweets-map state)))]
+    (if count (str (number-format count) s) "")))
 ~~~
+
+This ````entity-count```` function takes a ````tweet````, the ````state```` snapshot, a keyword ````k```` and a string ````s````. It then checks if the ````tweet```` is a retweet (contains a ````:retweeted-status```` ). If so, it uses the ID of the retweet, otherwise it takes the ID of ````tweet```` as ````rt-id````. Then, ````count```` is determined by looking up the ````rt-id```` within the ````state```` snapshot, using ````k```` as the lookup function. Finally, if ````count```` exists, it concatenates the result of calling the ````number-format```` function with ````count```` and the string ````s````. This ````entity-count```` function can now be used more specifically:
 
 ~~~
 (defn rt-count
@@ -220,6 +236,8 @@ The result of the ````from-now```` function should be equally familiar. It shows
   [tweet state]
   (entity-count tweet state :favorite_count " fav"))
 ~~~
+
+Both ````rt-count```` and ````fav-count```` simply call ````entity-count```` with the respective keywords and strings. The ````rt-count-since-startup```` is a little more involved:
 
 ~~~
 (defn rt-count-since-startup
@@ -234,6 +252,10 @@ The result of the ````from-now```` function should be equally familiar. It shows
       (str "analyzed: " (number-format cnt) " retweets, reach " (number-format reach)))))
 ~~~
 
+Once again, we look if the tweet is a retweet. If so, further reasoning is done on the retweet, if not, the tweet itself is used. Then, we can look up the number of retweets within the loaded tweets and the reach within the same dataset by looking up the the count within the respective sort orders which we have derived and updated when ingesting tweets.
+
+Finally, there is a function that returns a list of tweets for display in the UI, paginated, with the correct number of items and in the right sort order:
+
 ~~~
 (defn tweets-by-order
   "Finds top n tweets by specified order."
@@ -243,5 +265,4 @@ The result of the ````from-now```` function should be equally familiar. It shows
             (drop (* n skip) ,)
             (take n ,))))
 ~~~
-
 
