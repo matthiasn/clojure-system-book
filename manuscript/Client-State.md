@@ -268,12 +268,17 @@ Accordingly, we're creating a channel named ````sliding-channel```` with such a 
 
 ### The birdwatch.state.search namespace
 
-The ````birdwatch.state.search```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/30836e475517e60291783fb2ea2d85aabf79a6b1/Clojure-Websockets/MainApp/src/cljs/birdwatch/state/search.cljs)** is concerned with starting new real-time searches and loading previous tweets matching the search criteria:
+The ````birdwatch.state.search```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/c14a72f196f729786b0049655d98a2218322d81e/Clojure-Websockets/MainApp/src/cljs/birdwatch/state/search.cljs)** is concerned with starting new real-time searches and loading previous tweets matching the search criteria:
 
 ~~~
 (ns birdwatch.state.search
   (:require [birdwatch.util :as util]
             [cljs.core.async :as async :refer [put!]]))
+
+(defn append-search-text
+  "Appends string s to search-text in app, separated by space."
+  [app s]
+  (swap! app assoc :search-text (str (:search-text @app) " " s)))
 
 (defn- load-prev
   "Loads previous tweets matching the current search. Search is contructed
@@ -307,7 +312,18 @@ The ````birdwatch.state.search```` **[namespace](https://github.com/matthiasn/Bi
     (dotimes [n 2] (load-prev app qry-chan))))
 ~~~
 
-In the namespace above, we have three function that are concerned with different angles of getting results of a real-time search to the client. First, there's the ````load-prev```` function:
+In the namespace above, we have four functions that are concerned with different angles of getting results of a real-time search to the client. First, there's the ````append-search-text```` function:
+
+~~~
+(defn append-search-text
+  "Appends string s to search-text in app, separated by space."
+  [app s]
+  (swap! app assoc :search-text (str (:search-text @app) " " s)))
+~~~
+
+In this function, the ````:search-text```` key inside the application state atom is appended with an additional word. This function is called when a message comes in after clicking on a word in the word cloud or a line in the bar chart and adds the respective word in the input field for the next search.
+
+Next, there's the '````load-prev```` function:
 
 ~~~
 (defn- load-prev

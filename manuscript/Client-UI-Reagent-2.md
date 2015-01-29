@@ -1,6 +1,6 @@
 ### Reagent Components for Tweets
 
-Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/468f523bbb7a7cb9a56001d8752a3eeb08bc91c9/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/tweets.cljs)**:
+Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/c14a72f196f729786b0049655d98a2218322d81e/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/tweets.cljs)**:
 
 ~~~
 (ns birdwatch.ui.tweets
@@ -92,16 +92,18 @@ Next, let's have a look at the ````birdwatch.ui.tweets```` **[namespace](https:/
         tweets (atom [])
         state-chan (chan (sliding-buffer 1))]
     (go-loop []
-             (let [[_ state] (<! state-chan)
-                   order (:sorted state)
-                   n (:n state)
-                   page (dec (:page state))]
-               (when (:live state) (reset! app state))
-               (reset! tweets (util/tweets-by-order order @app n page))
+             (let [[_ state-snapshot] (<! state-chan)
+                   order (:sorted state-snapshot)
+                   n (:n state-snapshot)
+                   page (dec (:page state-snapshot))]
+               (when (:live state-snapshot)
+                 (reset! app state-snapshot)
+                 (reset! tweets (util/tweets-by-order order state-snapshot n page)))
                (<! (timeout 20)))
              (recur))
     (sub state-pub :app-state state-chan)
-    (r/render-component [tweets-view app tweets cmd-chan] (util/by-id "tweet-frame"))))~~~
+    (r/render-component [tweets-view app tweets cmd-chan] (util/by-id "tweet-frame"))))
+~~~
 
 The first component here is ````twitter-intent````:
 
@@ -263,17 +265,107 @@ Finally, the tweets view needs to be rendered and mounted, which happens inside 
         tweets (atom [])
         state-chan (chan (sliding-buffer 1))]
     (go-loop []
-             (let [[_ state] (<! state-chan)
-                   order (:sorted state)
-                   n (:n state)
-                   page (dec (:page state))]
-               (when (:live state) (reset! app state))
-               (reset! tweets (util/tweets-by-order order @app n page))
+             (let [[_ state-snapshot] (<! state-chan)
+                   order (:sorted state-snapshot)
+                   n (:n state-snapshot)
+                   page (dec (:page state-snapshot))]
+               (when (:live state-snapshot)
+                 (reset! app state-snapshot)
+                 (reset! tweets (util/tweets-by-order order state-snapshot n page)))
                (<! (timeout 20)))
              (recur))
     (sub state-pub :app-state state-chan)
     (r/render-component [tweets-view app tweets cmd-chan] (util/by-id "tweet-frame"))))
 ~~~
 
+The mechanism above is comparable to the approach in the ````birdwatch.ui.elements```` namespace. The function takes the ````state-pub```` and the ````cmd-chan```` as arguments. It then sets up a subscriber to the application state change publisher ````state-pub````. Inside a ````let```` binding, we find the two atoms ````app```` and ````tweets````. The ````app```` is used the way we've already seen. In addition, the ````tweets```` atom is used for a list of the tweets to render inside the ````tweets-view````. Then further along, when the view is set to _live_, the ````app```` atom is reset with the ````state-snapshot```` and the ````tweets```` atom is reset with the value returned when calling the ````util/tweets-by-order```` function with a couple of values derived from the ````state-snapshot````.
 
+In the code above, we have used a couple of helpers from the ````birdwatch.ui.util```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/c14a72f196f729786b0049655d98a2218322d81e/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/util.cljs)**, all of which are pure functions:
+
+~~~
+(ns birdwatch.ui.util
+  (:require [clojure.string :as s]))
+
+(defn by-id [id] (.getElementById js/document id))
+
+(defn number-format
+  "formats a number for display, e.g. 1.7K, 122K or 1.5M followers"
+  [number]
+  (cond
+   (< number 1000) (str number)
+   (< number 100000) (str (/ (.round js/Math (/ number 100)) 10) "K")
+   (< number 1000000) (str (.round js/Math (/ number 1000)) "K")
+   :default (str (/ (.round js/Math (/ number 100000)) 10) "M")))
+
+(defn from-now
+  "format date using the external moment.js library"
+  [date]
+  (let [time-string (. (js/moment. date) (fromNow true))]
+    (if (= time-string "a few seconds") "just now" time-string)))
+
+(def twitter-url "https://twitter.com/")
+(defn a-blank [url text] (str "<a href='" url "' target='_blank'>" text "</a>"))
+
+(defn- url-replacer
+  "replace URL occurences in tweet texts with HTML (including links)"
+  [acc entity]
+  (s/replace acc (:url entity) (a-blank (:url entity) (:display_url entity))))
+
+(defn- hashtags-replacer
+  "replace hashtags in tweet text with HTML (including links)"
+  [acc entity]
+  (let [hashtag (:text entity)
+        f-hashtag (str "#" hashtag)]
+    (s/replace acc f-hashtag (a-blank (str twitter-url "search?q=%23" hashtag) f-hashtag))))
+
+(defn- mentions-replacer
+  "replace user mentions in tweet text with HTML (including links)"
+  [acc entity]
+  (let [screen-name (:screen_name entity)
+        f-screen-name (str "@" screen-name)]
+    (s/replace acc f-screen-name (a-blank (str twitter-url screen-name) f-screen-name))))
+
+(defn- reducer
+  "generic reducer, allowing to call specified function for each item in collection"
+  [text coll fun]
+  (reduce fun text coll))
+
+(defn format-tweet
+  "format tweet text for display"
+  [tweet]
+  (let [{:keys [urls media user_mentions hashtags]} (:entities tweet)]
+    (assoc tweet :html-text
+      (-> (:text tweet)
+          (reducer , urls url-replacer)
+          (reducer , media url-replacer)
+          (reducer , user_mentions mentions-replacer)
+          (reducer , hashtags hashtags-replacer)
+          (s/replace , "RT " "<strong>RT </strong>")))))
+
+(defn entity-count
+  "gets count of specified entity from either tweet, or, when exists, original (retweeted) tweet"
+  [tweet state sym s]
+  (let [rt-id (if (contains? tweet :retweeted_status) (:id_str (:retweeted_status tweet)) (:id_str tweet))
+        count (sym ((keyword rt-id) (:tweets-map state)))]
+    (if (not (nil? count)) (str (number-format count) s) "")))
+
+(defn rt-count [tweet state] (entity-count tweet state :retweet_count " RT | "))
+(defn fav-count [tweet state] (entity-count tweet state :favorite_count " fav"))
+
+(defn rt-count-since-startup
+  "gets RT count since startup for tweet, if exists returns formatted string"
+  [tweet state]
+  (let [t (if (contains? tweet :retweeted_status) (:retweeted_status tweet) tweet)
+        cnt ((keyword (:id_str t)) (:by-rt-since-startup state))
+        reach ((keyword (:id_str t)) (:by-reach state))]
+    (if (> cnt 0) (str "analyzed: " (number-format cnt) " retweets, reach " (number-format reach)))))
+
+(defn tweets-by-order
+  "find top n tweets by specified order"
+  [order app n skip]
+  (map (fn [[k v]] (get (:tweets-map app) k {:id_str (name k)}))
+       (->> (order app)
+            (drop (* n skip) ,)
+            (take n ,))))
+~~~
 

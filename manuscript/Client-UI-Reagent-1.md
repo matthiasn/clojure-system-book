@@ -33,8 +33,8 @@ Using this approach has an additional advantage. If the UI is a function of the 
   (let [app (atom {})
         state-chan (chan (sliding-buffer 1))]
     (go-loop []
-             (let [[_ state] (<! state-chan)]
-               (reset! app state)
+             (let [[_ state-snapshot] (<! state-chan)]
+               (reset! app state-snapshot)
                (<! (timeout 10))
                (recur)))
     (sub state-pub :app-state state-chan)
@@ -63,7 +63,7 @@ In the previous chapter, we've learned how to initialize UI elements while also 
 
 ![](images/client-elements.png)
 
-And here's how that looks like in **[code](https://github.com/matthiasn/BirdWatch/blob/2cfa1c68d911418e57fad7a6fa363a868b24b65a/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/elements.cljs)**:
+And here's how that looks like in **[code](https://github.com/matthiasn/BirdWatch/blob/277531c52e58b726f3cdb60898941d90b544b797/Clojure-Websockets/MainApp/src/cljs/birdwatch/ui/elements.cljs)**:
 
 ~~~
 (ns birdwatch.ui.elements
@@ -141,8 +141,8 @@ And here's how that looks like in **[code](https://github.com/matthiasn/BirdWatc
         state-chan (chan (sliding-buffer 1))]
     (pipe cmd-chan cmd-out-chan)
     (go-loop []
-             (let [[_ state] (<! state-chan)]
-               (reset! app state)
+             (let [[_ state-snapshot] (<! state-chan)]
+               (reset! app state-snapshot)
                (<! (timeout 10))
                (recur)))
     (sub state-pub :app-state state-chan)
@@ -316,8 +316,8 @@ Finally in this namespace, we have some code for initializing the Reagent compon
         state-chan (chan (sliding-buffer 1))]
     (pipe cmd-chan cmd-out-chan)
     (go-loop []
-             (let [[_ state] (<! state-chan)]
-               (reset! app state)
+             (let [[_ state-snapshot] (<! state-chan)]
+               (reset! app state-snapshot)
                (<! (timeout 10))
                (recur)))
     (sub state-pub :app-state state-chan)
