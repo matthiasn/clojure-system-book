@@ -299,7 +299,7 @@ Within the ````pagination-view````, we then include one ````pag-item```` for eac
 
 Once again, a ````:key```` is assigned to each ````pag-item````. As mentioned, this is good practice when working with React. Don't adhere and at least you're reminded by a warning on the console.
 
-Below, we repeat the process for the ````pag-size````, which we also use as a string for the prefix to the React key. Here, we are simply using 4 different page sizes as the options: ````[5 10 25 100]````.
+Below, we repeat the process for the ````pag-size````, which we also use as a string for the prefix to the React key. Here, we simply use 4 different page size options: ````[5 10 25 100]````.
 
 Finally in this namespace, we have some code for initializing the Reagent components on application startup:
 
@@ -326,6 +326,6 @@ Finally in this namespace, we have some code for initializing the Reagent compon
 
 First, we have the vector ````views```` which contains one vector per component, with the function defining it in the first position and the ID of the DOM element to render it into in the second position. 
 
-Next, we have the ````init-views```` function. You will recognize the mechanism for subscribing to state changes we discussed in the last chapter. In addition, we are piping the local ````cmd-chan```` into the ````cmd-cmd-chan```` that the function receives as an argument: ````(pipe cmd-chan cmd-out-chan)````.
+Next, we have the ````init-views```` function. You will recognize the mechanism for subscribing to state changes we discussed in the last chapter. In addition, we pipe the local ````cmd-chan```` into the ````cmd-cmd-chan```` that the function receives as an argument: ````(pipe cmd-chan cmd-out-chan)````.
 
 Once the connection to the rest of the application is established, each component inside the ````views```` vector is rendered / mounted into the DOM inside the ````doseq````, where we destructure the individual vectors as ````[component id]```` and use them for calls to ````r/render-component````. This ````init-views```` function is then called from the ````core```` namespace when the application starts as we've already seen in a previous chapter.
