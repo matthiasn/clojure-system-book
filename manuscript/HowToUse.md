@@ -4,6 +4,8 @@ It's actually pretty straightforward. In a typical chapter you will find code sn
 
 Next, the code will typically be explained. If you think that the explanation sucks, isn't clear, could be better or whatever, I'd ask you to please post that insufficiency on the **[Google Group](https://groups.google.com/forum/#!forum/building-a-system-in-clojure)** associated with the writing process of this book and I will try to improve it. This is all a work in progress.
 
+Also, wherever you'd like to get clarification, discuss a different approach or whatever, please send me an email: <matthias.nehlsen@gmail.com>
+
 That's all, really. 
 
 **Have fun.**
