@@ -1,6 +1,10 @@
 ### Word Cloud Chart
 
-Here's the ````birdwatch.charts.cloud-chart```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/83ff6bfc4b930e877f8f8414b53fc381bf5b4366/Clojure-Websockets/MainApp/src/cljs/birdwatch/charts/cloud_chart.cljs)**:
+![Word Cloud Chart](images/wordcloud.png)
+
+The word cloud is generated using **[D3.js](http://d3js.org)** and Jason Davies' **[d3-cloud](https://github.com/jasondavies/d3-cloud)** on top of it. I then wrote some JavaScript code to interact with with **d3-cloud**. There's not much of a point in going through the **d3** code here, but if you're interested, you can check it out on GitHub: **[wordcloud.js](https://github.com/matthiasn/BirdWatch/blob/83ff6bfc4b930e877f8f8414b53fc381bf5b4366/Clojure-Websockets/MainApp/resources/public/js/wordcloud.js)**.
+
+Here's the ClojureScript code to interact with ````wordcloud.js````  ````birdwatch.charts.cloud-chart```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/83ff6bfc4b930e877f8f8414b53fc381bf5b4366/Clojure-Websockets/MainApp/src/cljs/birdwatch/charts/cloud_chart.cljs)**:
 
 ~~~
 (ns birdwatch.charts.cloud-chart
@@ -26,3 +30,7 @@ Here's the ````birdwatch.charts.cloud-chart```` **[namespace](https://github.com
                (recur)))
     (sub state-pub :app-state state-chan)))
 ~~~
+
+By now, there should be no suprises in here at all. We have the ````go-loop```` listening to state changes and the timeout for control over how often a value is taken off the channel. This is particularly important for the word cloud as this is by far the most CPU-intensive operation in the entire BirdWatch application. It would be interesting to implement the word cloud in pure ClojureScript. Maybe one day. 
+
+Inside the ````mount-wordcloud```` function, we create the ````word-cloud```` through JavaScript interop and then inside the ````go-loop````, we call the ````.redraw```` function with ````(clj->js (wc/get-words state n))````, which is the data structure returned from ````wc/get-words```` and then converted to a JavaScript data structure.
