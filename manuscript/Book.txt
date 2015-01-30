@@ -36,9 +36,11 @@ Client-UI-Tweets.md
 Client-UI-Util.md
 Client-UI-Pure.md
 
-Client-Wordcount.md
+Client-Charts-Intro.md
 Client-Timeseries.md
 Client-Timeseries-Chart.md
+
+Client-Wordcount.md
 Client-Wordcount-Chart.md
 
 Testing.md
