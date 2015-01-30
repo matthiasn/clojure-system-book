@@ -107,7 +107,7 @@ In the code for the Reagent components, we have used a couple of helpers from th
             (take n ,))))
 ~~~
 
-I don't know, for my taste, this namespace is almost too long in terms of the number of lines. What do you think? Anyway, let's go through the code function by function. First, we have the ````by-id```` function:
+I don't know, but for my taste this namespace is almost too long in terms of the number of lines. What do you think? Anyway, let's go through the code function by function. First, we have the ````by-id```` function:
 
 ~~~
 (defn by-id
@@ -116,7 +116,7 @@ I don't know, for my taste, this namespace is almost too long in terms of the nu
   (.getElementById js/document id))
 ~~~
 
-This function is very straightforward, despite the interaction with the JavaScript host platform. All it does it get a DOM element by ID. Next, we have the ````number-format```` function:
+This function is very straightforward despite the interaction with the JavaScript host platform. All it does is getting a DOM element by ID. Next, we have the ````number-format```` function:
 
 ~~~
 (defn number-format
@@ -129,7 +129,7 @@ This function is very straightforward, despite the interaction with the JavaScri
    :default (str (/ (.round js/Math (/ number 100000)) 10) "M")))
 ~~~
 
-You know what this does if you've ever used Twitter. It reduces large numbers to fewer significant figures. Take Justin Bieber for example. There's simply not enough space to display his number of followers, which was **59,776,559** at the time of writing this. It is so much easier to squeeze in **59.8M** instead.
+You know what this does if you've ever used Twitter. It reduces large numbers to fewer significant figures. Take Justin Bieber, for example. There's simply not enough space to display his number of followers, which was **59,776,559** at the time of writing. It is so much easier to squeeze in **59.8M** instead.
 
 ~~~
 (defn from-now
@@ -156,13 +156,13 @@ The ````a-blank```` returns an HTML string for a link that opens in a new tab. T
 [:div {:dangerouslySetInnerHTML #js {:__html (:html-text tweet)}}]
 ~~~
 
-One could likely implement this in pure Reagent, without this "dangerous" behavior. I don't mind it as injections of malicious code don't seem to be an issue in this application. However, it would be more elegant. Anyone interested in solving this? Maybe that could be a task to solve during a meetup or so. If you're interested, knock yourself out.
+It may be possible to implement this in pure Reagent without this "dangerous" behavior. That's fine by me as injections of malicious code don't seem to be an issue in this application. And it would be more elegant. Anyone interested in solving this? Maybe that could be a task to solve during a meetup or so. If you're interested, knock yourself out.
 
 The ````a-blank```` function we've seen a moment ago is then used by the ````url-replacer````, ````hashtags-replacer````, and ````mentions-replacer```` functions:
 
 ~~~
 (defn- url-replacer
-  "Replace URL occurences in tweet texts with HTML (including links)."
+  "Replaces URL occurrences in tweet texts with HTML (including links)."
   [acc entity]
   (s/replace acc (:url entity) (a-blank (:url entity) (:display_url entity))))
 ~~~
@@ -185,16 +185,16 @@ The ````a-blank```` function we've seen a moment ago is then used by the ````url
     (s/replace acc f-screen-name (a-blank (str twitter-url screen-name) f-screen-name))))
 ~~~
 
-The three _replacer_ functions we just looked at obviously need to be called from somewhere. I wanted to use the **[thread-first macro](http://clojuredocs.org/clojure.core/-%3E)** and pass the result from one ````reduce```` into the next ````reduce```` until all replacements have been performed. However, the signature of ````reduce```` did not match. Not to worry, I can just write a function for that:
+The three _replacer_ functions we have just looked at obviously need to be called from somewhere. I wanted to use the **[thread-first macro](http://clojuredocs.org/clojure.core/-%3E)** and pass the result from one ````reduce```` into the next ````reduce```` until all replacements had been performed. However, the signature of ````reduce```` did not match. Not to worry, I can just write a function for that:
 
 ~~~
 (defn- reducer
-  "Generic reducer, allows calling specified function for each item in provided collection."
+  "Generic reducer, allows calling specified function for each item in collection provided."
   [text coll fun]
   (reduce fun text coll))
 ~~~
 
-In the ````reducer```` function above, reduce is called internally, while providing the signature I need to work with either the ````thread-first```` or the ````thread-last```` macro. This ````reducer```` can now be called from inside the function that formats the entire tweet text HTML string:
+In the ````reducer```` function above, reduce is called internally while providing the signature I need, so to work with either the ````thread-first```` or the ````thread-last```` macro. This ````reducer```` can now be called from inside the function that formats the entire tweet text HTML string:
 
 ~~~
 (defn format-tweet
@@ -210,11 +210,11 @@ In the ````reducer```` function above, reduce is called internally, while provid
           (s/replace , "RT " "<strong>RT </strong>")))))
 ~~~
 
-So much for the tweet text. But we have more to discuss. We need to get the counts of multiple entities, such as the _followers_, _retweet_, _favorites_, or also the _retweets within the loaded tweets_:
+So much for the tweet text. But we have more to discuss. We need to get the counts of multiple entities, such as the _followers_, _retweet_, _favorites_, or the _retweets within the loaded tweets_:
 
 ~~~
 (defn entity-count
-  "Gets count of specified entity from either tweet, or, when exists, original (retweeted) tweet."
+  "Gets count of specified entity from either tweet or, if exists, original (retweeted) tweet."
   [tweet state k s]
   (let [rt-id (if (contains? tweet :retweeted_status)
                 (:id_str (:retweeted_status tweet))
@@ -223,7 +223,7 @@ So much for the tweet text. But we have more to discuss. We need to get the coun
     (if count (str (number-format count) s) "")))
 ~~~
 
-This ````entity-count```` function takes a ````tweet````, the ````state```` snapshot, a keyword ````k```` and a string ````s````. It then checks if the ````tweet```` is a retweet (contains a ````:retweeted-status```` ). If so, it uses the ID of the retweet, otherwise it takes the ID of ````tweet```` as ````rt-id````. Then, ````count```` is determined by looking up the ````rt-id```` within the ````state```` snapshot, using ````k```` as the lookup function. Finally, if ````count```` exists, it concatenates the result of calling the ````number-format```` function with ````count```` and the string ````s````. This ````entity-count```` function can now be used more specifically:
+This ````entity-count```` function takes a ````tweet````, the ````state```` snapshot, a keyword ````k```` and a string ````s````. It then checks if the ````tweet```` is a retweet (contains a ````:retweeted-status```` ). If so, it uses the ID of the retweet, otherwise it takes the ID of ````tweet```` as ````rt-id````. Then, ````count```` is determined by looking up the ````rt-id```` within the ````state```` snapshot, using ````k```` as the lookup function. Finally, if ````count```` exists, it concatenates the result from calling the ````number-format```` function with ````count```` and the string ````s````. This ````entity-count```` function can now be used more specifically:
 
 ~~~
 (defn rt-count
@@ -252,7 +252,7 @@ Both ````rt-count```` and ````fav-count```` simply call ````entity-count```` wit
       (str "analyzed: " (number-format cnt) " retweets, reach " (number-format reach)))))
 ~~~
 
-Once again, we look if the tweet is a retweet. If so, further reasoning is done on the retweet, if not, the tweet itself is used. Then, we can look up the number of retweets within the loaded tweets and the reach within the same dataset by looking up the the count within the respective sort orders which we have derived and updated when ingesting tweets.
+Once again, we look if the tweet is a retweet. If so, further reasoning is done on the retweet; if not, the tweet itself is used. Then, we can look up the number of retweets within the loaded tweets and the reach within the same dataset by looking up the count within the respective sort orders, which we have derived and updated when ingesting tweets.
 
 Finally, there is a function that returns a list of tweets for display in the UI, paginated, with the correct number of items and in the right sort order:
 
@@ -266,8 +266,8 @@ Finally, there is a function that returns a list of tweets for display in the UI
             (take n ,))))
 ~~~
 
-The ````tweets-by-order```` function takes the desired ````order````, the ````state```` snapshot, the page size ````n```` and the number of items to ````skip```` (for pagination). It then uses ````map```` to apply an anonymous function to every item in a collection that is derived by taking the specified sort order from the ````state```` snapshot, dropping ````(* n skip)```` items and taking ````n```` items. Inside the anonymous function, each item is converted to a tweet by looking it up in the ````:tweets-map```` key inside the ````state```` snapshot. If the tweet is not found, the map ````{:id_str (name k)}```` is used instead. This default value is used for the ````missing-tweet```` component we've met when discussing the ````tweets-view```` component. The ````:id-str```` of the missing tweet then allows the ````missing-tweet```` component to emit a request for retrieval.
+The ````tweets-by-order```` function takes the desired ````order````, the ````state```` snapshot, the page size ````n```` and the number of items to ````skip```` (for pagination). It then uses ````map```` to apply an anonymous function to every item in a collection that is derived by taking the specified sort order from the ````state```` snapshot, dropping ````(* n skip)```` items and taking ````n```` items. Inside the anonymous function, each item is converted to a tweet by looking it up in the ````:tweets-map```` key inside the ````state```` snapshot. If the tweet is not found, the map ````{:id_str (name k)}```` is used instead. This default value is used for the ````missing-tweet```` component we met when we discussed the ````tweets-view```` component. The ````:id-str```` of the missing tweet then allows the ````missing-tweet```` component to emit a request for retrieval.
 
 That's it for displaying the tweets. I like that the part of the application handling the application state does not need to know anything about how it's rendered or used. This, however, requires knowledge of the data structure inside the UI layer. I think that's okay though. For the UI layer, the application state change is an observable fact that it can then transform into a visual representation. It's a function that takes the state snapshot and derives the DOM, with no write access to the application state. I like that more than having the State component know about data structures required by the UI. However, I'm curious about your thoughts on this. 
 
-By the way, for every thought you have and that you'd like to get clarification on or that you'd like to discuss, please send me an email: <matthias.nehlsen@gmail.com>
+By the way, for every thought that you have and you'd like to get clarification on or discuss, please send me an email: <matthias.nehlsen@gmail.com>
