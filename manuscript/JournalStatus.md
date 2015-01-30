@@ -2,6 +2,8 @@
 This section of the book will allow you to keep track of what I'm working on at any moment, what's going well (or not) and what to expect next. I will keep it updated frequently.
 
 ## Journal
+**Jan 28th to Jan 30th**: Rewrite of the UI chapters on the client side.
+
 **Jan 27th**: Rewrite of the State chapter.
 
 **Jan 26th:** Rewrite of the Communicator chapter.
@@ -19,4 +21,4 @@ This section of the book will allow you to keep track of what I'm working on at 
 ## Chapter Status
 **Server Side:** I think the architecture is reasonably clean, with dependencies between different parts of the application reduced as much as possible. I am not completely sold on the necessity of the **Component library** though. While the advantages of reloading the application seem compelling, I have not made much use of that yet and haven't in a while. On the client side, I am dealing with the same issues around trying to avoid hairballs of interdependencies and I think I have succeeded, even without the added complexity required by Component. On the other hand, using Component adds good structure. Maybe I'd remove the channel components and have the channels provided by each component directly. I'm curious about your thoughts on this subject.
 
-**Client Side:** The client-side application is rewritten to reflect the changes mentioned in the new introduction. The chapters about the ````core````, ````communicator````, and ````state.*```` namespaces have been rewritten. Approach the remaining chapters with care, they are about to change a lot.
+**Client Side:** The client-side application has been rewritten to reflect the changes mentioned in the new introduction. They are mostly complete, except for not all proofreading being completed yet. Also, the client summary is still missing.
