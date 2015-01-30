@@ -42,6 +42,7 @@ Client-Charts-Timeseries.md
 Client-Charts-Wordcloud.md
 Client-Stats-Wordcount.md
 Client-Charts-Wordcount.md
+Client-Summary.md
 
 Testing.md
 OperationalInsight.md
