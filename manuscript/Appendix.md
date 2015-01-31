@@ -1,6 +1,9 @@
 # Appendix
 
 ## Chapter Status History
+
+**Client Side Chapters before Jan 31st:** The client-side application has been rewritten to reflect the changes mentioned in the new introduction. They are mostly complete, except for not all proofreading being completed yet. Also, the client summary is still missing.
+
 **Client Chapters before Jan 30th:** The client-side application is rewritten to reflect the changes mentioned in the new introduction. The chapters about the ````core````, ````communicator````, and ````state.*```` namespaces have been rewritten. Approach the remaining chapters with care, they are about to change a lot.
 
 **Client Side (Jan 27th, 2015):** The client-side application is rewritten to reflect the changes mentioned in the new introduction. The chapters about the ````core```` and ````communicator```` namespaces have been rewritten. Approach the remaining chapters with care, they are about to change a lot.

@@ -144,7 +144,7 @@ Before we can do the actual timeseries mapping, we will need two helper function
   (.unix (js/moment. (:created_at t))))
 ~~~
 
-The ````count-into-map```` function simply takes a map ````ts-map```` and increments the counter at the key ````k````. The ````tweet-ts```` function is nothing more than a lightweight wrapper around **[moment.js](http://momentjs.com)** for retrieving the milliseconds since epoch. 
+The ````count-into-map```` function simply takes a map ````ts-map```` and increments the counter at the key ````k````. The ````tweet-ts```` function is nothing more than a lightweight wrapper around **[moment.js](http://momentjs.com)** for retrieving the milliseconds since **[epoch](http://en.wikipedia.org/wiki/Unix_time)**. 
 
 With these in place we can now look at the ````ts-data```` function, which is the main workhorse in this namespace:
 
