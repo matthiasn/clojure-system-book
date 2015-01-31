@@ -1,1 +1,13 @@
-Client-Wordcount.md
+Client-Charts-Intro.md
+empty.md
+Client-Stats-Timeseries.md
+empty.md
+Client-Charts-Timeseries.md
+empty.md
+Client-Charts-Wordcloud.md
+empty.md
+Client-Stats-Wordcount.md
+empty.md
+Client-Charts-Wordcount.md
+empty.md
+Client-Summary.md
