@@ -46,9 +46,9 @@ We've already looked at the timeseries chart in the last chapter to get an idea 
        [:div.dot.active {:style {:top top :border-color "steelblue"}}]])))
 
 (defn ts-chart
-  "Renders time series chart consisting of SVG for the bars and a label.
+  "Renders timeseries chart consisting of SVG for the bars and a label.
    Appearance is similar to the Rickshaw timeseries chart, which this
-   component replaced, except for the CSS."
+   component has replaced, except for the CSS."
   [bars-atom label]
   (let [bars @bars-atom
         indexed (vec (map-indexed vector bars))
@@ -99,10 +99,10 @@ Next, we have the ````bar```` function:
 
 This renders a single bar of height ````h```` and width ````w```` at the ````x```` and ````y```` coordinates. Note the ````:y (- y h)````. This is because in SVG's coordinate system, x=0 and y=0 is in the upper left corner, which is not that useful for charts. Then, we also have the ````idx````, which is the index of each bar. This is used for rendering a label. When the mouse enters the bar, the label is shown by setting the ````label```` atom: ````:on-mouse-enter #(reset! label {:idx idx})````, which is cleared again when the mouse leaves ````:on-mouse-leave #(reset! label {})````. We will look at the label below.
 
-The ````bar```` component can now be used inside the ````barchart```` component:
+The ````bar```` component can now be used inside the ````bar chart```` component:
 
 ~~~
-(defn barchart
+(defn bar chart
   "Renders a bar chart, making use of the bar function above. Returns
    entire SVG element."
   [indexed mx cnt w label]
@@ -113,7 +113,7 @@ The ````bar```` component can now be used inside the ````barchart```` component:
         ^{:key k} [bar (* idx w) ts-h (* (/ v mx) ts-h) (- w gap) idx label])]]))
 ~~~
 
-This function first of all determines the ````gap```` between the bars. It then renders the ````:svg```` with all bars inside a group ````:g````. Once again, we are setting the key so that React can reuse elements and be more efficient. The ````label```` atom is passed on to the individual bars for the mouse-in/mouse-out behavior showing the data for a specific bar in the label.
+This function first of all determines the ````gap```` between the bars. It then renders the ````:svg```` with all bars inside a group ````:g````. Once again, we are setting the key so that React can reuse elements and be more efficient. The ````label```` atom is passed on to the individual bars for the mouse-in/mouse-out behavior, showing the data for a specific bar in the label.
 
 Then, we have the ````labels```` component. Let's first see how that looks like with the sample data from when we discussed the ````birdwatch.timeseries```` namespace:
 
@@ -134,15 +134,15 @@ Then, we have the ````labels```` component. Let's first see how that looks like 
        [:div.dot.active {:style {:top top :border-color "steelblue"}}]])))
 ~~~
 
-As you can see above, the ````labels```` component consists of two parts. On top, it shows how many tweets were encountered in the interval and at the bottom it shows us the start of the interval.
+As you can see above, the ````labels```` component consists of two parts. On top it shows how many tweets were encountered in the interval, and at the bottom it shows us the start of the interval.
 
-Now we have all components together so we can combine them into the ````ts-chart```` component holding the entire bar chart including labels:
+Now we have all components together, and we can combine them into the ````ts-chart```` component holding the entire bar chart including labels:
 
 ~~~
 (defn ts-chart
-  "Renders time series chart consisting of SVG for the bars and a label.
+  "Renders timeseries chart consisting of SVG for the bars and a label.
    Appearance is similar to the Rickshaw timeseries chart, which this
-   component replaced, except for the CSS."
+   component has replaced, except for the CSS."
   [bars-atom label]
   (let [bars @bars-atom
         indexed (vec (map-indexed vector bars))
@@ -150,12 +150,12 @@ Now we have all components together so we can combine them into the ````ts-chart
         cnt (count bars)
         w (/ ts-w cnt)]
     [:div.rickshaw_graph
-     [barchart indexed mx cnt w label]
+     [bar chart indexed mx cnt w label]
      [labels bars mx cnt w label]]))
 ~~~
 
 
-This component creates the ````:div```` that holds both the ````barchart```` and ````labels```` components. Note that I've removed the Rickshaw library from the project, but for now I'm still using some of its CSS, e.g. the ````rickshaw_graph```` class, or the classes used in the ````labels```` component. 
+This component creates the ````:div```` that holds both the ````bar chart```` and ````labels```` components. Note that I've removed the Rickshaw library from the project, but for now I'm still using some of its CSS, e.g. the ````rickshaw_graph```` class, or the classes used in the ````labels```` component. 
 
 Finally, the ````ts-chart```` needs to be mounted into the DOM. Also, the mechanism for subscribing to application state changes needs to be fired up. This happens in the ````mount-ts-chart```` function:
 
@@ -176,5 +176,5 @@ Finally, the ````ts-chart```` needs to be mounted into the DOM. Also, the mechan
     (sub state-pub :app-state state-chan)))
 ~~~
 
-The mechanism here is similar to other Reagent components we've seen. The function receives the ````state-pub```` and a time interval as arguments. Inside a let-binding, the bars and the label info are held in atoms, in addition to the local ````state-chan````. Then inside a ````go-loop````, ````state```` snapshots are taken off ````state-chan````. This ````state```` snapshot is then used to derive the time series data by calling ````ts-data````, a pure function inside ````birdwatch.stats.timeseries````. The timeout here should be longer as it would be a waste of CPU cycles to call the ````ts-data```` function every 10 milliseconds. Every second is fine. Also, the component is rendered into the DOM element ````ts-elem```` and ````state-chan```` subscribes to the ````state-pub```` for the ````:app-state```` topic. This is exactly the same for all UI components in this application.
+The mechanism here is similar to other Reagent components we've seen. The function receives the ````state-pub```` and a time interval as arguments. Inside a let-binding, the bars and the label info are held in atoms in addition to the local ````state-chan````. Then, inside a ````go-loop````, ````state```` snapshots are taken off ````state-chan````. This ````state```` snapshot is then used to derive the timeseries data by calling ````ts-data````, a pure function inside ````birdwatch.stats.timeseries````. The timeout here should be longer as it would be a waste of CPU cycles to call the ````ts-data```` function every 10 milliseconds. Every second is fine. Also, the component is rendered into the DOM element ````ts-elem````, and ````state-chan```` subscribes to the ````state-pub```` for the ````:app-state```` topic. This is exactly the same for all UI components in this application.
 
