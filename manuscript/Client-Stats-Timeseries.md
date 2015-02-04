@@ -49,7 +49,7 @@ The ````birdwatch.timeseries```` **[namespace](https://github.com/matthiasn/Bird
   (.unix (js/moment. (:created_at t))))
 
 (defn ts-data
-  "Performs time series analysis by counting tweets in even intervals."
+  "Performs timeseries analysis by counting tweets in even intervals."
   [state]
   (let [tweets-by-id ((util/tweets-by-order :tweets-map :by-id) state 100000)]
     (let [oldest (tweet-ts (last tweets-by-id))
@@ -84,7 +84,7 @@ First in the namespace, we have the ````date-round```` function, which is a help
 (def day (* 24 hr))
 ~~~
 
-Pretty straightforward, nothing more than a higher-order function that returns a another function with the ````interval```` argument baked into the returned function. This returned function then multiplies ````interval```` with the ````Math/floor```` of dividing the argument ````t```` of the returned function by the ````interval```` provided when creating the function.
+Pretty straightforward, nothing more than a higher-order function that returns another function with the ````interval```` argument baked into the returned function. This returned function then multiplies ````interval```` with the ````Math/floor```` of dividing the argument ````t```` of the returned function by the ````interval```` provided when creating the function.
 
 Then, we have the ````grouping-interval```` function:
 
@@ -101,7 +101,7 @@ Then, we have the ````grouping-interval```` function:
    :else                            m))  ;round by nearest minute
 ~~~
 
-Here, we figure out how long the duration of one bar is going to be, depending on the total time span covered by the tweets loaded. Next, there's ````empty-ts-map```` function:
+Here, we figure out how long the duration of one bar will be, depending on the total time span covered by the tweets loaded. Next, there's the ````empty-ts-map```` function:
 
 ~~~
 (defn empty-ts-map
@@ -150,7 +150,7 @@ With these in place we can now look at the ````ts-data```` function, which is th
 
 ~~~
 (defn ts-data
-  "Performs time series analysis by counting tweets in even intervals."
+  "Performs timeseries analysis by counting tweets in even intervals."
   [state]
   (let [tweets-by-id ((util/tweets-by-order :tweets-map :by-id) state 100000)]
     (let [oldest (tweet-ts (last tweets-by-id))
@@ -162,7 +162,7 @@ With these in place we can now look at the ````ts-data```` function, which is th
               (map #(rounder (tweet-ts %)) tweets-by-id)))))
 ~~~
 
-This function takes the ````state```` snapshot, gets ````tweets-by-id```` which, as the name implies, gets the tweets sorted by ID, which is equivalent to them sorted by time. From these, we determine the ````oldest```` and ````newest```` tweets, from which we determine the appropriate interval and construct the ````rounder```` function. With these, we can run ````reduce```` with ````count-into-map```` as the reducing function, the ````(empty-ts-map newest oldest interval)```` as the accumulator and ````(map #(rounder (tweet-ts %)) tweets-by-id)```` as the data structure to run over, which rounds each tweet in there to the correct interval so that it can be counted.
+This function takes the ````state```` snapshot, gets ````tweets-by-id```` which, as the name implies, gets the tweets sorted by ID, which is equivalent to them being sorted by time. From these, we determine the ````oldest```` and ````newest```` tweets, from which we determine the appropriate interval and construct the ````rounder```` function. With these, we can run ````reduce```` with ````count-into-map```` as the reducing function, the ````(empty-ts-map newest oldest interval)```` as the accumulator and ````(map #(rounder (tweet-ts %)) tweets-by-id)```` as the data structure to run over, which rounds each tweet in there to the correct interval so that it can be counted.
 
 Here's a truncated output of this function as an example, after running the ````reduce```` over actual tweets:
 
@@ -185,4 +185,4 @@ Let's take it one step further and use this truncated sample data as the actual 
 
 ![Timeseries Chart with Example Data](images/ts-example.png)
 
-Okay, with this, we are well equipped to explore the code for the time series chart.
+Okay, with this, we are well equipped to explore the code for the timeseries chart.
