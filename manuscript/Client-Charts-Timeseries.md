@@ -99,10 +99,10 @@ Next, we have the ````bar```` function:
 
 This renders a single bar of height ````h```` and width ````w```` at the ````x```` and ````y```` coordinates. Note the ````:y (- y h)````. This is because in SVG's coordinate system, x=0 and y=0 is in the upper left corner, which is not that useful for charts. Then, we also have the ````idx````, which is the index of each bar. This is used for rendering a label. When the mouse enters the bar, the label is shown by setting the ````label```` atom: ````:on-mouse-enter #(reset! label {:idx idx})````, which is cleared again when the mouse leaves ````:on-mouse-leave #(reset! label {})````. We will look at the label below.
 
-The ````bar```` component can now be used inside the ````bar chart```` component:
+The ````bar```` component can now be used inside the ````barchart```` component:
 
 ~~~
-(defn bar chart
+(defn barchart
   "Renders a bar chart, making use of the bar function above. Returns
    entire SVG element."
   [indexed mx cnt w label]
@@ -150,12 +150,12 @@ Now we have all components together, and we can combine them into the ````ts-cha
         cnt (count bars)
         w (/ ts-w cnt)]
     [:div.rickshaw_graph
-     [bar chart indexed mx cnt w label]
+     [barchart indexed mx cnt w label]
      [labels bars mx cnt w label]]))
 ~~~
 
 
-This component creates the ````:div```` that holds both the ````bar chart```` and ````labels```` components. Note that I've removed the Rickshaw library from the project, but for now I'm still using some of its CSS, e.g. the ````rickshaw_graph```` class, or the classes used in the ````labels```` component. 
+This component creates the ````:div```` that holds both the ````barchart```` and ````labels```` components. Note that I've removed the Rickshaw library from the project, but for now I'm still using some of its CSS, e.g. the ````rickshaw_graph```` class, or the classes used in the ````labels```` component. 
 
 Finally, the ````ts-chart```` needs to be mounted into the DOM. Also, the mechanism for subscribing to application state changes needs to be fired up. This happens in the ````mount-ts-chart```` function:
 
