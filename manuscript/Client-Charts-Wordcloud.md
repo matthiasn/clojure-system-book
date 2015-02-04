@@ -17,8 +17,8 @@ Here's the ClojureScript code to interact with ````wordcloud.js```` in the ````b
 (def cloud-elem (util/by-id "wordCloud"))
 (def w (util/elem-width cloud-elem))
 
-(defn mount-wordcloud
-  "Mount wordcloud and wire channels for incoming data and outgoing commands."
+(defn mount-word cloud
+  "Mount word cloud and wire channels for incoming data and outgoing commands."
   [state-pub cmd-chan {:keys [n every-ms]}]
   (let [on-click #(put! cmd-chan [:append-search-text %])
         word-cloud (.WordCloud js/BirdWatch w (* w 0.7) 250 on-click cloud-elem)
@@ -31,6 +31,6 @@ Here's the ClojureScript code to interact with ````wordcloud.js```` in the ````b
     (sub state-pub :app-state state-chan)))
 ~~~
 
-By now, there should be no surprises in here at all. We have the ````go-loop```` listening to state changes and the timeout for control over how often a value is taken off the channel. This is particularly important for the word cloud as this is by far the most CPU-intensive operation in the entire BirdWatch application. It would be interesting to implement the word cloud in pure ClojureScript. Maybe one day. 
+By now, there should be any surprises in here at all any more. We have the ````go-loop```` listening to state changes and the timeout for control over how often a value is taken off the channel. This is particularly important for the word cloud as this is by far the most CPU-intensive operation in the entire BirdWatch application. It would be interesting to implement the word cloud in pure ClojureScript. Maybe one day. 
 
-Inside the ````mount-wordcloud```` function, we create the ````word-cloud```` through JavaScript interop and then inside the ````go-loop````, we call the ````.redraw```` function with ````(clj->js (wc/get-words state n))````, which is the data structure returned from ````wc/get-words```` and then converted to a JavaScript data structure.
+Inside the ````mount-word cloud```` function, we create the ````word-cloud```` through JavaScript interop and then inside the ````go-loop````, we call the ````.redraw```` function with ````(clj->js (wc/get-words state n))````, which is the data structure returned from ````wc/get-words```` and then converted to a JavaScript data structure.
