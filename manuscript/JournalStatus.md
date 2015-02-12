@@ -2,7 +2,7 @@
 This section of the book will allow you to keep track of what I'm working on at any moment, what's going well (or not) and what to expect next. I will keep it updated frequently.
 
 ## Journal
-**Feb 1st onwards**: preparations for Docker: setting up Linux development environment. Also: conception of load tests. 
+**Feb 1st onwards**: preparations for Docker: setting up Linux development environment. Also: conception of load tests.
 
 **Jan 31st**: Client chapters ready for review and feedback.
 
