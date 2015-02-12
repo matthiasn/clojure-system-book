@@ -2,6 +2,8 @@
 This section of the book will allow you to keep track of what I'm working on at any moment, what's going well (or not) and what to expect next. I will keep it updated frequently.
 
 ## Journal
+**Feb 1st onwards**: preparations for Docker: setting up Linux development environment. Also: conception of load tests. 
+
 **Jan 31st**: Client chapters ready for review and feedback.
 
 **Jan 28th to Jan 30th**: Rewrite of the UI chapters on the client side.
@@ -21,6 +23,6 @@ This section of the book will allow you to keep track of what I'm working on at 
 **Jan 9th to Jan 15th:** Redesign of the client-side architecture according to **[this blog post](http://matthiasnehlsen.com/blog/2015/01/09/Hairball-Removal/)**. Going well, I have so far removed pretty much all dependencies between namespaces. Only the state namespace is still larger than I'd want it to be. That'll be something to work on this weekend.
 
 ## Chapter Status
-**Server Side:** I think the architecture is reasonably clean, with dependencies between different parts of the application reduced as much as possible. I am not completely sold on the necessity of the **Component library** though. While the advantages of reloading the application seem compelling, I have not made much use of that yet and haven't in a while. On the client side, I am dealing with the same issues around trying to avoid hairballs of interdependencies and I think I have succeeded, even without the added complexity required by Component. On the other hand, using Component adds good structure. Maybe I'd remove the channel components and have the channels provided by each component directly. I'm curious about your thoughts on this subject.
+**Server Side:** I think the architecture is reasonably clean, with dependencies between different parts of the application reduced as much as possible. **Ready for feedback.**
 
-**Client Side:** The client-side application has been rewritten to reflect the changes mentioned in the new introduction. The chapters are complete, except for not all proofreading being completed yet.
+**Client Side:** The client-side application has been rewritten to reflect the changes mentioned in the new introduction. **Ready for feedback.**
