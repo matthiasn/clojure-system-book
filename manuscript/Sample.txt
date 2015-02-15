@@ -1,8 +1,6 @@
 Intro.md
 HowToUse.md
 
-JournalStatus.md
-
 Architecture-Overview.md
 
 Code-Initialization.md
@@ -15,3 +13,5 @@ TwitterClient-PersistenceComponent.md
 TwitterClient-InteropComponent.md
 
 BuyIt.md
+
+JournalStatus.md

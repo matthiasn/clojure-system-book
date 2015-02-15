@@ -1,8 +1,6 @@
 Intro.md
 HowToUse.md
 
-JournalStatus.md
-
 Architecture-Overview.md
 
 Code-Initialization.md
@@ -44,8 +42,13 @@ Client-Stats-Wordcount.md
 Client-Charts-Wordcount.md
 Client-Summary.md
 
+Monitoring.md
+
 Testing.md
 OperationalInsight.md
 LoadTestingOptimization.md
 Deployment.md
+
+JournalStatus.md
+
 Appendix.md
