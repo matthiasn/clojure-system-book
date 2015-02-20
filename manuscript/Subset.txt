@@ -5,3 +5,5 @@ Client-Charts-Wordcloud.md
 Client-Stats-Wordcount.md
 Client-Charts-Wordcount.md
 Client-Summary.md
+
+SystemsThinking.md
