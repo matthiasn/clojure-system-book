@@ -42,6 +42,8 @@ Client-Stats-Wordcount.md
 Client-Charts-Wordcount.md
 Client-Summary.md
 
+SystemsThinking.md
+
 Monitoring.md
 
 Testing.md
