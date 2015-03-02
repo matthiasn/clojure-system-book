@@ -39,8 +39,8 @@ Then, there are those system that don't behave nicely:
 Does that remind you of one or more projects you've worked on in the past? I definitely had that feeling when I read this. This could be said about multiple systems I've had the dubious pleasure to work on in the past. How can these problems be dealt with?
 
 > "Understanding archetypal problem-generating structures is not enough. Putting up with them is impossible. They need to be changed. The destruction they cause is often blamed on particular actors or events, although it is actually a consequence of system structure. Blaming, disciplining, firing, twisting policy levers harder, hoping for a more favorable sequence of driving events, tinkering at the margins-these standard responses will not fix structural problems. That is why I call these archetypes 'traps'."
-
-"But system traps can be escaped by recognizing them in advance and not getting caught in them, or by altering the structure by reformulating goals, by weakening, strenghtening, or altering feedback loops, by adding new feedback loops. That is why I call these archetypes not just traps, but opportunities."
+>
+> "But system traps can be escaped-by recognizing them in advance and not getting caught in them, or by altering the structure-by reformulating goals, by weakening, strenghtening, or altering feedback loops, by adding new feedback loops. That is why I call these archetypes not just traps, but opportunities."
 >
 > Meadows, Donatella H. (2008) Thinking in Systems: A Primer - Page  111
 
