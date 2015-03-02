@@ -51,7 +51,7 @@ In addition to a couple of regular channels, there also is a ````pub````, which 
 (def state-pub (pub state-pub-chan first)) ; Pub for subscribing to
 ~~~
 
-Here, the ````state-pub```` is a publisher that takes all items off the ````state-pub-chan```` and that uses the function ````first```` to determine the topic of a message. In order for that to work, it expects a data structure where the topic is the first element in a sequence or a vector. In this application, we will use vectors for that type of messages. The ````pub```` will then apply the function ````first```` to each element, so whatever is in the first position of that vector will be the topic of the message. **Namespaced keywords*** are particularly useful for this purpose.
+Here, the ````state-pub```` is a publisher that takes all items off the ````state-pub-chan```` and that uses the function ````first```` to determine the topic of a message. In order for that to work, it expects a data structure where the topic is the first element in a sequence or a vector. In this application, we will use vectors for that type of messages. The ````pub```` will then apply the function ````first```` to each element, so whatever is in the first position of that vector will be the topic of the message. **Namespaced keywords** are particularly useful for this purpose.
 
 One might wonder if sending the entire dereferenced application state on a channel wasn't too expensive. But it is not expensive at all since we are dealing with an immutable data structure that exists already and which can be passed around cheaply because it doesn't need to be copied.
 

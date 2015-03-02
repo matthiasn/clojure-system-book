@@ -1,8 +1,6 @@
 Intro.md
 HowToUse.md
 
-JournalStatus.md
-
 Architecture-Overview.md
 
 Code-Initialization.md
@@ -29,16 +27,30 @@ Client-Core.md
 Client-WebSockets.md
 Client-State.md
 
-Client-UI-Reagent-1.md
-Client-UI-Reagent-2.md
+Client-UI-React-Reagent.md
+Client-UI-State.md
+Client-UI-Simple-Components.md
+Client-UI-Tweets.md
+Client-UI-Util.md
 Client-UI-Pure.md
-Client-Wordcount.md
-Client-Timeseries.md
-Client-Timeseries-Chart.md
-Client-Wordcount-Chart.md
+
+Client-Charts-Intro.md
+Client-Stats-Timeseries.md
+Client-Charts-Timeseries.md
+Client-Charts-Wordcloud.md
+Client-Stats-Wordcount.md
+Client-Charts-Wordcount.md
+Client-Summary.md
+
+SystemsThinking.md
+
+Monitoring.md
 
 Testing.md
 OperationalInsight.md
 LoadTestingOptimization.md
 Deployment.md
+
+JournalStatus.md
+
 Appendix.md

@@ -1,63 +1,3 @@
-## User Interface
-
-### React.js, Immutable Data and Reagent
-**[React](http://facebook.github.io/react/)** is a revolutionary way to build user interfaces. Its model is particularly well suited for working with immutable data structures because it is based on rendering out the entire application state every single time something changes. Unlike other frameworks, it does not require a mutation of your application state itself. React will then render the state into a virtual DOM, always keep the previous version of the virtual DOM and run an efficient diffing algorithm between the two and only change the actual and slow DOM where it has found changes between the previous and the current virtual DOM during the diffing phase.
-
-This may at first sound inefficient but it is actually very fast, making it trivial to achieve 60 frames per second in the browser in most cases. As far as I know, **[David Nolen](https://twitter.com/swannodette)** was the first who realized how well this model is suited for working with ClojureScript's immutable data structures. He then developed **[Om](https://github.com/swannodette/om)**, which he first announced in this **[blog post](http://swannodette.github.io/2013/12/17/the-future-of-javascript-mvcs/)**. Kudos to him for this discovery. At that time I was working on an **[AngularJS](http://www.amazon.com/AngularJS-UI-Development-Amit-Ghart-ebook/dp/B00OXVAK7A/ref=sr_1_1?ie=UTF8&qid=1420394659&sr=8-1)** book and reading his blog post made me realize that AngularJS is not be the way to go, at least not for me. I had already been exposed to functional programming principles enough to know the value of working with immutable values. Luckily, the publisher found a co-author as I didn't want to spend another couple of months with AngularJS.
-
-I wrote the first version of the ClojureScript client using **Om**, but I always had the problem that I needed a rather large amount of context when coming back to the code for the user interface. I then discovered **[Reagent](https://github.com/reagent-project/reagent)**, which also uses **React.js** and is based on the same principles as Om. 
-
-I found the required code for a Reagent component to be much more succinct and legible so that I made a complete switch. A good part of the reason here is that I like its **[Hiccup](https://github.com/weavejester/hiccup)** syntax.
-
-Now when I come back to the UI code, I scratch my head a lot less than with the previous version. I shared the experience I read in this **[blog post](http://diogo149.github.io/2014/10/19/om-no/)**, which made me give Reagent a shot. I haven't regretted it. Reagent exposes a lot less incidental complexity than Om, and that just works better with my tiny brain. For more information on Reagent I can also recommend this **[blog post](http://getprismatic.com/story/1405451329953)**, besides the decent enough documentation of the project itself.
-
-I will not start with an introduction to Reagent here as the previously mentioned resources should have you covered. Instead, I will just explain the code, which you actually may find simple enough without consulting many other resources. If some of it looks too simple to be true, no worries, it really is not.
-
-### Interacting with Application State from the UI
-There is one major way in which I deviate from the Reagent samples and documentation and that is passing application state to Reagent. As I mentioned previously, I do not like to pass an atom around because it is all too simple to destroy it. When working with UI code, I simply don't want to be able to do that, nor do I want others working on the same codebase to be able to accidentally mutilate the application state from outside a tightly limited state owner.
-
-Luckily, the solution to that is relatively simple. I already mentioned in the **State** chapter that there's a ````broadcast-state```` function that puts dereferenced application state changes on a channel, which are then broadcast to interest parties using a **core.async pub**.
-
-All that any of the UI components has to do now is subscribe to this **pub** and ````reset!```` an atom local to the UI component with that new state. Reagent's ````atom```` implementation, which needs to be used here, allows Reagent to detect changes to this atom and re-render accordingly. From Reagent's **[source](https://github.com/reagent-project/reagent/blob/master/src/reagent/core.cljs#L173)**: _"Like clojure.core/atom, except that it keeps track of derefs. Reagent components that derefs one of these are automatically re-rendered."_.
-
-Now using this atom locally is safe, whatever anyone decided to do with it does not affect the state of the application. In order to change the application, the UI component will have to send the state owner a message on the ````cmd-chan````.
-
-Using this approach has an additional advantage. If the UI is a function of the data that involves complex statistical reasoning, we do not necessarily want to trigger a re-render every single time the application state changes as this can easily become too expensive. Instead, I would like to have a way to throttle how often an update occurs. We've already seen a part of the solution to that when we sent the dereferenced application state on the ````state-pub-chan````. There, we were using a ````sliding-buffer```` and we can use the same mechanism here again, with the addition of a ````timeout```` inside the ````go-loop```` receiving messages from subscribing to state changes. Let's have a look at this mechanism with a simple example:
-
-~~~
-(defn count-view [app] [:span (:count @app)])
-
-(defn init-count-view
-  "Initialize count view view and wire state"
-  [state-pub]
-  (let [app (atom {})
-        state-chan (chan (sliding-buffer 1))]
-    (go-loop []
-             (let [[_ state-snapshot] (<! state-chan)]
-               (reset! app state-snapshot)
-               (<! (timeout 10))
-               (recur)))
-    (sub state-pub :app-state state-chan)
-    (r/render-component [count-view app] (util/by-id "tweet-count"))))
-~~~
-
-First in this example, there's a Reagent component called ````count-view````. It only renders a simple ````:span```` with the value of the ````count```` key inside the application state. Next, there's the ````init-count-view```` function which subscribes to the ````state-pub````, creates a local atom, starts a ````go-loop```` that updates the local atom when changes occur and finally initializes the view with the local atom. Notice the usage of the ````sliding-buffer````. Once again, only the latest state change is kept. In addition to that, a ````timeout```` of 10 milliseconds occurs inside the ````go-loop````, which effectively limits the number of updates to a maximum of 100 per second. If more updates occur, the ````go-loop```` will be busy, causing the ````sliding-buffer```` to accept the latest update and drop older ones. Then, when the timeout is up, the ````go-loop```` will always have the newest state message at the time. In this simple case, the ````timeout```` may not be necessary at all, but it becomes more useful when we only want to update the UI every second or even less often when more expensive statistical reasoning needs to be performed before actually rendering the UI.
-
-Here's the part of the architecture drawing that hopefully helps by illustrating the mechanism involved:
-
-![](images/client-state-pub.png)
-
-For completeness, in order to render this component into the DOM, we need some HTML, with an ````id```` where the element can be rendered:
-
-{lang=html}
-~~~
-<div id="count">Tweets: <span id="tweet-count"></span></div>
-~~~
-
-The result of this can be seen on the right side of this screenshot:
-
-![](images/header.png)
-
 ### Simple Reagent Components
 In the previous chapter, we've learned how to initialize UI elements while also subscribing to the ````state-pub````. This may seem a little excessive for some very small UI components, so I've decided to put all the small UI elements such as the ````search-view````, the ````pagination-view````, the ````sort-view````, the ````count-view ````, the ````total-count-view````, and the ````users-count-view```` together in a single namespace and let them share one function called ````init-views```` for initializing and wiring them altogether. Here's a screenshot with the elements circled in red that are rendered by the ````birdwatch.ui.elements```` namespace:
 
@@ -207,7 +147,7 @@ The ````sort-view```` component is a little more involved. We need a couple of b
 
 Then, in the ````sort-view```` component itself, we dereference the local state and use ````(:sorted @app)```` as ````curr-order```` in the ````let````-binding. With that, we can start constructing the markup generated by this component, starting with a ````:div````. This ````:div```` then contains a couple of buttons, starting with the **Live** button. 
 
-Clicking this "Live" button toggles if the tweets view gets updated or not. Oftentimes, updates happen too frequently to read anything otherwise, particularly when sorting tweets by time, when every new tweet will push the previous ones down in the list. When the key inside the application state is set to false, the tweets component will simply not update, which is trivial to realize through the mechanism of sending state updates on a ````pub````. We will see that later when talking about the tweets component. Here, all we need to concern ourselves with is to send a message to the state component when the button is pressed.
+Clicking this "Live" button toggles if the tweets view gets updated or not. Oftentimes, updates happen too frequently to read anything else, particularly when sorting tweets by time, when every new tweet will push the previous ones down in the list. When the key inside the application state is set to false, the tweets component will simply not update, which is trivial to realize through the mechanism of sending state updates on a ````pub````. We will see that later when talking about the tweets component. Here, all we need to concern ourselves with is to send a message to the state component when the button is pressed.
 
 Next, there's a static button with the label ````"Sort By"````. Note that with Hiccup, we can simply assign classes to the button, like so:
 
@@ -293,13 +233,13 @@ Before we dive into the code, here's how the ````pagination-view```` looks like 
 
 Here, we first have a ````pag-item```` component for each page, which is used for switching the view to the particular page when clicked. In that case, a message of type ````:set-current-page```` with the index ````idx```` of the clicked button is put onto the ````cmd-chan````: ````[:set-current-page idx])````.
 
-Next, we have the same kind of button is used for different page sizes for the tweet view as you saw on the right in the screenshot of the ````pagination-view```` above. Only that this time, the message sets the page size: ````[:set-page-size n]````.
+Next, we have the same kind of button used for different page sizes for the tweet view as you saw on the right in the screenshot of the ````pagination-view```` above. Only that this time, the message sets the page size: ````[:set-page-size n]````.
 
 Within the ````pagination-view````, we then include one ````pag-item```` for each of the pages within the tweets loaded. This should be updated to use actual numbers from the application. But then, we would also need buttons for _first_ and _last_ if we don't want to render 500 pagination items or so. Pull request, anyone? Right now, we will simply use 15 or, if the actual number of pages is lower, that number.
 
 Once again, a ````:key```` is assigned to each ````pag-item````. As mentioned, this is good practice when working with React. Don't adhere and at least you're reminded by a warning on the console.
 
-Below, we repeat the process for the ````pag-size````, which we also use as a string for the prefix to the React key. Here, we are simply using 4 different page sizes as the options: ````[5 10 25 100]````.
+Below, we repeat the process for the ````pag-size````, which we also use as a string for the prefix to the React key. Here, we simply use 4 different page size options: ````[5 10 25 100]````.
 
 Finally in this namespace, we have some code for initializing the Reagent components on application startup:
 
@@ -326,6 +266,6 @@ Finally in this namespace, we have some code for initializing the Reagent compon
 
 First, we have the vector ````views```` which contains one vector per component, with the function defining it in the first position and the ID of the DOM element to render it into in the second position. 
 
-Next, we have the ````init-views```` function. You will recognize the mechanism for subscribing to state changes we discussed in the last chapter. In addition, we are piping the local ````cmd-chan```` into the ````cmd-cmd-chan```` that the function receives as an argument: ````(pipe cmd-chan cmd-out-chan)````.
+Next, we have the ````init-views```` function. You will recognize the mechanism for subscribing to state changes we discussed in the last chapter. In addition, we pipe the local ````cmd-chan```` into the ````cmd-cmd-chan```` that the function receives as an argument: ````(pipe cmd-chan cmd-out-chan)````.
 
 Once the connection to the rest of the application is established, each component inside the ````views```` vector is rendered / mounted into the DOM inside the ````doseq````, where we destructure the individual vectors as ````[component id]```` and use them for calls to ````r/render-component````. This ````init-views```` function is then called from the ````core```` namespace when the application starts as we've already seen in a previous chapter.
