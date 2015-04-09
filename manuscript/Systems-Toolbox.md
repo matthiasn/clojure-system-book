@@ -1,6 +1,6 @@
 # Update - April 9th, 2015
 
-**TL;DR** Where are the book updates? I’ve been developing a library for building systems, and it has already made the codebase of the BirdWatch application much simpler. I’ll be back to updating the book using the new code and concepts soon. Thanks for buying the book!
+**TL;DR: Where are the book updates?** I've been developing a library for building systems, and it has already made the codebase of the BirdWatch application much simpler. I'll be back to updating the book using the new code and concepts soon. Thanks for buying the book!
 
 ---
 
@@ -16,7 +16,7 @@ The code inside the BirdWatch application felt the same way. Where I only wanted
 
 So instead, I wanted to pull common functionality out into a separate library. Then, a new consulting gig came along with **[Aviso Novate](https://twitter.com/avisonovate)** thanks to the recommendation of **[Ryan Neufeld](https://twitter.com/rkneufeld)**. That could have been a problem in terms of finding the time for working on the library. But luckily, the opposite was true. The library could well be helpful in the project I'm working on, so they generously let me explore the problem and write the library.
 
-I call this library  **[systems-toolbox](https://github.com/matthiasn/systems-toolbox)**. If you happen to follow me on GitHub, you may have seen the **[79 commits](https://github.com/matthiasn/systems-toolbox/commits/master)** I pushed there over the last five weeks, and now I can say that it is shaping up nicely. The documentation is not up to speed yet, but the codebase of **[BirdWatch](https://github.com/matthiasn/BirdWatch)** provides a good point of reference as I've already fully switched it over to the new approach, both on the client- and the server-side.
+I call this library  **[systems-toolbox](https://github.com/matthiasn/systems-toolbox)**. If you happen to follow me on GitHub, you may have seen the **[79 commits](https://github.com/matthiasn/systems-toolbox/commits/master)** I pushed there over the last five weeks, and now I can say that it is shaping up nicely. The documentation is not up to speed yet, but the codebase of **[BirdWatch](https://github.com/matthiasn/BirdWatch)** provides a good point of reference. I've already fully migrated BirdWatch to use the new approach, both on the client- and the server-side, and it's working well.
 
 I've been very interested in Systems Thinking lately. If you're not familiar with this kind of thinking, it is based on approaching and understanding the world by determining observable systems.
 
