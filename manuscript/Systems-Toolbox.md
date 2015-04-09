@@ -1,4 +1,8 @@
-# Building a System in Clojure - Update
+# Update - April 9th, 2015
+
+**TL;DR** Where are the book updates? I’ve been developing a library for building systems, and it has already made the codebase of the BirdWatch application much simpler. I’ll be back to updating the book using the new code and concepts soon. Thanks for buying the book!
+
+---
 
 Hi there, and thank you for becoming a reader of **[Building a System in Clojure (and ClojureScript)](https://leanpub.com/building-a-system-in-clojure)** early on[^1]. You will probably have wondered by now when I was planning to release new content. That's a valid question -- and you deserve to know.
 
