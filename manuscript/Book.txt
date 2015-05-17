@@ -1,7 +1,11 @@
 Systems-Toolbox.md
 
-Intro.md
+Introduction.md
+Whats-In-This-Book.md
+Why-am-I-writing-this-book.md
 HowToUse.md
+
+SystemsThinking.md
 
 Architecture-Overview.md
 
@@ -43,8 +47,6 @@ Client-Charts-Wordcloud.md
 Client-Stats-Wordcount.md
 Client-Charts-Wordcount.md
 Client-Summary.md
-
-SystemsThinking.md
 
 Monitoring.md
 

@@ -1,4 +1,4 @@
-# Introduction
+# What's in this book?
 
 This is a book about Clojure and it is also a book about systems. What is a system? Let's ask an expert in the discipline of **systems thinking**:
 
