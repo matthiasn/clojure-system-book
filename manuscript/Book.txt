@@ -1,5 +1,3 @@
-Systems-Toolbox.md
-
 Introduction.md
 Whats-In-This-Book.md
 Why-am-I-writing-this-book.md
@@ -47,6 +45,8 @@ Client-Charts-Wordcloud.md
 Client-Stats-Wordcount.md
 Client-Charts-Wordcount.md
 Client-Summary.md
+
+Systems-Toolbox-Intro.md
 
 Monitoring.md
 
