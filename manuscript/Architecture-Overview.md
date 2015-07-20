@@ -2,7 +2,9 @@
 
 ## Architectural Overview
 
-Let's start with the basic architecture of the server side. Here's an overview:
+In the following chapters, we will look at an earlier version of my **[BirdWatch](https://github.com/matthiasn/BirdWatch)** application. The approach outlined here is not my recommended approach any longer, as there were a lot of functionalities that were common to each and all the components in the system. Instead, I have moved this common functionality into a separate library called **[systems-toolbox](https://github.com/matthiasn/systems-toolbox)**. However, by going through the initial, you will have a good reference for why I wanted to have the library. In particular, please look out for repetitiveness and try to think how you may get rid of it. Then later on in this book, we can compare notes as I will present what I did. Please also email me (the address is on my **[GitHub](https://github.com/matthiasn)** page) and discuss what you would do differently.
+
+Now let's start with the basic architecture of the server side. Here's an overview:
 
 ![channels overview](images/bw-channels.png)
 

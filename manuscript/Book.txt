@@ -55,6 +55,4 @@ OperationalInsight.md
 LoadTestingOptimization.md
 Deployment.md
 
-JournalStatus.md
-
 Appendix.md
