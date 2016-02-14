@@ -12,9 +12,4 @@ TwitterClient-PercolationComponent.md
 TwitterClient-PersistenceComponent.md
 TwitterClient-InteropComponent.md
 
-Omitted-Old-Chapters.md
-
 Systems-Toolbox-Intro.md
-
-BuyIt.md
-
