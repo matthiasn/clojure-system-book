@@ -355,3 +355,122 @@ That made me wonder where time was spent in my library, so I set out to check wh
 
 Okay, so even when I run this test alone in a cold JVM with `$ lein test :only matthiasn.systems-toolbox.runtime-perf-test/reset-atom-repeatedly` and only a single run, I get anywhere between 29 and 43 **million** ops/sec. When I set `test-runs` to 10, I even get up to 90 million ops/sec on the JVM. On phantom, there's no noticable effect of JIT on subsequent runs, by the way. But there I also don't know how to isolate test runs, so likely the JIT optimizations will already have kicked in by the time the tests run. Still, I get a solid 15 million ops/sec in phantom at the time of writing. On Chrome, I got 38 million ops/sec and on Firefox, I got a whopping 66 million ops/sec. Interesting, last time I checked, Chrome was faster than any other browser, but that does not seem to be the case any more. Anyway, in either case, resetting an atom is quite obviously not a bottleneck on any of those platforms.
 
+Hmm, maybe the atom watching which leads to publishing a new state snapshot when a change is detected could be the culprit? Let's check:
+
+~~~
+(defn swap-watched-atom-repeatedly-fn
+  []
+  "This test aims at getting some perspective how expensive swapping an atom is in Clojure/ClojureScript.
+  Answer: not terribly expensive. On the JVM, this can be performed around 70 million times per second,
+  whereas in ClojureScript, this can be done 15 million times per second (2015 Retina MacBook)."
+  (let [start-ts (component/now)
+        cnt (* 1000 1000)
+        state (atom 0)]
+    (add-watch state :watcher (fn [_ _ _ _new-state] #()))
+    (dotimes [_ cnt] (swap! state inc))
+    (let [ops-per-sec (int (* (/ 1000 (- (component/now) start-ts)) cnt))]
+      (log/debug "Watched atom swaps/s:" ops-per-sec)
+      (is (> ops-per-sec 1000)))))
+
+(deftest swap-watched-atom-repeatedly
+  (dotimes [_ test-runs]
+    (swap-watched-atom-repeatedly-fn)))
+~~~
+
+Nope. Almost 70 million ops/sec on Firefox and 40 million ops/sec on the JVM (on repeated runs) suggest differently. Hmm, could it be core.async? Let's see:
+
+~~~
+(defn put-on-chan-repeatedly-fn
+  "Channel with attached mult and no other channels tapping into mult: messages silently dropped."
+  []
+  (let [start-ts (component/now)
+        cnt (* 100 1000)
+        ch (chan)
+        m (mult ch)
+        done (promise-chan)]
+    (go
+      (dotimes [n cnt] (>! ch n))
+      (put! done true))
+
+    (tp/w-timeout cnt (go
+                        (testing "all messages received"
+                          (is (true? (<! done))))
+                        (let [ops-per-sec (int (* (/ 1000 (- (component/now) start-ts)) cnt))]
+                          (log/debug "Channel puts/s:" ops-per-sec)
+                          (is (> ops-per-sec 1000)))))))
+
+(deftest put-on-chan-repeatedly1
+  (put-on-chan-repeatedly-fn))
+(deftest put-on-chan-repeatedly2
+  (put-on-chan-repeatedly-fn))
+(deftest put-on-chan-repeatedly3
+  (put-on-chan-repeatedly-fn))
+(deftest put-on-chan-repeatedly4
+  (put-on-chan-repeatedly-fn))
+(deftest put-on-chan-repeatedly5
+  (put-on-chan-repeatedly-fn))
+(deftest put-on-chan-repeatedly6
+  (put-on-chan-repeatedly-fn))
+~~~
+
+Okay, around 1 million ops/sec on Firefox and a little under 250K ops/sec on the JVM (on repeated runs), that is substantially slower than the atom operations. We might be onto something here, since the library does multiple core.async operations for each message. Let's emulate the behavior using core.async directly:
+
+~~~
+
+(defn put-consume-mult-w-pub-repeatedly-fn
+  "Channel with attached go-loop, simple calculation using messages from channel, publication of state change. This
+  imitates the basic use case of the systems-toolbox: there's a go-loop, some processing and publication of component
+  state. Running this test gives some perspective of the amount of overhead that the systems-toolbox introduces,
+  such as adding metadata to messages."
+  []
+  (let [start-ts (component/now)
+        cnt (* 100 1000)
+        ch (chan (buffer 1))
+        m (mult ch)
+        ch2 (chan)
+        state-pub-chan (chan (sliding-buffer 1))
+        state-mult (mult state-pub-chan)
+        state (atom 0)
+        done (promise-chan)]
+
+    (go-loop []
+      (let [n (<! ch2)
+            res (+ @state n)]
+        (reset! state res)
+        (>! state-pub-chan res)
+        (when (= (dec cnt) n)
+          (put! done true)))
+      (recur))
+
+    (tap m ch2)
+    (go (dotimes [n cnt] (>! ch n)))
+
+    (tp/w-timeout cnt (go
+                        (testing "promise delivered"
+                          (is (true? (<! done))))
+                        (let [ops-per-sec (int (* (/ 1000 (- (component/now) start-ts)) cnt))]
+                          (log/debug "Channel puts and consume from mult/s (w/pub):" ops-per-sec)
+                          (is (> ops-per-sec 1000)))
+                        (testing "all messages received (sum of all number sent matches)"
+                          (is (= @state (reduce + (range cnt)))))
+                        :done))))
+
+(deftest put-consume-mult-w-pub-repeatedly
+  (put-consume-mult-w-pub-repeatedly-fn))
+(deftest put-consume-mult-w-pub-repeatedly2
+  (put-consume-mult-w-pub-repeatedly-fn))
+(deftest put-consume-mult-w-pub-repeatedly3
+  (put-consume-mult-w-pub-repeatedly-fn))
+(deftest put-consume-mult-w-pub-repeatedly4
+  (put-consume-mult-w-pub-repeatedly-fn))
+(deftest put-consume-mult-w-pub-repeatedly5
+  (put-consume-mult-w-pub-repeatedly-fn))
+(deftest put-consume-mult-w-pub-repeatedly6
+  (put-consume-mult-w-pub-repeatedly-fn))
+~~~
+
+Here, we do roughly the same a component in the systems-toolbox does, which is receive messages on a channel, process them in a `go-loop` (which is just hidden from the user in the case of the systems-toolbox), and publish state changes onto the `stae-pub-chan`. Et voilá, the results are pretty much the same as we see when processing messages with the systems-toolbox, with around 90K msgs/sec on the JVM.
+
+Okay, so I'm fully aware of my tendency to shave yaks when it comes to looking at performance. However, I think this little excursion was useful, at least for me, as it provides context where time is spent and where future optimizations could go. For example, you've probably heard that atoms are slower than their `volatile!` counterpart. However, when looking at the data that surfaced here, interacting with atoms is not where substantial amounts time are wasted. Thus, looking at replacing atoms with `volatile!` is likely not going to help much. If anything, it might be worth looking into core.async, which does seem to add a considerable amount of overhead. Considering that we are talking about in-process conveyance here and that Kafka is capable of handling **[millions of messages](https://engineering.linkedin.com/kafka/benchmarking-apache-kafka-2-million-writes-second-three-cheap-machines)** a second, the numbers here are a little lame, especially since in the case of Kafka, this involves roundtrips to the filesystem and network. But then again, this is not a real problem until it is. So far, the applications I have written with the systems-toolbox have not hit a brickwall when it comes to performance. 90K msgs/sec is still plenty and probably more than you could expect to get from REST-based microservices.
+
+However, the results confirm my hunch that it's probably a good idea to make the message conveyance in the systems-toolbox pluggable, and then offer a choice to handle it with either **core.async** or **Kafka** on the JVM, as that would offer interesting properties for observability out of the box. But that's a different story and not within the scope of this chapter. In the browser, I cannot think of a use case right now where tens of thousands of messages per second would not suffice.
