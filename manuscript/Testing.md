@@ -169,7 +169,189 @@ Before converting tests, let's try something simple.
   (is (= 2 2)))
 ~~~
 
-With these namespaces in place, we can now call test tests, for example `$ lein doo firefox cljs-test once`. Oops, I'm writing this on a machine that didn't have the **karma** test runner installed. If you can't run `$ karma -v`, you want want to install it with `$ npm install -g karma`, plus check the further error output that tells you clearly which additional **npm** modules you want to have installed. Or, obviously, if you don't have **npm** available, you want to get it from **[Node.js](https://nodejs.org/en/)** first. With the dependencies met, my initial test runs fine.
+With these namespaces in place, we can now call test tests, for example `$ lein doo firefox cljs-test once`. Oops, I'm writing this on a machine that didn't have the **karma** test runner installed. If you can't run `$ karma --version`, you want want to install it with `$ npm install -g karma`, plus check the further error output that tells you clearly which additional **npm** modules you want to have installed. Or, obviously, if you don't have **npm** available, you want to get it from **[Node.js](https://nodejs.org/en/)** first. With the dependencies met, my initial test runs fine.
 
 Now I should just be able to rename my existing tests to `.cljc` and be off to the pub, right? Not so fast. While the library is written in `.cljc` pretty much from the get-go, that means nothing for the existing tests. And, there we have have it, the tests as of the **[current commit](https://github.com/matthiasn/systems-toolbox/blob/994ff8d698d1fa3f4b1d32d706f63de72bb283a4/test/matthiasn/systems_toolbox/scheduler_test.clj)** at the time of writing use **promises**. Such a shame those are platform-specific and only exist on the JVM. Hmm, let's see, can we replace them **core.async**? Probably.
+
+
+### Promises for testing in ClojureScript?
+
+Using **promises** for determining when the assertions should be made was not a bad idea, were it not for the lack of them on the ClojureScript side. But, **core.async** to the rescue, we can actually model the behavior of promises ourselves. In core.async, there's a **promise-chan**, which can only be delivered on once. 'put!' then gives us the the `deliver` functionality for promises. For finally waiting for either a result or a timeout, which is done by `deref` with promises, we can use `alts!`. Let's look at a super simple **[example](https://github.com/matthiasn/systems-toolbox/blob/af1cb5368628d158141808dfbe2f409effd13511/test/matthiasn/systems_toolbox/component_test.cljc#L15)** first:
+
+~~~
+(deftest cmp-all-msgs-handler
+  "Tests that a very simple component that only has a handler for all messages regardless of type receives all
+  messages sent to the component. State management of the component is not used here, instead we keep track
+  of the messages in an atom that's external to the component and that the handler function has access to.
+  A promise is used here which is delivered on when the message count received matches those sent. This does
+  not tell us anything about the order yet, but it is still very useful when waiting for all messages to be
+  delivered. In the subsequent assertion, we then check if the received messages are complete and in the
+  expected order."
+  (let [msgs-recvd (atom [])
+        cnt 1000
+        msgs-to-send (vec (range cnt))
+        all-recvd (promise-chan)
+        cmp (component/make-component {:all-msgs-handler (fn [{:keys [msg-payload]}]
+                                                           (swap! msgs-recvd conj msg-payload)
+                                                           (when (= cnt (count @msgs-recvd))
+                                                             (put! all-recvd true)))})]
+
+    (component/send-msgs cmp (map (fn [m] [:some/type m]) msgs-to-send))
+
+    (tp/w-timeout 5000 (go
+                         (testing "all messages received"
+                           (is (true? (<! all-recvd))))
+                         (testing "sent messages equal received messages"
+                           (is (= msgs-to-send @msgs-recvd)))))))
+~~~
+
+As you can see above, there's the **promise-chan** `all-recvd`, onto which we `put!` a message (`true` in this case) when done. Then, in the `go` block inside the call to `tp/w-timeout`, we can wait for the promise-chan to be delivered on first, before proceding with other assertions that only make sense when the promise is delivered.
+
+This `w-timeout` function implements behavior differently, depending on the target platform. Let's have a look at the whole **[namespace](https://github.com/matthiasn/systems-toolbox/blob/9286c070f8be8684cf69676adc9bbaa393832201/test/matthiasn/systems_toolbox/test_promise.cljc)**. However, this is optional, it requires some understanding of `go` blocks and channels, which the systems-toolbox tries to hide from you. So feel free to skip the next code block and only use this promise-like behavior as a recipe, if you so desire.
+
+~~~
+(ns matthiasn.systems-toolbox.test-promise
+
+  "Provide a promise-like experience for testing."
+
+  #?(:cljs (:require-macros [cljs.core.async.macros :refer [go]]))
+  (:require
+   #?(:clj  [clojure.test :refer [is]]
+      :cljs [cljs.test :refer-macros [async is]])
+   #?(:clj  [clojure.core.async :refer [go alts! <!! timeout]]
+      :cljs [cljs.core.async :refer [alts! take! timeout]])))
+
+(defn test-async
+  "Asynchronous test awaiting ch to produce a value or close. Makes use of cljs.test's facility
+  for async testing.
+  Borrowed from http://stackoverflow.com/questions/30766215/how-do-i-unit-test-clojure-core-async-go-macros"
+  [ch]
+  #?(:clj (<!! ch)
+     :cljs (async done (take! ch (fn [_] (done))))))
+
+(defn test-within
+  "Asserts that ch does not close or produce a value within ms. Returns a channel from which the value
+  can be taken. Also borrowed from stackoverflow comment above."
+  [ms ch]
+  (go (let [t (timeout ms)
+            [v ch] (alts! [ch t])]
+        (is (not= ch t)
+            (str "Test should have finished within " ms "ms."))
+        v)))
+
+(defn w-timeout
+  "Combines tes-async and test-within to provide the deref functionality we expect from a promise.
+  The first argument is the timeout in milliseconds, the second argument should be a go-block (which
+  returns a channel with the return value of the block once completed). Then, in that go block, we can
+  await the promise-chan to be delivered first before making any further assertions."
+  [ms ch]
+  (test-async
+    (test-within ms ch)))
+~~
+
+First, the `test-async` function implements the wait differently. On the JVM, we have the blocking	 `<!!` which simply blocks until there's value on the channel. On the ClojureScript side, we can make use of `async` to achieve the same thing. Note that the channel here, when composed in `w-timeout`, is the `go` block inside `test-within`. As mentioned, `go` blocks return a channel, onto which the return value will be put on completion.
+
+Then, inside `test-within`, `alts!` is used, which will return either the value on the promise-chan or the timeout, whatever happens first. This then asserts that the channel which returned first was not the timeout. This gives us a nice way to wait for as long as necessary, up to the timeout, with having to use dumb waiters like `Thread/sleep` that always wait for the entirety of its duration and thus hold up test runs. Also, `Thread/sleep` does not work in the browser, while this mechanism presented here does.
+
+In `w-timeout`, these two functions are then combined into one that takes both the timeout and a go-block, in which we should wait for the promise-chan.
+
+
+### Running tests in the browser / PhantomJS
+
+
+
+### Performance considerations
+
+The other day, I wanted to know how many messages the systems-toolbox could process per second, for a single component. So I wrote an initial test for that and got like 70K messages per second. Now, this is probably not terrible, especially in the browser where I currently cannot think of any application that would need anything near this number. Here's the **[test](https://github.com/matthiasn/systems-toolbox/blob/cbeeb951d34f65da60e8772f194c7e609b71eae1/test/matthiasn/systems_toolbox/component_test.cljc#L40)**:
+
+~~~
+
+(defn cmp-all-msgs-handler-cmp-state-fn
+  []
+  "Like cmp-all-msgs-handler test, except that the handler function here acts on the component state provided
+  in the map that the :all-msgs-handler function is called with. [...]"
+  (let [cnt (* 100 1000)
+        state (atom 0)
+        vals-to-send (vec (range cnt))
+        msgs-to-send (map (fn [m] [:some/type m]) vals-to-send)
+        all-recvd (promise-chan)
+        res (reduce + (range cnt))
+        cmp (component/make-component {:state-fn         (fn [_put-fn] {:state state})
+                                       :all-msgs-handler (fn [{:keys [msg-payload cmp-state]}]
+                                                           (let [new-state (+ @cmp-state msg-payload)]
+                                                             (reset! state new-state)
+                                                             (when (= res new-state)
+                                                               (put! all-recvd true))))})
+        start-ts (component/now)]
+
+    (component/send-msgs cmp msgs-to-send)
+
+    (tp/w-timeout cnt (go
+                        (testing "all messages received"
+                          (is (true? (<! all-recvd))))
+                        (testing "processes more than 1K messages per second"
+                          (let [msgs-per-sec (int (* (/ 1000 (- (component/now) start-ts)) cnt))]
+                            (log/debug "Msgs/s:" msgs-per-sec)
+                            (is (> msgs-per-sec 1000))))
+                        (testing "sent messages equal received messages"
+                          (is (= res @state)))))))
+
+(deftest cmp-all-msgs-handler-cmp-state1
+  (cmp-all-msgs-handler-cmp-state-fn))
+
+(deftest cmp-all-msgs-handler-cmp-state2
+  (cmp-all-msgs-handler-cmp-state-fn))
+
+(deftest cmp-all-msgs-handler-cmp-state3
+  (cmp-all-msgs-handler-cmp-state-fn))
+
+(deftest cmp-all-msgs-handler-cmp-state4
+  (cmp-all-msgs-handler-cmp-state-fn))
+
+(deftest cmp-all-msgs-handler-cmp-state5
+  (cmp-all-msgs-handler-cmp-state-fn))
+
+(deftest cmp-all-msgs-handler-cmp-state6
+  (cmp-all-msgs-handler-cmp-state-fn))
+~~~
+
+What happens here is that I take an atom with zero in it, and the range from zero to 100,000 (exclusive) and send each number to the component `cmp`, which adds each to its component state. Then, in the assertions section, I calculate how many messages per second the processing time corresponds to, print that value for reference, assert that it's large enough, and finally check that all numbers were processed by comparing the number in the component state with the result of `(reduce + (range cnt)`. I also make an assertion about the number of messages per second being high enough here, but that's probably not terribly useful as this number has to be pretty conservative anyway to take into account less powerful nodes, such as the ones used by TravisCI or CircleCI. Also note that the test code is in a function that I then call multiple times to see how much of an effect JIT compilation has on the result. Apparently, some optimizations do kick in on subsequent runs:
+
+~~~
+lein test matthiasn.systems-toolbox.component-test
+DEBUG m.systems-toolbox.component-test - Msgs/s: 62814
+DEBUG m.systems-toolbox.component-test - Msgs/s: 71479
+DEBUG m.systems-toolbox.component-test - Msgs/s: 91575
+DEBUG m.systems-toolbox.component-test - Msgs/s: 88731
+DEBUG m.systems-toolbox.component-test - Msgs/s: 78616
+DEBUG m.systems-toolbox.component-test - Msgs/s: 89928
+~~~
+
+Okay, roughly 60K messages per second on the first run and then towards 90K messages per second on subsequent runs. Doesn't sound that terrible.
+
+Then on the next day, I went for breakfast with my friend Peter. I told him what I was working on and about the numbers I achieved. Then he mentioned that he was working on an implementation of the actor model in Rust and that there, his latest benchmark gave him numbers north of 2 million messages per second, without much optimization effort. That was a bit of a downer. Sure, I wouldn't be too bothered to learn that Rust was faster than Clojure, that's kind of to be expected, but well above an order of magnitude for the simple task of delivering a message to some entity is more than I'd hope for, and potentially more after optimizing the implementation in Rust.
+
+That made me wonder where time was spent in my library, so I set out to check what the JVM is capable of. I started with looking at atoms and how often I can reset or swap them per second. Here's the test for resetting an atom:
+
+~~~
+(defn reset-atom-repeatedly-fn
+  []
+  "This test aims at getting some perspective how expensive resetting an atom is in Clojure/ClojureScript.
+  Answer: not terribly expensive. On the JVM, this can be performed around 90 million times per second,
+  whereas in ClojureScript, this can be done 15 million times per second on PhantomJS and over 60 million
+  times per second in Firefox (2015 Retina MacBook)."
+  (let [start-ts (component/now)
+        cnt (* 1000 1000)
+        state (atom 0)]
+    (dotimes [n cnt] (reset! state n))
+    (let [ops-per-sec (int (* (/ 1000 (- (component/now) start-ts)) cnt))]
+      (log/debug "Atom resets/s:" ops-per-sec)
+      (is (> ops-per-sec 1000)))))
+
+(deftest reset-atom-repeatedly
+  (dotimes [_ test-runs]
+    (reset-atom-repeatedly-fn)))
+~~~
+
+Okay, so even when I run this test alone in a cold JVM with `$ lein test :only matthiasn.systems-toolbox.runtime-perf-test/reset-atom-repeatedly` and only a single run, I get anywhere between 29 and 43 **million** ops/sec. When I set `test-runs` to 10, I even get up to 90 million ops/sec on the JVM. On phantom, there's no noticable effect of JIT on subsequent runs, by the way. But there I also don't know how to isolate test runs, so likely the JIT optimizations will already have kicked in by the time the tests run. Still, I get a solid 15 million ops/sec in phantom at the time of writing. On Chrome, I got 38 million ops/sec and on Firefox, I got a whopping 66 million ops/sec. Interesting, last time I checked, Chrome was faster than any other browser, but that does not seem to be the case any more. Anyway, in either case, resetting an atom is quite obviously not a bottleneck on any of those platforms.
 
