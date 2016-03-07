@@ -24,7 +24,7 @@ Proper reasoning and having an overall strategy of what you want to achieve is f
 
 > Right? And - and do the guardrails help you get to where you want to go? Like, do guardrails guide you places? No. There are guardrails everywhere. They don't point your car in any particular direction. So again, we're going to need to be able to think about our program. It's going to be critical. All of our guardrails will have failed us. We're going to have this problem. We're going to need to be able to reason about our program. Say, "Well, you know what? I think," because maybe if it's not too complex, I'll be able to say, "I know, through ordinary logic, it couldn't be in this part of the program. It must be in that part, and let me go look there first," things like that.
 
-> -- <cite>Rich Hickey, 2011</cite>
+> -- *Rich Hickey, 2011*
 
 If you haven't seen this talk, please do that now. Or read the transcript or both. It's worth it.
 
@@ -71,7 +71,7 @@ Unless you're in the business of building CI servers, I can only recommend you s
 
 ![](images/testing/travis-ci.png)
 
-**[TravisCI](https://travis-ci.org/matthiasn/systems-toolbox)** quite easy to use. Once you've signed up, all you need to do is add a YAML file named `.travis.yml` to your repository. In the case of the systems-toolbox, it looks as follows:
+**[TravisCI](https://travis-ci.org/matthiasn/systems-toolbox)** is quite easy to use. Once you've signed up, all you need to do is add a YAML file named `.travis.yml` to your repository. In the case of the systems-toolbox, it looks as follows:
 
 ~~~
 language: clojure
@@ -110,9 +110,9 @@ Here, I'm using the `lein test2junit` task to generate JUnit-style test reports.
 
 With these modifications, we can now keep the JUnit reports without having to set up S3.
 
-![](images/testing/circle-artifacts.png)
+![](images/testing/circle-ci-artifacts.png)
 
-![](images/testing/circle-junit.png)
+![](images/testing/circle-ci-junit.png)
 
 
 ### Conclusion
@@ -356,7 +356,7 @@ That made me wonder where time was spent in my library, so I set out to check wh
     (reset-atom-repeatedly-fn)))
 ~~~
 
-Okay, so even when I run this test alone in a cold JVM with `$ lein test :only matthiasn.systems-toolbox.runtime-perf-test/reset-atom-repeatedly` and only a single run, I get anywhere between 29 and 43 **million** ops/sec. When I set `test-runs` to 10, I even get up to 90 million ops/sec on the JVM. On phantom, there's no noticeable effect of JIT on subsequent runs, by the way. But there I also don't know how to isolate test runs, so likely the JIT optimizations will already have kicked in by the time the tests run. Still, I get a solid 15 million ops/sec in phantom at the time of writing. On Chrome, I got 38 million ops/sec and on Firefox, I got a whopping 66 million ops/sec. Interesting, last time I checked, Chrome was faster than any other browser, but that does not seem to be the case any longer. Anyway, in either case, resetting an atom is quite obviously not a bottleneck on any of those platforms.
+Okay, so even when I run this test alone in a cold JVM with `$ lein test :only matthiasn.systems-toolbox.runtime-perf-test/reset-atom-repeatedly` and only a single run, I get anywhere between 29 and 43 **million** ops/sec. When I set `test-runs` to 10, I even get up to **90 million** ops/sec on the JVM. On phantom, there's no noticeable effect of JIT on subsequent runs, by the way. But there I also don't know how to isolate test runs, so likely the JIT optimizations will already have kicked in by the time the tests run. Still, I get a solid 15 million ops/sec in phantom at the time of writing. On Chrome, I got 38 million ops/sec and on Firefox, I got a whopping **66 million** ops/sec. Interesting, last time I checked, Chrome was faster than any other browser, but that does not seem to be the case any longer. Anyway, in either case, resetting an atom is quite obviously not a bottleneck on any of those platforms.
 
 Hmm, maybe the atom watching, which leads to publishing a new state snapshot when a change is detected, could be the culprit? Let's check:
 
@@ -472,7 +472,7 @@ Okay, around 1 million ops/sec on Firefox and a little under 250K ops/sec on the
   (put-consume-mult-w-pub-repeatedly-fn))
 ~~~
 
-Here, we do roughly the same a component in the systems-toolbox does, which receives messages on a channel, process them in a `go-loop` (which is hidden from the user in the case of the systems-toolbox), and publish state changes onto the `state-pub-chan`. Et voilá, the results are pretty much the same as we see when processing messages with the systems-toolbox, with around 90K msgs/sec on the JVM.
+Here, we do roughly the same a component in the systems-toolbox does, which receives messages on a channel, process them in a `go-loop` (which is hidden from the user in the case of the systems-toolbox), and publish state changes onto the `state-pub-chan`. Et voilà, the results are pretty much the same as we see when processing messages with the systems-toolbox, with around 90K msgs/sec on the JVM.
 
 Okay, so I'm fully aware of my tendency to shave yaks when it comes to looking at performance. However, I think this little excursion was useful, at least for me, as it provides some context where time is spent and where future optimizations could go. For example, you've probably heard that atoms are slower than their `volatile!` counterpart. However, when looking at the data that surfaced here, interacting with atoms is not where substantial amounts time are wasted. Thus, looking at replacing atoms with `volatile!` is likely not going to help much. If anything, it might be worth looking into core.async, which does seem to add a considerable amount of overhead. Considering that we are talking about in-process conveyance here and that Kafka is capable of handling **[millions of messages](https://engineering.linkedin.com/kafka/benchmarking-apache-kafka-2-million-writes-second-three-cheap-machines)** a second, the numbers here are a little lame, especially since in the case of Kafka, this involves round trips to the filesystem and network. But then again, this is not a real problem until it is. So far, the applications I have written with the systems-toolbox have not hit a brick wall when it comes to performance. 90K msgs/sec is still plenty and probably more than you could expect to get from REST-based microservices.
 
