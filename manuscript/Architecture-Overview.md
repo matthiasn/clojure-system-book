@@ -1,4 +1,4 @@
-# Server-side Architecture
+# Old Server-side Architecture
 
 ## Architectural Overview
 

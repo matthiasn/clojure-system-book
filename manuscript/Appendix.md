@@ -34,17 +34,3 @@ Of course, there's a lot more to the language and plenty of stuff to learn when 
 As another online resource, I have also found **[Clojure for the Brave and True](http://www.braveclojure.com)** to be fun and helpful. Check it out. And if you like it, why not support the author and buy his ebook? You can then enjoy the book on your favorite ebook reader as well, and even if you read it on the web, you will ensure that the author can keep up the good work. Great feeling, I did the same.
 
 Another great resource is **[Joy of Clojure, 2nd edition](http://r.matthiasnehlsen.com/joyclojure/link)**. Fun read and I learned a lot. I will revisit it and share some thoughts about it in the **[reviews section](/reviews)** soon.
-
-## Chapter Status History
-**Server Side Chapters before February 12th:** I think the architecture is reasonably clean, with dependencies between different parts of the application reduced as much as possible. I am not completely sold on the necessity of the **Component library** though. While the advantages of reloading the application seem compelling, I have not made much use of that yet and haven't in a while. On the client side, I am dealing with the same issues around trying to avoid hairballs of interdependencies and I think I have succeeded, even without the added complexity required by Component. On the other hand, using Component adds good structure. Maybe I'd remove the channel components and have the channels provided by each component directly. I'm curious about your thoughts on this subject.
-
-**Client Side Chapters before Jan 31st:** The client-side application has been rewritten to reflect the changes mentioned in the new introduction. They are mostly complete, except for not all proofreading being completed yet. Also, the client summary is still missing.
-
-**Client Chapters before Jan 30th:** The client-side application is rewritten to reflect the changes mentioned in the new introduction. The chapters about the ````core````, ````communicator````, and ````state.*```` namespaces have been rewritten. Approach the remaining chapters with care, they are about to change a lot.
-
-**Client Side (Jan 27th, 2015):** The client-side application is rewritten to reflect the changes mentioned in the new introduction. The chapters about the ````core```` and ````communicator```` namespaces have been rewritten. Approach the remaining chapters with care, they are about to change a lot.
-
-**Client Side (Jan 21, 2015):** The client-side application is rewritten to reflect the changes mentioned in the new introduction. The new introduction will now undergo proofreading before landing in the book. For now, read it on  **[GitHub](https://github.com/matthiasn/clojure-system-book/blob/master/manuscript/Client-Architecture.md) instead. Approach the existing chapters about the client side with care, they are about to change a lot.
-
-**before Jan 21st, 2015:**
-Feel free to use this as a bad example. There are way too many dependencies between namespaces. Also, the application state lives in an atom is not properly protected. I do not feel comfortable with freely passing it around because anyone (including myself) using it from anywhere could accidentally mutilate it, causing the application to fail. Instead, I want to protect it and only hand out immutable data for rendering or whatever other purpose. The required redesign is done in code, it's in **[master](https://github.com/matthiasn/BirdWatch)** on GitHub. Chapter rewrites and archtectural drawings due very soon.

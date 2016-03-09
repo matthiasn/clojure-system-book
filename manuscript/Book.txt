@@ -48,6 +48,8 @@ Client-Summary.md
 
 Systems-Toolbox-Intro.md
 
+Systems-Toolbox-UI.md
+
 Monitoring.md
 
 Testing.md
