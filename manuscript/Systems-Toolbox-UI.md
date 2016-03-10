@@ -74,11 +74,91 @@ Okay, let's go through this namespace from the bottom up. The `cmp-map` generate
 
 Then, there's the handler map. It's a map with the different message types that the component handles as keys, and the respective handler functions as values.
 
-Then, there are the handler functions. Handler functions take a single argument, a map, which among other things contains the `current-state` and `msg-payload`. We'll look at messages later. For now, it's only important that the message payloads here need to be integers that correspond to existing counter entries. Then, the handler functions can return the new component state after processing the message in the `new-state` key on the return map. Handlers can also emit messages themselves, but we'll look at that later.
+Then, there are the handler functions. Handler functions take a single argument, a map, which among other things contains the `current-state` and `msg-payload`. There are other keys on the argument map, such as `msg` for the entire message (vector with msg-type plus msg-payload), `msg-type`, which is a namespaced keyword, `msg-meta` for more information on about the message and so on. For now, it's only important that the message payloads here need to be integers that correspond to indices of existing counter entries. Then, the handler functions can return the new component state after processing the message in the `new-state` key on the return map. Handlers can also emit messages themselves, but we'll look at that later. What those handlers do should be relatively straight-forward. Those take the current component state and modify it by either increasing/decreasing the value at a particular index or by adding or removing a value at the end.
+
+That's it for the state component. Now we can let other components observe its state, for example, our UI component:
+
+~~~
+(ns example.counter-ui
+  (:require [matthiasn.systems-toolbox-ui.reagent :as r]
+            [matthiasn.systems-toolbox-ui.helpers :as h]))
+
+(defn counter-view
+  "Renders individual counter view, with buttons for increasing or decreasing the value."
+  [idx v put-fn]
+  [:div
+   [:h1 v]
+   [:button {:on-click #(put-fn [:cnt/dec idx])} "dec"]
+   [:button {:on-click #(put-fn [:cnt/inc idx])} "inc"]])
+
+(defn counters-view
+  "Renders counters view which observes the state held by the state component.
+  Contains two buttons for adding or removing counters, plus a counter-view
+  for every element in the observed state."
+  [{:keys [current-state put-fn]}]
+  (let [indexed (map-indexed vector (:counters current-state))]
+    [:div.counters
+     [h/pp-div current-state]
+     [:button {:on-click #(put-fn [:cnt/remove])} "remove"]
+     [:button {:on-click #(put-fn [:cnt/add])} "add"]
+     (for [[idx v] indexed]
+            ^{:key idx} [counter-view idx v put-fn])]))
+
+(defn cmp-map
+  [cmp-id]
+  (r/cmp-map {:cmp-id  cmp-id
+              :view-fn counters-view
+              :dom-id  "counter"}))
+
+~~~
+
+Here, we have two different functions that each generates a piece of the UI. `counter-view` renders an individual counter, together with buttons for either increasing or decreasing the value of the counter. Note that the buttons do not interact with the state component directly. Rather, when clicking a button, a message is sent, which is then handled by the state component. Thus, we have a clear separation of concerns, rather than state mutation from anywhere.
+
+Next, there is the `counters-view` function, which renders the application state in a pretty-printed format, two buttons for adding or removing counters, plus a `counter-view` for every counter in the counters vector of the application state.
+
+Now, we finally need to wire everything together. This happens in the `core` namespace of our example:
+
+~~~
+(ns example.core
+  (:require [example.store :as store]
+            [example.counter-ui :as cnt]
+            [matthiasn.systems-toolbox.switchboard :as sb]))
+
+(defonce switchboard (sb/component :client/switchboard))
+
+(defn init
+  []
+  (sb/send-mult-cmd
+    switchboard
+    [[:cmd/init-comp (cnt/cmp-map :client/cnt-cmp)]
+     [:cmd/init-comp (store/cmp-map :client/store-cmp)]
+     [:cmd/route {:from :client/cnt-cmp :to :client/store-cmp}]
+     [:cmd/observe-state {:from :client/store-cmp :to :client/cnt-cmp}]]))
+
+(init)
+~~~
+
+Here, we declare a switchboard in a `defonce`, so that it survives application reloads. This is necessary for use with **[figwheel](https://github.com/bhauman/lein-figwheel)**, but more about that later. Then, there's an init function, in which we send multiple commands to that switchboard. The `:cmd/init-comp` tells the switchboard to instantiate both the UI and the state components for us. The order here does not matter, because, at this point, they don't need to exchange messages yet. Then, we route all messages from the UI component to the store component. These are the command messages for incrementing and decrementing counters. In Redux, these are called actions. Then finally, we tell the switchboard that the UI component is supposed to observe the state of the store component. Thus every time our application state changes, the UI is re-rendered automatically.
 
 
+### Better UI development with Figwheel
 
+**[Figwheel](https://github.com/bhauman/lein-figwheel)** is a game changer for UI development in ClojureScript. It is so much better to have your UI automatically (and almost instantly) reload after a code change that I can't imagine working without it any longer. Of course, the **systems-toolbox** and **systems-toolbox-ui** also had to support it to be of any use. So how do you use figwheel? Instead of compiling the ClojureScript with `lein cljsbuild auto release`, you instead run `lein figwheel`. This command will first compile your ClojureScript code and then watch the code for changes, recompile it and reload the application. The **systems-toolbox** supports this by preserving the state of your components upon reload. 
 
+You can, for example, try change to the text of the buttons after clicking them a few times and adding a few counters, so that your application state is different from the initial state. Now, for example, change the "inc" text to "+" and save the file. Within about a second, you will see that your page reloads while retaining the previous state. This feature can make your development much faster.
+
+Also, you can change the handlers on the fly. Try to change the `inc-handler` so that it resembles the following:
+
+~~~
+(defn inc-handler
+  "Handler for incrementing specific counter"
+  [{:keys [current-state msg-payload]}]
+    {:new-state (update-in current-state [:counters msg-payload] #(+ % 10))})
+~~~
+
+Now, after reload, every click on the `inc` button of a counter will increase its value by 10, all while still retaining the previous state upon reload. Just note that reloading may not work as expected if you change the structure of the application state map. Obviously, the reload mechanism will only have the previous state at its disposal, and if that doesn't match expectations any longer, your application may not work after a reload triggered by figwheel. In that case, just do a "traditional" page reload.
+
+By the way, the automatic reload also works for CSS changes. This is a huge time saver when you tweak the CSS of some page of the application where a `cmd-r` reload of the page will not get you to the same page yet, maybe because the routing or session persistence isn't completely implemented yet.
 
 
 
