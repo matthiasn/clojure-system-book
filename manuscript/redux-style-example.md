@@ -97,11 +97,11 @@ Then, there's application state. The initial state is returned by the `state-fn`
 
 Each of these three counters has an initial value, which can be changed by clicking the respective buttons. That's all there is to the app state. Each handler takes the `current-state` argument and returns the `:new-state` in the respective key in the returned **map**.
 
-Then, as a recent addition to the library, there is also validation provided by the excellent **[clojure.spec](https://clojure.org/about/spec)**, which for me changes everything in **Clojure** for the better. With it, we can specify precisely how both messages passed around and returned state changes are supposed to look like, and fail otherwise. This validation gives you the best of both worlds. You get the sanity check from a typed world, only better in some regards, but without all the clutter.
+Then, as a recent addition to the library, there is also **validation** provided by the excellent **[clojure.spec](https://clojure.org/about/spec)**, which for me changes everything in **Clojure** for the better. With it, we can specify precisely how both messages passed around and returned state changes are supposed to look like, and fail otherwise. This validation gives you the best of both worlds. You get the sanity check from a typed world, only better in some regards, and without all the clutter.
 
-Next, let's have an eye on a UI component that makes use of this state to render UI, and finally, look at how messages get passed back and forth between those components.
+Next, let's have an eye on a UI component that makes use of this state to render something, and finally, look at how messages get passed back and forth between those components.
 
-The UI functions are super simple. There are only three functions, `counter-view`, `counters-view`, and `cmp-map`:
+The UI functions are super simple. There are only three functions here, `counter-view`, `counters-view`, and `cmp-map`:
 
 ````
 (ns example.counter-ui
@@ -140,11 +140,11 @@ The `cmp-map` function returns a configuration map that systems-toolbox needs to
 
 This `counters-view` then gets passed the `current-state` and turns that into a tree structure of DOM elements, with add and remove buttons once, and then a `counter-view` for each indexed element in the counters in the `current-state`. Then, note that there's the `put-fn`, which we can call when the component is supposed to send something, so in this case when the respective button is clicked. Note that the index is used to identify which of the (initially three) counters to increment or decrement.
 
-That's all there is to the UI component. Now let's look at how those components are wired together, in the `core` namespace. There's the `switchboard`, which you can think like this:
+That's all there is to the UI component. Now let's look at how those components are wired together, in the `core` namespace. There's the `switchboard`, which you can think of like this:
 
 ![Telephony switchboard](images/JT_Switchboard_770x540.jpg "Telephony switchboard")
 
-Someone connects a wire, and you can start talking. Only that here, the wires are uni-directional. Under the hood, there are **[core.async](https://github.com/clojure/core.async)** channels connected to each other, but you don't need to worry about that for now.
+Someone connects a wire, and you can start talking. Only that here, the wires are **uni-directional**. Under the hood, there are **[core.async](https://github.com/clojure/core.async)** channels connected to each other, but you don't need to worry about that for now.
 
 Let's have a look at the code:
 
@@ -170,13 +170,13 @@ Let's have a look at the code:
 (init)
 ````
 
-First, the **switchboard** is created. Then, we send a message to the switchboard, with a vector containing multiple commands. We start with initializing the `:client/cnt-cmp` and `:client/store-cmp` components, which are responsible for UI and state management respectively. The order here is not relevant, as these components don't need to know about each other anyway.
+First, the **switchboard** is created. Then, we send a message to the switchboard, with a vector containing multiple commands. We start with initializing the `:client/cnt-cmp` and `:client/store-cmp` components, which are responsible for UI and state management, respectively. The order here is not relevant, as these components don't need to know about each other anyway.
 
 Then, we **route** messages from the UI component to the store component by using `:cmd/route`. Routing means that a connection is made for all messages for which there is a handler, so here `:cnt/inc`, `:cnt/dec`, `:cnt/add` and `:cnt/remove`, as we've seen in the `:handler-map` earlier.  With this, whenever we use the `put-fn` inside the UI and send a message of any of these types, the store will receive it.
 
 So far so good. Next, we need the UI to observe the state of the store component, which happens when sending the `:cmd/observe-state` message. Whenever the state of the`:client/store-cmp` changes, the UI will now have a copy of the change in it's `local` atom.
 
-That's all there is to it. Now, this example has been quite simple. However, you can build much more complex applications in the same style. Very recently, this approach has become much more viable thanks to **[clojure.spec](https://clojure.org/about/spec)**, which is a great addition to my development toolbox. You should use it in your projects, too. If you have not heard the latest **[Cognicast](http://blog.cognitect.com/cognicast/)** where Rich Hickey talks about it, you should do that now.
+That's all there is to it. Now, this example has been quite simple. However, you can build much more complex applications in the same style. Very recently, this approach has become much more viable thanks to **[clojure.spec](https://clojure.org/about/spec)**, which is a great addition to my development toolbox. You should use it in your projects, too. If you have not heard the latest **[Cognicast](http://blog.cognitect.com/cognicast/)** where Rich Hickey talks about it, you should do that right now.
 
 Note that not only does **clojure.spec** allow us to validate our app-specific data structures - it is also used dynamically in the switchboard when wiring components, so that validation takes application state into account. This dynamic validation is powerful, and would be difficult to achieve with a type system. Whenever there's another `cmp-id` that the switchboard has initialized, the set of possible values is updated, so that once it comes to `route` and `observe-state`, only valid component ids can be used. Try changing a component ID and you'll see an error message that is surprisingly not terrible for Clojure. Yeah, I don't like typical error messages in Clojure, and anything that makes the situation better is much appreciated.
 
@@ -184,7 +184,7 @@ Oh, I should also note **[Figwheel](https://github.com/bhauman/lein-figwheel)**.
 
 [could be useful to have an animated GIF here]
 
-Also, this is incredibly useful when doing CSS changes. Usually, you'd probably do tiny changes in the developer tools until you have achieved the desired effect. But with Figwheel, the page will also reload while retaining app state, typically without any jumpiness.
+Also, this is incredibly useful when doing **CSS** changes. Usually, you'd probably do tiny changes in the developer tools until you have achieved the desired effect. But with Figwheel, the page will also reload while retaining app state, typically without any jumpiness.
 
 Have a look and try it out for yourself. For that, I'd like you to clone the repository and run the application as follows:
 
@@ -194,7 +194,7 @@ And in an additional terminal:
 
 `lein figwheel`
 
-And now go to the store and change what happens when clicking the `inc` button. Where before, the value would be incremented by one, it could now increment by 11, like this:
+And now go to the store and change what happens when clicking the `inc` button. Where before, the value would be incremented by one, we could now have it increment by 11, like this:
 
 ````
 (defn inc-handler
@@ -205,14 +205,14 @@ And now go to the store and change what happens when clicking the `inc` button. 
 
 After saving `store.cljs`, you'll briefly notice the figwheel logo overlayed on top of the page, and next, you click the button and increment the previous counter value, only that now you'll add 11 or whatever else you chose as the number there in your changed `inc-handler` function.
 
-You can probably imagine how useful that can be when you build anything more complex. And over the next couple of chapters, I will show you different examples of more complex applications using the same pattern, only then composing more complex behavior out of the same predictable handler functions. By the way, these handler functions are easily testable because they are pure, acting on immutable data and returning new values, rather than mutating some existing state. We'll get to that later.
+You can probably imagine how useful that can be when you build anything more complex. And over the next couple of chapters, I will show you different examples of more complex applications using the same pattern, only then composing more complex behavior out of the same predictable handler functions. By the way, these handler functions are easily testable because they are pure, acting on immutable data and returning new values, rather than mutating some existing state. We'll get to that in a later chapter.
 
 Now check out the example application, play around with it, and let me know what you think. The systems-toolbox has helped me build these applications:
 
-* BirdWatch
-* iWasWhere
+* **[BirdWatch](https://github.com/matthiasn/BirdWatch)**
+* **[iWasWhere](https://github.com/matthiasn/iWasWhere)**
 * a client project
-* trailing mousepointer example
-* redux counter example
+* **[trailing mousepointer example](https://github.com/matthiasn/systems-toolbox/tree/master/examples/trailing-mouse-pointer)**
+* **[redux counter example]()**
 
 I think it may help you build your application, too.
