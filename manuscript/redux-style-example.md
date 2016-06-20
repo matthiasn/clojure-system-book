@@ -182,7 +182,7 @@ Note that not only does **clojure.spec** allow us to validate our app-specific d
 
 Oh, I should also note **[Figwheel](https://github.com/bhauman/lein-figwheel)**. Applications built with the **systems-toolbox** are compatible with figwheel, with a page reload on every code change, while preserving application state. The reload mechanism is very useful during development, especially when you have some login. It's tedious without, where you have to recreate the app state after reloading the page so that you can judge the little change you made. Not so here, you make the change, and the page reloads automatically, while retaining the application state.
 
-[could be useful to have an animated GIF here]
+![Figwheel in Action](images/redux-counter.gif "Figwheel in Action")
 
 Also, this is incredibly useful when doing **CSS** changes. Usually, you'd probably do tiny changes in the developer tools until you have achieved the desired effect. But with Figwheel, the page will also reload while retaining app state, typically without any jumpiness.
 
@@ -207,7 +207,7 @@ After saving `store.cljs`, you'll briefly notice the figwheel logo overlayed on 
 
 You can probably imagine how useful that can be when you build anything more complex. And over the next couple of chapters, I will show you different examples of more complex applications using the same pattern, only then composing more complex behavior out of the same predictable handler functions. By the way, these handler functions are easily testable because they are pure, acting on immutable data and returning new values, rather than mutating some existing state. We'll get to that in a later chapter.
 
-Now check out the example application, play around with it, and let me know what you think. The systems-toolbox has helped me build these applications:
+Now check out the example application, play around with it, and let me know what you think. The **[systems-toolbox](https://github.com/matthiasn/systems-toolbox)** has helped me build these applications so far:
 
 * **[BirdWatch](https://github.com/matthiasn/BirdWatch)**
 * **[iWasWhere](https://github.com/matthiasn/iWasWhere)**
