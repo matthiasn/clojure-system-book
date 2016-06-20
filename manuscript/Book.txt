@@ -1,3 +1,11 @@
+New-Intro.md
+
+Example1-Counter.md
+
+Example2-WS-Roundtrips.md
+
+Appendix.md
+
 Introduction.md
 Whats-In-This-Book.md
 Why-am-I-writing-this-book.md
