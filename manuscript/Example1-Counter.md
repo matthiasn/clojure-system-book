@@ -6,7 +6,7 @@ Okay, now you're familiar with Rich Hickey's thoughts on immutable data. Hopeful
 
 Rather, nowadays, we want to build highly **interactive** web applications that feel like **desktop applications** or **mobile apps**, rather than the typical thing of the early web, where you submit a form and wait for some page to appear, seconds later.
 
-Ideally, we should be able to do the same thing on the client as we do on the server. Pass some data to a function, get some DOM subtree back, and move on. But for a long time there was no decent solution for this problem, which presumably has to do with the **[DOM](https://en.wikipedia.org/wiki/Document_Object_Model)** being this highly mutable construct, which UI frameworks such as **[AngularJS](https://angularjs.org/)** use directly for attaching data and functionality. I tried to use AngularJS with **ClojureScript** a long time ago, and it just doesn't seem to work properly, in a way I'd call predictable.
+Ideally, we should be able to do the same thing on the client as we do on the server. Pass some data to a function, get some DOM subtree back, and move on. But for a long time there was no decent solution for this problem, which presumably has to do with the **[DOM](https://en.wikipedia.org/wiki/Document_Object_Model)** being this highly mutable construct, which UI frameworks such as **[AngularJS 1.x](https://angularjs.org/)** use directly for attaching data and functionality. I tried to use AngularJS with **ClojureScript** a long time ago, and it just doesn't seem to work properly, in a way I'd call predictable.
 
 Then, along came **[React](https://facebook.github.io/react/)**, which changed everything. It allows us to write pure functions that we can feed immutable data, and that will build an entire DOM subtree out of the data every single time. Then, when a change in the data is detected, the render function is called again, generating the entire output. **React** will then do some diffing between the previous version and the latest version, in a virtual DOM, and deal with the messy DOM mutation to enact the detected changes in the "real" DOM. This approach may sound like a lot of work, but in reality, it's super fast, faster than anything we'd have to worry about in most cases.
 
@@ -46,7 +46,7 @@ In this example, there's the store component, let's just look at the code:
 (defn inc-handler
   "Handler for incrementing specific counter"
   [{:keys [current-state msg-payload]}]
-  {:new-state (update-in current-state [:counters (:counter msg-payload)] #(+ % 1))})
+  {:new-state (update-in current-state [:counters (:counter msg-payload)] inc)})
 
 (defn dec-handler
   "Handler for decrementing specific counter"
@@ -200,7 +200,7 @@ And now go to the store and change what happens when clicking the `inc` button. 
 (defn inc-handler
   "Handler for incrementing specific counter"
   [{:keys [current-state msg-payload]}]
-  {:new-state (update-in current-state [:counters (:counter msg-payload)] #(+ % 1))})
+  {:new-state (update-in current-state [:counters (:counter msg-payload)] #(+ % 11))})
 ````
 
 After saving `store.cljs`, you'll briefly notice the figwheel logo overlayed on top of the page, and next, you click the button and increment the previous counter value, only that now you'll add 11 or whatever else you chose as the number there in your changed `inc-handler` function.
@@ -215,4 +215,6 @@ Now check out the example application, play around with it, and let me know what
 * **[trailing mousepointer example](https://github.com/matthiasn/systems-toolbox/tree/master/examples/trailing-mouse-pointer)**
 * **[redux counter example]()**
 
-I think it may help you build your application, too.
+It may help you build your application, too.
+
+**P.S.** I needed some integration test for the **[systems-toolbox-ui](https://github.com/matthiasn/systems-toolbox-ui)** library, something running in an actual browser. So I wrote some tests running the example discussed above, clicking the buttons, and then asserting that they change as expected. You can run those tests and see for yourself, the instructions are **[here](https://github.com/matthiasn/systems-toolbox-ui)**.
