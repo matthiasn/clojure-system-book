@@ -28,11 +28,11 @@ The store component on the client, which holds the client-side state, is then ob
 
 The communication between these components is comparable to what was introduced in the previous chapter. What's new here is the `sente-cmp`. Let's have a brief look what **[WebSockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)** are. They give us a way for establising a very low latency **bi-directional** connection between client and server. It's not HTTP but instead its own protocol. They are well supported from IE 10 on, and in all other recent browsers. Some critics may say that they may be problematic because firewalls and reverse proxies might have to be reconfigured. Well, that might indeed problematic if (and only if) your OPS guys are incompetent. But most likely they won't be, so it's only a matter of communication (and some upfront planning) to get this potential hurdle out of the way.
 
-Other than that potential issue, there appears to be no downside to using WebSockets, and plenty of upsides. You absolutely need to be able to send messages from server to client at any time if you want to build a modern, responsive UI. Sure, you could also use SSE for that route, and send messages from client to server the way you'd normally do: via REST calls, for each message. That may work; it may also be too expensive if you want to send messages often. For example here, with the mouse positions, the user experience would likely be quite poor.
+Other than that potential issue with your firewall, there appears to be no downside to using **WebSockets**, and plenty of upsides. You absolutely need to be able to send messages from server to client at any time if you want to build a modern, responsive UI. Sure, you could also use SSE for that direction, and send messages from client to server the way you'd normally do: via REST calls, for each message. That may work; it may also be too expensive if you want to send messages often. For the use case at hand in this example, with the mouse positions, the user experience would likely be quite poor.
 
-WebSockets are also nice because, using them via the systems-toolbox, gives you an ordering guarantee, which would be much harder with REST calls.
+WebSockets are also nice because, using them via the systems-toolbox, gives you an ordering guarantee, which would be much harder with REST calls. Another aspect not to underestimate is that with REST calls, you need to think about authentication on every single request, where you do it once for a WebSockets connection.
 
-Anyway, let's look at some code, starting where the messages originate in our example: the mouse move component:
+Anyway, let's look at some code, starting with where the messages originate in our example, the `ui-mouse-moves` component:
 
 ```
 (ns example.ui-mouse-moves
@@ -112,9 +112,9 @@ Anyway, let's look at some code, starting where the messages originate in our ex
               :cfg     {:msgs-on-firehose true}}))
 ```
 
-Here, we have a UI component which emits messages whenever the user moves her mouse on top of it's div. Then, the rendering is actually done via SVG, which is trivial when you combine it with Reagent. You can see that we just create a group with two circle, each with a distinct position based on the last known message. fast movements will reveal the latency, as you'll see how the messages from the server lag behind.
+Here, we have a UI component which emits messages whenever the user moves her mouse on top of the `div`. Then, the actual rendering is done via **[SVG]()**, which is trivial when you combine it with Reagent. You can see that we just create a group with two circles, each with a distinct position based on the last known message. Fast movements will then reveal latency, as you'll see how the messages coming back from the server lag behind.
 
-Let's go through this function by function, starting from the bottom of the namespace:
+Let's go through the namesapce function by function, starting from the bottom of the namespace:
 
 ```
 (defn cmp-map
@@ -125,7 +125,7 @@ Let's go through this function by function, starting from the bottom of the name
               :cfg     {:msgs-on-firehose true}}))          
 ```
 
-This function creates the component map, which is like a blueprint that tells the switchboard how to fire up the component. The UI part is done by calling `r/cmp-map`, which is the main function in the **systems-toolbox-ui** library. Once the returned map is sent to the switchboard, a component will be initialized that renders the `mouse-view` function into the **DOM element** with the `"mouse"` ID.
+The `cmp-map` function creates the component map, which is like a blueprint that tells the switchboard how to fire up the component. The **UI** part is done by calling `r/cmp-map`, which is the main function in the **systems-toolbox-ui** library. Once the returned map is sent to the switchboard, a component will be initialized that renders the `mouse-view` function into the **DOM element** with the `"mouse"` ID.
 
 Next, let's have a look at the `mouse-view` function, which is responsible for rendering the UI component:
 
@@ -158,7 +158,7 @@ Note that this component gets passed a map with the `observed`, `local`, and `pu
 
 [hmm, maybe the mouse-pos should not be recorded in local atom]
 
-Finally, the `put-fn` is used to emit a message when an event, either `:on-mouse-move` or `:on-touch-move`, is detected. Note that we're detecting the width on every call to the function, and also in the `onresize` callback of `js/window`. This ensures that the square mouse div fills the parent element, while working with the correct pixel coordinate system. One could instead also work with a viewBox, like this: `{:width "100%" :viewBox "0 0 1000 1000"}`. However, that would not work correctly as the mouse position would not be aligned with the circles here.
+Finally, the `put-fn` is used to emit a message when an event, either `:on-mouse-move` or `:on-touch-move`, is encountered. Note that we're detecting the width on every call to the function, and also in the `onresize` callback of `js/window`. This ensures that the square mouse div fills the parent element, while working with the correct pixel coordinate system. One could instead also work with a viewBox, like this: `{:width "100%" :viewBox "0 0 1000 1000"}`. However, that would not work correctly in this case as the mouse position would not be aligned with the circles here.
 
 Next, let's look at the `mouse-touch-ev-handler` function:
 
@@ -176,7 +176,7 @@ Next, let's look at the `mouse-touch-ev-handler` function:
       (.stopPropagation ev))))
 ```
 
-This higher-order function returns an event handling function that is called for both `:on-mouse-move` and `:on-touch-move` events. These are almost the same, except that we want the first item in the **[TouchList](https://developer.mozilla.org/en-US/docs/Web/API/TouchList)** that we can get a hold off inside the **[targetTouches](https://developer.mozilla.org/en-US/docs/Web/API/TouchEvent/targetTouches)** property of the event. Because of the similarity, we can use the same code and only change `ev` in the let-binding, like this `(if touch? (aget (.-targetTouches ev) 0) ev)`.
+This **[higher-order function]()** returns an event handling function that is called for both `:on-mouse-move` and `:on-touch-move` events. These are almost the same, except that we want the first item in the **[TouchList](https://developer.mozilla.org/en-US/docs/Web/API/TouchList)** that we can get a hold off inside the **[targetTouches](https://developer.mozilla.org/en-US/docs/Web/API/TouchEvent/targetTouches)** property of the event. Because of the similarity, we can use the same code and only change `ev` in the let-binding, like this `(if touch? (aget (.-targetTouches ev) 0) ev)`.
 
 Next, there's the `text-view` function:
 
@@ -197,7 +197,7 @@ Next, there's the `text-view` function:
      [:text (merge text-default {:x 115 :y 80}) (str mean " mean / " mn " min / " mx " max / " last-rt " last")])])
 ```
 
-This one is very straight-forward. There's an **[SVG group](https://developer.mozilla.org/en/docs/Web/SVG/Element/g)** with some text at different positions inside.
+This one is very straight-forward. There's an **[SVG group](https://developer.mozilla.org/en/docs/Web/SVG/Element/g)** with some text at different positions.
 
 Finally, we have the `trailing-circles` function:
 

@@ -30,7 +30,8 @@ We start with three counters, which each can be incremented or decremented using
 
 Let me briefly introduce the systems-toolbox model now. There's a **component**. A component is an entity that has a lifecycle. It has some state, and it reacts to messages. It then also has some **observable state**, which other parts of the application can look at, read-only.
 
-In this example, there's the store component, let's just look at the code:
+In this example, there's the store component, let's just look at the code[^codelinks].
+ in the **[example.store namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/redux-counter01/src/cljs/example/store.cljs)**:
 
 ````
 (ns example.store
@@ -101,7 +102,7 @@ Then, as a recent addition to the library, there is also **validation** provided
 
 Next, let's have an eye on a UI component that makes use of this state to render something, and finally, look at how messages get passed back and forth between those components.
 
-The UI functions are super simple. There are only three functions here, `counter-view`, `counters-view`, and `cmp-map`:
+The UI functions are super simple. There are only three functions in the **[example.counter-ui namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/redux-counter01/src/cljs/example/counter_ui.cljs)**, `counter-view`, `counters-view`, and `cmp-map`:
 
 ````
 (ns example.counter-ui
@@ -146,7 +147,7 @@ That's all there is to the UI component. Now let's look at how those components 
 
 Someone connects a wire, and you can start talking. Only that here, the wires are **uni-directional**. Under the hood, there are **[core.async](https://github.com/clojure/core.async)** channels connected to each other, but you don't need to worry about that for now.
 
-Let's have a look at the code:
+Let's have a look at the **[example.core namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/redux-counter01/src/cljs/example/core.cljs)**:
 
 ````
 (ns example.core
@@ -218,3 +219,6 @@ Now check out the example application, play around with it, and let me know what
 It may help you build your application, too.
 
 **P.S.** I needed some integration test for the **[systems-toolbox-ui](https://github.com/matthiasn/systems-toolbox-ui)** library, something running in an actual browser. So I wrote some tests running the example discussed above, clicking the buttons, and then asserting that they change as expected. You can run those tests and see for yourself, the instructions are **[here](https://github.com/matthiasn/systems-toolbox-ui)**.
+
+
+[^codelinks]: The links should always point to the latest version in the codebase and be in sync with the text in the book chapters. If you find that that is not the case, it means I messed up somewhere and need your help. Just send me an email to <matthias.nehlsen@gmail.com> and I will update the chapter text as quickly as possible. Thanks!
