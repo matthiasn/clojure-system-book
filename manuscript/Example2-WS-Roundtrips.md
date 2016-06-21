@@ -1,30 +1,32 @@
 # DRAFT: WebSocket Latency Visualization Example
 
-A little over a year ago, I wrote an article about this sample application for the systems-toolbox, the one for visualizing webSocket round trip times. 
+Some time ago, I wrote an article about this sample application for the **[systems-toolbox](https://github.com/matthiasn/systems-toolbox)**, the one for visualizing **[WebSocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)** round trip times. 
 
 [Screenshot]
 
-Now that I'm back at actively developing the systems-toolbox, it was a good time to update this application to be fully validated by clojure.spec, and write about it. By the way, clojure.spec came at a crucial time for me. This kind of validation was really missing in the systems-toolbox, and made me question the whole approach after fighting with annoying bugs in my latest application, iWasWhere (which I'll introduce in a future post). But now with clojure.spec, these annoying bugs are gone for good. The last two weeks I upgraded all my applications, and the systems-toolbox libraries, to use clojure.spec and I'm now more convinced about the approach than ever. You really can build applications this way, and stay sane at the same time.
+A live demo can be found **[here](http://systems-toolbox.matthiasnehlsen.com/)** and the code is **[here](https://github.com/matthiasn/systems-toolbox/tree/master/examples/trailing-mouse-pointer)**.
 
-We'll look into validation in this post, too. But let's get started with the application itself. here, we have a couple of different components:
+Now that I'm back at actively developing the systems-toolbox, it was a good time to update this application to be fully validated by **[clojure.spec](https://clojure.org/about/spec)**, and write about it. By the way, clojure.spec came at a crucial time for me. This kind of validation was really missing in the systems-toolbox, and made me question the whole approach after fighting with annoying bugs in my latest application, **[iWasWhere](https://github.com/matthiasn/iWasWhere)** (which I'll introduce in a subsequent chapter). But now with clojure.spec, these annoying bugs are gone for good. In a matter of a little over a week I upgraded all my applications, and the systems-toolbox libraries, to use clojure.spec and I'm now more convinced about the approach than ever. You really **can** build applications this way, and **stay sane** at the same time.
 
-on the client:
+We'll look into validation in this chapter, too. But let's get started with the application itself. Here, we have a couple of different components:
+
+On the client:
 
 * there's a component that shows the position of the mouse, both locally and for the message coming back from the server
 * there's the store, which holds the client-side state
 * there's a UI component for visualizing the round trip times as histograms
 * in addition, there are components for visualizing message flow, and for showing some JVM stats
 
-on the server
+On the server
 
 * there's the store, which keeps a counter, and returns the message with the mouse pos to the client where it originated
 * then, there's also a component for gathering some stats about the JVM
 
-On both sides, there are sente components for establishing bi-directional communication between client and server.
+On both sides, there are **[Sente](https://github.com/ptaoussanis/sente)** components for establishing bi-directional communication between client and server. These ready-to-use components are provided by the **[systems-toolbox-sente](https://github.com/matthiasn/systems-toolbox-sente)** library.
 
-The store component on the client is observed by both the histogram and the mouse move components, these render something based on what's in the state of the store component.
+The store component on the client is observed by both the histogram and the mouse move components; these two render something based on what's in the state of the store component.
 
-The communication between these components is comparable to what was introduced last week. What's new here is the sente-cmp. Let's have a look what WebSockets are. They give us a way for establising a very low latency bi directional connection between client and server. It's not HTTP but instead its own protocol. They are well supported from IE 10 on, and in all other recent browsers. Some critics may say that they may be problematic because firewalls and reverse proxies might have to reconfigured. Well, that might indeed problematic if (and only if) your OPS guys are incompetent. But most likely they won't be, so it's only a matter of communication (and some upfront planning) to get this out of the way.
+The communication between these components is comparable to what was introduced in the previous chapter. What's new here is the `sente-cmp`. Let's have a brief look what **[WebSockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)** are. They give us a way for establising a very low latency **bi-directional** connection between client and server. It's not HTTP but instead its own protocol. They are well supported from IE 10 on, and in all other recent browsers. Some critics may say that they may be problematic because firewalls and reverse proxies might have to reconfigured. Well, that might indeed problematic if (and only if) your OPS guys are incompetent. But most likely they won't be, so it's only a matter of communication (and some upfront planning) to get this out of the way.
 
 Other than that potential issue, there appears to be no downside to using WebSockets, and plenty of upsides. You absolutely need to be able to send messages from server to client at any time if you want to build a modern, responsive UI. Sure, you could also use SSE for that route, and send messages from client to server the way you'd normally do: via REST calls, for each message. That may work; it may also be too expensive if you want to send messages often. For example here, with the mouse positions, the user experience would likely be quite poor.
 
