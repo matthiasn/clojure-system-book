@@ -43,7 +43,9 @@ Anyway, let's look at some code, starting with where the messages originate in o
             [matthiasn.systems-toolbox-ui.helpers :refer [by-id]]))
 
 ;; some SVG defaults
-(def circle-defaults {:fill "rgba(255,0,0,0.1)" :stroke "rgba(0,0,0,0.5)" :stroke-width 2 :r 15})
+(def circle-defaults {:fill "rgba(255,0,0,0.1)
+" :stroke "rgba(0,0,0,0.5)"
+                      :stroke-width 2 :r 15})
 (def text-default {:stroke "none" :fill "black" :style {:font-size 12}})
 (def text-bold (merge text-default {:style {:font-weight :bold :font-size 12}}))
 
@@ -63,15 +65,18 @@ Anyway, let's look at some code, starting with where the messages originate in o
                    :fill         fill}])])))
 
 (defn trailing-circles
-  "Displays two transparent circles. The position of the circles comes from the most recent messages,
-  one sent locally and the other with a roundtrip to the server in between.  This makes it easier to
-  visually detect any delays."
+  "Displays two transparent circles. The position of the circles comes from the most recent
+  messages, one sent locally and the other with a roundtrip to the server in between.  This
+  makes it easier to visually detect any delays."
   [state]
   (let [local-pos (:local state)
         from-server (:from-server state)]
     [:g
-     [:circle (merge circle-defaults {:cx (:x local-pos) :cy (:y local-pos)})]
-     [:circle (merge circle-defaults {:cx (:x from-server) :cy (:y from-server) :fill "rgba(0,0,255,0.1)"})]]))
+     [:circle (merge circle-defaults {:cx (:x local-pos)
+                                      :cy (:y local-pos)})]
+     [:circle (merge circle-defaults {:cx (:x from-server)
+                                      :cy (:y from-server)
+                                      :fill "rgba(0,0,255,0.1)"})]]))
 
 (defn mouse-view
   "Renders SVG with both local mouse position and the last one returned from the server,
@@ -215,15 +220,18 @@ Next, we have the `trailing-circles` function:
 
 ~~~
 (defn trailing-circles
-  "Displays two transparent circles. The position of the circles comes from the most recent messages,
-  one sent locally and the other with a roundtrip to the server in between.  This makes it easier to
-  visually detect any delays."
+  "Displays two transparent circles. The position of the circles comes from the most recent
+  messages, one sent locally and the other with a roundtrip to the server in between.  This
+  makes it easier to visually detect any delays."
   [state]
   (let [local-pos (:local state)
         from-server (:from-server state)]
     [:g
-     [:circle (merge circle-defaults {:cx (:x local-pos) :cy (:y local-pos)})]
-     [:circle (merge circle-defaults {:cx (:x from-server) :cy (:y from-server) :fill "rgba(0,0,255,0.1)"})]]))
+     [:circle (merge circle-defaults {:cx (:x local-pos)
+                                      :cy (:y local-pos)})]
+     [:circle (merge circle-defaults {:cx (:x from-server)
+                                      :cy (:y from-server)
+                                      :fill "rgba(0,0,255,0.1)"})]]))
 ~~~
 
 This one renders an SVG group with the two circles inside. Then, there are some defaults for the different elements, which can be merged with more specific maps as desired:
@@ -259,14 +267,15 @@ That's it for the rendering of the mouse element. Next, let's discuss the server
 
 ~~~
 (ns example.pointer
-  "This component receives messages, keeps a counter, decorates them with the state of the counter, and sends
-  them back. Here, this provides a way to measure roundtrip time from the UI, as timestamps are recorded as
-  the message flows through the system.
-  Also records a recent history of mouse positions for all clients, which the component provides to clients
-  upon request.")
+  "This component receives messages, keeps a counter, decorates them with the state of the
+  counter, and sends them back. Here, this provides a way to measure roundtrip time from the UI,
+  as timestamps are recorded as the message flows through the system.
+  Also records a recent history of mouse positions for all clients, which the component provides
+  to clients upon request.")
 
 (defn process-mouse-pos
-  "Handler function for received mouse positions, increments counter and returns mouse position to sender."
+  "Handler function for received mouse positions, increments counter and returns mouse position
+  to sender."
   [{:keys [current-state msg-meta msg-payload]}]
   (let [new-state (-> current-state
                       (update-in [:count] inc)
