@@ -33,7 +33,7 @@ Let me briefly introduce the systems-toolbox model now. There's a **component**.
 In this example, there's the store component, let's just look at the code[^codelinks].
  in the **[example.store namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/redux-counter01/src/cljs/example/store.cljs)**:
 
-````
+~~~
 (ns example.store
   "In this namespace, the app state is managed. One can only interact with the state by sending
   immutable messages. Each such message is then handled by a handler function. These handler functions
@@ -87,8 +87,7 @@ In this example, there's the store component, let's just look at the code[^codel
                  :cnt/dec    dec-handler
                  :cnt/remove remove-handler
                  :cnt/add    add-handler}})
-
-````
+~~~
 
 Above, you can see that there are four handlers, for four different message types: `:cnt/inc`, `:cnt/dec`, `:cnt/add` and `:cnt/remove`.
 
@@ -104,7 +103,7 @@ Next, let's have an eye on a UI component that makes use of this state to render
 
 The UI functions are super simple. There are only three functions in the **[example.counter-ui namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/redux-counter01/src/cljs/example/counter_ui.cljs)**, `counter-view`, `counters-view`, and `cmp-map`:
 
-````
+~~~
 (ns example.counter-ui
   (:require [matthiasn.systems-toolbox-ui.reagent :as r]
             [matthiasn.systems-toolbox-ui.helpers :as h]))
@@ -135,7 +134,7 @@ The UI functions are super simple. There are only three functions in the **[exam
   (r/cmp-map {:cmp-id  cmp-id
               :view-fn counters-view
               :dom-id  "counter"}))
-````
+~~~
 
 The `cmp-map` function returns a configuration map that systems-toolbox needs to start a component of this kind. In this case, that's a component that renders a small piece of UI into the element with the specified element ID in the DOM. There, it specifies that the counters-view function should be called to turn data into a piece of user interface.
 
@@ -149,7 +148,7 @@ Someone connects a wire, and you can start talking. Only that here, the wires ar
 
 Let's have a look at the **[example.core namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/redux-counter01/src/cljs/example/core.cljs)**:
 
-````
+~~~
 (ns example.core
   (:require [example.store :as store]
             [example.counter-ui :as cnt]
@@ -169,7 +168,7 @@ Let's have a look at the **[example.core namespace](https://github.com/matthiasn
      [:cmd/observe-state {:from :client/store-cmp :to :client/cnt-cmp}]]))
 
 (init)
-````
+~~~
 
 First, the **switchboard** is created. Then, we send a message to the switchboard, with a vector containing multiple commands. We start with initializing the `:client/cnt-cmp` and `:client/store-cmp` components, which are responsible for UI and state management, respectively. The order here is not relevant, as these components don't need to know about each other anyway.
 
@@ -197,12 +196,12 @@ And in an additional terminal:
 
 And now go to the store and change what happens when clicking the `inc` button. Where before, the value would be incremented by one, we could now have it increment by 11, like this:
 
-````
+~~~
 (defn inc-handler
   "Handler for incrementing specific counter"
   [{:keys [current-state msg-payload]}]
   {:new-state (update-in current-state [:counters (:counter msg-payload)] #(+ % 11))})
-````
+~~~
 
 After saving `store.cljs`, you'll briefly notice the figwheel logo overlayed on top of the page, and next, you click the button and increment the previous counter value, only that now you'll add 11 or whatever else you chose as the number there in your changed `inc-handler` function.
 

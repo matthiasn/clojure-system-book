@@ -37,7 +37,7 @@ WebSockets are also nice because you get an ordering guarantee, which would be m
 
 Anyway, let's look at some code, starting with where the messages originate in our example, the `ui-mouse-moves` component:
 
-```
+~~~
 (ns example.ui-mouse-moves
   (:require [matthiasn.systems-toolbox-ui.reagent :as r]
             [matthiasn.systems-toolbox-ui.helpers :refer [by-id]]))
@@ -114,11 +114,11 @@ Anyway, let's look at some code, starting with where the messages originate in o
               :dom-id  "mouse"
               :init-fn init-fn
               :cfg     {:msgs-on-firehose true}}))
-```
+~~~
 
 Here, we have a UI component that covers the entire page. This is facilitated by the CSS:
 
-```
+~~~
 #mouse {
     position: absolute;
     top: 0;
@@ -127,7 +127,7 @@ Here, we have a UI component that covers the entire page. This is facilitated by
     z-index: 10;
     margin-left: -12.5%;
 }
-```
+~~~
 
 Note that we want this transparent element on top, covering the rest of the page, which is what the `z-index` does. Also, we want `pointer-events` to reach the elements below, for example for clicking links or buttons, so we them to `none`.
 
@@ -141,7 +141,7 @@ In the screenshot above, you can see green circles for the mouse moves captured 
 
 Let's go through the **[namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/ui_mouse_moves.cljs)**, function by function, starting from the bottom:
 
-```
+~~~
 (defn cmp-map
   "Configuration map for systems-toolbox-ui component."
   [cmp-id]
@@ -150,13 +150,13 @@ Let's go through the **[namespace](https://github.com/matthiasn/systems-toolbox/
               :dom-id  "mouse"
               :init-fn init-fn
               :cfg     {:msgs-on-firehose true}}))      
-```
+~~~
 
 The `cmp-map` function creates the component map, which is like a blueprint that tells the switchboard how to fire up the component. The **UI** part is done by calling `r/cmp-map`, which is the main function in the **systems-toolbox-ui** library. Once the returned map is sent to the switchboard, a component will be initialized that renders the `mouse-view` function into the **DOM element** with the `"mouse"` ID.
 
 Then, there's the `init-fn`:
 
-```
+~~~
 (defn init-fn
   "Listen to onmousemove events for entire page, emit message when fired.
   These events are then sent to the server for measuring the round-trip time,
@@ -170,25 +170,25 @@ Then, there's the `init-fn`:
           (let [t (aget (.-targetTouches ev) 0)]
             (put-fn [:mouse/pos {:x (.-pageX t) :y (.-pageY t)}])
             #_(.preventDefault ev)))))
-```
+~~~
 
 This function takes care of registring handler functions for all mouse movements (and also touch movement, for that matter) for the entire window. By doing that here on the window, we can get away with the `mouse-view` element not getting any mouse movement events, which is required for still reacting to clicks in elements that are actually covered by it, since it spans the entire page. When such an event is encountered, a `:mouse/pos` message is sent, which then happens to be received by both the `:client/store-cmp` and the `:server/pos-cmp`. Not that this component needs to be concerned with that in any way though - there's proper decoupling between them.
 
 You can see how those messages are supposed to look like in the respective **specs**:
 
-```
+~~~
 (s/def :ex/x pos-int?)
 (s/def :ex/y pos-int?)
 
 (s/def :mouse/pos
   (s/keys :req-un [:ex/x :ex/y]))
-```
+~~~
 
 If you still haven't heard Rich Hickey talk about **[clojure.spec]()**, you really need to do that now. It has many useful properties. Among them is that you'll know immediately if you've broken your application with some recent change, as the system would throw an error immediately, rather than drag that problem along and blow up in your face somewhere else, where you'll have a hard time figuring out where it originated. What's also very useful is that when you come back to some code you wrote some time ago and want to know what a message is supposed to look like, you don't have to print it out and infer what the rules may be. No, instead you just look at the piece of code that's run when validating the message, it'll tell you all nitty-gritty details of what the expectations are. Much nicer.
 
 Next, let's have a look at the `mouse-view` function, which is responsible for rendering the UI component:
 
-```
+~~~
 (defn mouse-view
   "Renders SVG with both local mouse position and the last one returned from the server,
   in an area that covers the entire visible page."
@@ -207,14 +207,14 @@ Next, let's have a look at the `mouse-view` function, which is responsible for r
         [mouse-hist-view state-snapshot :local-hist "rgba(0,0,0,0.06)" "rgba(0,255,0,0.05)"])
       (when (-> state-snapshot :show-all :server)
         [mouse-hist-view state-snapshot :server-hist "rgba(0,0,0,0.06)" "rgba(0,0,128,0.05)"])]]))
-```
+~~~
 
 Note that this component gets passed a map with the `observed` and `local` keys. The `observed` key is an atom which holds the state of the component it observes. Here, this is always the latest snapshot of the `store-cmp`. The `local` atom contains some local state, such as the width of the SVG for resizing. Note that we're detecting the width on every call to the function, and also in the `onresize` callback of `js/window`. This ensures that the square mouse div fills the parent element, while working with the correct pixel coordinate system. One could instead also work with a viewBox, like this: `{:width "100%" :viewBox "0 0 1000 1000"}`. However, that would not work correctly in this case as the mouse position would not be aligned with the circles here.
 
 
 Finally, we have the `trailing-circles` function:
 
-```
+~~~
 (defn trailing-circles
   "Displays two transparent circles. The position of the circles comes from the most recent messages,
   one sent locally and the other with a roundtrip to the server in between.  This makes it easier to
@@ -225,19 +225,19 @@ Finally, we have the `trailing-circles` function:
     [:g
      [:circle (merge circle-defaults {:cx (:x local-pos) :cy (:y local-pos)})]
      [:circle (merge circle-defaults {:cx (:x from-server) :cy (:y from-server) :fill "rgba(0,0,255,0.1)"})]]))
-```
+~~~
 
 This one renders an SVG group with the two circles inside. Then finally, there are some defaults for the different elements, which can be merged with more specific maps as desired:
 
-```
+~~~
 (def circle-defaults {:fill "rgba(255,0,0,0.1)" :stroke "black" :stroke-width 2 :r 15})
 (def text-default {:stroke "none" :fill "black" :style {:font-size 12}})
 (def text-bold (merge text-default {:style {:font-weight :bold :font-size 12}}))
-```
+~~~
 
 Finally, there's the `mouse-hist-view` function:
 
-```
+~~~
 (defn mouse-hist-view
   "Render SVG group with filled circles from a vector of mouse positions in state."
   [state state-key stroke fill]
@@ -252,13 +252,13 @@ Finally, there's the `mouse-hist-view` function:
                    :cx           (:x pos)
                    :cy           (:y pos)
                    :fill         fill}])])))
-```
+~~~
 
 Here, the history of mouse movements is rendered, either for your local mouse movements, or the last 1000 from all users. You've seen how that looks like in the screenshot above.
 
 That's it for the rendering of the mouse element. Next, let's discuss the server side, before looking into the wiring of the components. It's really short, this is the entire **[example.pointer]()** namespace:
 
-```
+~~~
 (ns example.pointer
   "This component receives messages, keeps a counter, decorates them with the state of the counter, and sends
   them back. Here, this provides a way to measure roundtrip time from the UI, as timestamps are recorded as
@@ -286,7 +286,7 @@ That's it for the rendering of the mouse element. Next, let's discuss the server
    :state-fn    (fn [_] {:state (atom {:count 0 :mouse-moves []})})
    :handler-map {:mouse/pos      process-mouse-pos
                  :mouse/get-hist get-mouse-hist}})
-```
+~~~
 
 At the bottom, you see the `cmp-map`, which again is the map specifiying the component that the switchboard will then instantiate. Inside, there's the `:state-fn`, which does nothing but create the initial state inside an atom. Then, there's the `:handler-map`, which here only handles a single message type `:cmd/mouse-pos`.
 
@@ -298,7 +298,7 @@ Next, the messages need to get from the UI component to the server, and back to 
 
 For establishing these connections, let's have a look at the `core` namespaces on both server and client, starting with the client:
 
-```
+~~~
 (ns example.core
   (:require [example.spec]
             [example.store :as store]
@@ -334,7 +334,7 @@ For establishing these connections, let's have a look at the `core` namespaces o
      [:cmd/attach-to-firehose :client/observer-cmp]]))
 
 (init!)
-```
+~~~
 
 First, as usual, we create a `switchboard`. Then, we send messages to the switchboard, with the blueprints for the components we need initialized. For the core functionality discussed so far, only three of them are important: `:client/ws-cmp`, `:client/mouse-cmp` and `:client/store-cmp`.
 
