@@ -263,7 +263,7 @@ Finally, there's the `mouse-hist-view` function:
 
 Here, the history of mouse movements is rendered, either for your local mouse movements, or the last 1000 from all users. You've seen how that looks like in the screenshot above.
 
-That's it for the rendering of the mouse element. Next, let's discuss the server side, before looking into the wiring of the components. It's really short; this is the entire **[example.pointer](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljc/example/pointer.cljc)** namespace:
+That's it for the rendering of the mouse element. The messages emitted here then get sent both to the client-side and the server-side store components. Let's discuss the server side first, before looking into the wiring of the components. It's really short; this is the entire **[example.pointer](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljc/example/pointer.cljc)** namespace:
 
 ~~~
 (ns example.pointer
@@ -298,7 +298,7 @@ That's it for the rendering of the mouse element. Next, let's discuss the server
 
 At the bottom, you see the `cmp-map`, which again is the map specifying the component that the switchboard will then instantiate. Inside, there's the `:state-fn`, which does nothing but creates the initial state inside an atom. Then, there's the `:handler-map`, which here handles the two message types `:cmd/mouse-pos` and `:mouse/get-hist`.
 
-The `process-mouse-pos` handler function then gets the `current-state`, the `msg-payload`, and the `msg-meta` inside the map it gets passed as a single argument, and returns both the `:new-state` and a message to emit, which is the same message it received, only now enriched by the `:count` from this component's state. Note that we are reusing the `msg-meta` from the original message, as this metadata also contains the `:sente-id` of the originating client, which is required to route the message back to the client where it originated. There's more information on the metadata; we'll get to that later.
+The `process-mouse-pos` handler function then gets the `current-state`, the `msg-payload`, and the `msg-meta` inside the map it gets passed as a single argument, and returns both the `:new-state` and a message to emit, which is the same message it received, only now enriched by the `:count` from this component's state. Note that we are reusing the `msg-meta` from the original message, as this metadata also contains the `:sente-id` of the client, which is required to route the message back to where it originated. There's more information on the metadata; we'll get to that later.
 
 Next, the messages need to get from the UI component to the server, and back to the client. Here's how that looks like:
 
@@ -313,11 +313,10 @@ For establishing these connections, let's have a look at the `core` namespaces o
             [example.ui-histograms :as hist]
             [example.ui-mouse-moves :as mouse]
             [example.ui-info :as info]
-            [example.conf :as conf]
-            [matthiasn.systems-toolbox-ui.charts.observer :as obs]
+            [example.metrics :as metrics]
+            [example.observer :as observer]
             [matthiasn.systems-toolbox.switchboard :as sb]
-            [matthiasn.systems-toolbox-sente.client :as sente]
-            [matthiasn.systems-toolbox-metrics.jvmstats :as jvmstats]))
+            [matthiasn.systems-toolbox-sente.client :as sente]))
 
 (enable-console-print!)
 
@@ -326,31 +325,97 @@ For establishing these connections, let's have a look at the `core` namespaces o
 (defn init! []
   (sb/send-mult-cmd
     switchboard
-    [;; First, instantiate components
-     [:cmd/init-comp
-      #{(sente/cmp-map :client/ws-cmp {:relay-types #{:mouse/pos :mouse/get-hist} :msgs-on-firehose true})
+    [[:cmd/init-comp
+      #{(sente/cmp-map :client/ws-cmp {:relay-types #{:mouse/pos :mouse/get-hist}
+                                       :msgs-on-firehose true})
         (mouse/cmp-map :client/mouse-cmp)
         (info/cmp-map  :client/info-cmp)
         (store/cmp-map :client/store-cmp)
-        (hist/cmp-map  :client/histogram-cmp)
-        (jvmstats/cmp-map :client/jvmstats-cmp {:dom-id "jvm-stats-frame" :msgs-on-firehose true})
-        (obs/cmp-map   :client/observer-cmp conf/observer-cfg-map)}]
-
-     ;; Then, messages of a given type are wired from one component to another
-     [:cmd/route {:from :client/mouse-cmp
-                  :to #{:client/store-cmp :client/ws-cmp}}]
-     [:cmd/route {:from :client/ws-cmp
-                  :to #{:client/store-cmp :client/jvmstats-cmp}}]
-     [:cmd/route {:from :client/info-cmp
-                  :to #{:client/store-cmp :client/ws-cmp}}]
+        (hist/cmp-map  :client/histogram-cmp)}]
+     [:cmd/route {:from :client/mouse-cmp :to #{:client/store-cmp :client/ws-cmp}}]
+     [:cmd/route {:from :client/ws-cmp :to :client/store-cmp}]
+     [:cmd/route {:from :client/info-cmp :to #{:client/store-cmp :client/ws-cmp}}]
      [:cmd/observe-state {:from :client/store-cmp
-                          :to #{:client/mouse-cmp :client/histogram-cmp :client/info-cmp}}]
-
-     ;; Finally, wire firehose with all messages into the observer component
-     [:cmd/attach-to-firehose :client/observer-cmp]]))
+                          :to #{:client/mouse-cmp :client/histogram-cmp :client/info-cmp}}]]))
 
 (init!)
+
+(metrics/init! switchboard)
+(observer/init! switchboard)
+
 ~~~
 
-First, as usual, we create a switchboard. Then, we send messages to the switchboard, with the blueprints for the components we want the switchboard to initialize. For the core functionality discussed so far, only four of them are important: `:client/ws-cmp`, `:client/mouse-cmp`, `:client/info-cmp`, and `:client/store-cmp`.
+---
+
+First, as usual, we create a switchboard. Then, we send messages to the switchboard, with the blueprints for the components we want the switchboard to initialize. For the core functionality discussed so far, only three of them are important: `:client/ws-cmp`, `:client/mouse-cmp`, and `:client/store-cmp`. We'll look at the other components later.
+
+Note that the switchboard is kept in a `defonce`, which means that it can't be redefined later on. This is important for working with **[Figwheel](https://github.com/bhauman/lein-figwheel)**, as it allows the switchboard to shut down existing components and fire them up again after reload, while retaining the previous component state. Otherwise, without the `defonce`, the old state of each component would be lost as there would be an entirely new switchboard.
+
+Then, inside the component init block, the `:client/ws-cmp` is fired up first. This is the WebSockets component provided by the **[systems-toolbox-sente](https://github.com/matthiasn/systems-toolbox-sente)** library. Here, we specify that only messages of the types `:mouse/pos` and `:mouse/get-hist` should be relayed to the server.
+
+Next, we wire the components together:
+
+* messages from `:client/mouse-cmp` are sent to both `:client/store-cmp` and `:client/ws-cmp`
+* messages from `:client/ws-cmp` are sent to both `:client/store-cmp` and `:client/jvmstats-cmp`
+* messages from  `:client/info-cmp` are sent to both `:client/store-cmp` and `:client/ws-cmp`
+* `:client/mouse-cmp`, `:client/histogram-cmp` and `:client/info-cmp` all observe the state of the `:client/store-cmp`
+* finally, the `:client/observer-cmp` is attached to the firehose, but more about that later.
+
+At the bottom of the namespace, we also fire up the observer and metrics components. We'll look at that when covering the respective components. 
+
+With the client-side wiring in place, let's look at the server-side wiring in **[core.clj](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/clj/example/core.clj)**:
+
+~~~
+(ns example.core
+  (:require [example.spec]
+            [matthiasn.systems-toolbox.switchboard :as sb]
+            [matthiasn.systems-toolbox-sente.server :as sente]
+            [example.metrics :as metrics]
+            [example.index :as index]
+            [clojure.tools.logging :as log]
+            [clj-pid.core :as pid]
+            [example.pointer :as ptr]))
+
+(defonce switchboard (sb/component :server/switchboard))
+
+(defn start!
+  "Starts or restarts system by asking switchboard to fire up the provided ws-cmp and the ptr
+  component, which handles and counts messages about mouse moves."
+  []
+  (sb/send-mult-cmd
+    switchboard
+    [[:cmd/init-comp (sente/cmp-map :server/ws-cmp index/sente-map)]
+     [:cmd/init-comp (ptr/cmp-map   :server/ptr-cmp)]
+     [:cmd/route {:from :server/ptr-cmp :to :server/ws-cmp}]
+     [:cmd/route {:from :server/ws-cmp  :to :server/ptr-cmp}]]))
+
+(defn -main
+  "Starts the application from command line, saves and logs process ID. The system that is fired up
+  when restart! is called proceeds in core.async's thread pool. Since we don't want the application
+  to exit when just because the current thread is out of work, we just put it to sleep."
+  [& args]
+  (pid/save "example.pid")
+  (pid/delete-on-shutdown! "example.pid")
+  (log/info "Application started, PID" (pid/current))
+  (start!)
+  (metrics/start! switchboard)
+  (Thread/sleep Long/MAX_VALUE))
+~~~
+
+Here, just like on the client side, a switchboard is kept in a `defonce`. Then, we ask the switchboard to instantiate two components for us, the `:server/ws-cmp` and the `:server/ptr-cmp`, and then wire a simple message flow together.
+
+We've already discussed the `:server/ptr-cmp` above. The `:server/ws-cmp` is the server side of the Sente-WebSockets component, and it takes a configuration map, which you can find in the **[example.index](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/clj/example/index.clj)** namespace:
+
+~~~
+(def sente-map
+  "Configuration map for sente-cmp."
+  {:index-page-fn index-page
+   :relay-types   #{:mouse/pos :stats/jvm :mouse/hist}})
+~~~
+
+In this configuration map, we tell the component to relay three message types, `:mouse/pos`, `:stats/jvm`, and `:mouse/hist`. Also, we provide a function that renders the static HTML that is served to the clients. Have a look at the namespace to learn more. In particular, watch out for elements with an ID, like `[:div#mouse]`, `[:figure#histograms.fullwidth]`, `[:div#info]`, or `[:div#observer]`. These are the DOM elements that client-side application will then render dynamic content into.
+
+Then, also in the server-side `example.core` namespace is the `-main` function, which is the entry point into the application. Here, we save a PID file, which will contain the process ID, also log the PID, and `start!` the application. We also start the server-side portion of the metrics gathering and display, but more about that later.
+
+Finally, we let the main thread sleep until roughly the end of time, or until the application gets killed, whatever happens first. Well, actually `Long/MAX_VALUE` is only until roughly 292 million years from now, but hey, that should be enough.
 
