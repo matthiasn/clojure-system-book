@@ -6,9 +6,9 @@ But how fast IS that communication? Let's find out. The next sample application 
 
 ![Screenshot](images/ws-lat-screenshot.png "Screenshot")
 
-Check out the live demo **[here](http://systems-toolbox.matthiasnehlsen.com/)**, it'll give you some additional information about the application. There was a previous version of this example, but with **[clojure.spec](https://clojure.org/about/spec)** out, it was a good time to revisit this application and have it fully validated.
+Check out the live demo **[here](http://systems-toolbox.matthiasnehlsen.com/)**; it'll give you some additional information about the application. There was a previous version of this example, but with **[clojure.spec](https://clojure.org/about/spec)** released, it was a good time to revisit this application and have it fully validated.
 
-By the way, **[clojure.spec](https://clojure.org/about/spec)** came at a **crucial time** for me. This kind of validation was really missing in the systems-toolbox, and that made me question the whole approach after fighting with annoying bugs in my latest application, **[iWasWhere](https://github.com/matthiasn/iWasWhere)** (which I'll introduce in a subsequent chapter). But now with clojure.spec, the entire class of those annoying bugs is gone for good. In a matter of a little over a week, I upgraded all my applications plus the systems-toolbox libraries to use clojure.spec and I'm now more convinced about the approach than ever. You really **can** build applications this way, and **stay sane** at the same time.
+By the way, **[clojure.spec](https://clojure.org/about/spec)** came at a **crucial time** for me. This kind of validation was missing in the systems-toolbox (and more broadly in Clojure, too), and that made me question the whole approach, especially after fighting with annoying bugs in my latest application, **[iWasWhere](https://github.com/matthiasn/iWasWhere)** (which I'll introduce in a subsequent chapter). But now with clojure.spec, the entire class of those annoying bugs is gone for good. In a matter of a little over a week, I upgraded all my applications plus the systems-toolbox libraries to use clojure.spec, and I'm now more convinced about the approach than ever. You **can** build applications this way, and **stay sane** at the same time.
 
 We'll look into validation in this chapter, too. But let's get started with the application itself. Here, we have a couple of different components:
 
@@ -18,24 +18,24 @@ On the client:
 * there's the store, which holds the client-side state
 * there's a UI component for visualizing the round trip times as histograms
 * there's a UI component that shows some information about the app
-* in addition, there are components for visualizing message flow, and for showing some JVM stats
+* also, there are components for visualizing message flow, and for showing some JVM stats
 
 On the server:
 
-* there's the store, which keeps a counter of all messages passed through since application startup, and returns the message with the mouse position to the client where it originated, plus, upon request, a history of mouse positions from all connected clients
-* then, there's also a component for gathering some stats about the JVM, which are broadcast to all connected clients
+* there's the store, which keeps a counter of all messages passed through since application startup, and returns each mouse position message to the client where it originated, plus, upon request, a history of mouse positions from all connected clients
+* then, there's also a component for gathering some stats about the JVM, which get broadcast to all connected clients
 
 On both sides, there are **[Sente](https://github.com/ptaoussanis/sente)** components for establishing **bi-directional communication** between client and server. These ready-to-use components are provided by the **[systems-toolbox-sente](https://github.com/matthiasn/systems-toolbox-sente)** library, and you can use them in your projects, too, with a simple import and no more than a handful of lines of code.
 
-The store component on the client, which holds the client-side state, is then observed by the histogram, the mouse moves and the info components; these three render something based on what's in the state that they observe.
+The store component on the client, which holds the client-side state, is then observed by the histogram, the mouse moves, and the info components; these three render something based on what's in the state that they observe.
 
-The communication between these components is comparable to what was introduced in the previous chapter. What's new here is the `sente-cmp`. Let's have a brief look what **[WebSockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)** are. They give us a way for establising a very low latency **bi-directional** connection between client and server. It's not HTTP but instead its own protocol. WebSockets are well supported from IE 10 on, and in all other recent browsers. Some critics say that they may be problematic because firewalls and reverse proxies might have to be reconfigured. Well, that might indeed problematic if (and only if) your OPS people are incompetent. But most likely they are not, so it's only a matter of communication (and some upfront planning) to get this potential hurdle out of the way.
+The communication between these components is comparable to what was introduced in the previous chapter. What's new here is the `sente-cmp`. Let's have a brief look what **[WebSockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)** are. They give us a way to establish a very low latency **bi-directional** connection between client and server. It's not HTTP but instead its own protocol. WebSockets are well supported from IE 10 on, and in all other recent browsers. Some critics say that they may be problematic because firewalls and reverse proxies might have to be reconfigured. Well, that might indeed problematic if (and only if) your OPS people are incompetent. But most likely they are not, so it's only a matter of communication (and some upfront planning) to get this potential hurdle out of the way.
 
 Other than that potential issue with your firewall, there appears to be no downside to using **WebSockets**, and plenty of upsides. You absolutely need to be able to send messages from server to client at any time if you want to build a modern, responsive UI. Sure, you could also use **[Server-sent Events (SSE)](https://en.wikipedia.org/wiki/Server-sent_events)** for the server -> client direction, and send messages from client to server the way you'd normally do: via REST calls, for each message. That may work; it may also be too expensive if you want to send messages often. For the use case in this very example, with the mouse positions, the user experience would likely be quite poor.
 
 WebSockets are also nice because you get an ordering guarantee, which would be much harder with REST calls. Another aspect not to underestimate is that with REST calls, you need to think about authentication on every single request, where you do it once for a WebSockets connection.
 
-Anyway, let's look at some code, starting with where the messages originate in our example, the `ui-mouse-moves` component and its respective **[namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/ui_mouse_moves.cljs)**:
+Anyway, let's look at some code, starting with where the messages originate in our example, the `ui-mouse-moves` component, and its respective **[namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/ui_mouse_moves.cljs)**:
 
 ~~~
 (ns example.ui-mouse-moves
@@ -134,11 +134,11 @@ Here, we have a UI component that covers the entire page. This is facilitated by
 }
 ~~~
 
-Note that we want this transparent element on top, covering the rest of the page, which is what the `z-index` does. Also, we want `pointer-events` to reach the elements below, for example for clicking links or buttons, so we them to `none`.
+Note that we want this transparent element on top, covering the rest of the page, which is what the `z-index` does. Also, we want `pointer-events` to reach the elements below, for example for clicking links or buttons, so we set them to `none`.
 
 Then, in the `init-fn`, we set `ontouchmove` and `ontouchmove` event handlers, which get called when these events are fired anywhere on the page. We could also more specifically handle these events in the component's div, but then the `pointer-events` would not be available for elements below the `mouse-view` element, such as for clicking a button. Then, whenever an event is fired, a messaged is sent with the mouse position. This message will be received by the client side store directly, and also via the server side, where it'll be enriched with some additional data.
 
-Then, the rendering of the **[SVG](https://www.w3.org/Graphics/SVG/)** covering the entire page is done in the `mouse-view` function, which adapts the size of the element when `onresize` element fires. Here, the `trailing-circles` function is called, which renders the two circles. This is trivial to achieve with Reagent. You can see that we just create a group with two circles, each with a distinct position based on the last known message. Fast movements will then reveal latency, as you'll see how the messages coming back from the server lag behind. Then, there are two calls to the `mouse-hist-view` function, which renders either a local history or the last moves of all clients, as you'll hopefully have seen when playing around with the live demo of the application. If not, here's what that looks like:
+Then, the rendering of the **[SVG](https://www.w3.org/Graphics/SVG/)** covering the entire page is done in the `mouse-view` function, which adapts the size of the element when `onresize` element fires. Here, the `trailing-circles` function is called, which renders the two circles. This SVG rendering is trivial to achieve with Reagent. You can see that we just create a group with two circles, each with a distinct position based on the last known message. Fast movements will then reveal latency, as you'll see how the messages coming back from the server are lagging behind. Then, there are two calls to the `mouse-hist-view` function, which renders either a local history or the last moves of all clients, as you'll hopefully have seen when playing around with the live demo of the application. If not, here's what that looks like:
 
 ![Screenshot](images/ws-lat-screenshot2.png "Screenshot")
 
@@ -177,7 +177,7 @@ Then, there's the `init-fn`:
             #_(.preventDefault ev)))))
 ~~~
 
-This function takes care of registering handler functions for all mouse movements (and also touch movement, for that matter) for the entire window. By doing that here on the window, we can get away with the `mouse-view` element not getting any mouse movement events, which is required for still reacting to clicks in elements that are in fact covered by it, since it spans the entire page. When such an event is encountered, a `:mouse/pos` message is sent, which then happens to be received by both the `:client/store-cmp` and the `:server/pos-cmp`. Not that this component needs to be concerned with that in any way though - there's proper decoupling between them.
+This function takes care of registering handler functions for all mouse movements (and also touch movement, for that matter) for the entire window. By doing that here, for the entire window, we can get away with the `mouse-view` element not getting any mouse movement events, which is required for still reacting to clicks in elements that are in fact covered by it, since it spans the entire page. When such an event is encountered, a `:mouse/pos` message is sent, which then happens to be received by both the `:client/store-cmp` and the `:server/pos-cmp`. Not that this component needs to be concerned with that in any way, though - there's proper decoupling between them.
 
 You can see how those messages are supposed to look like in the respective **specs**:
 
@@ -189,7 +189,7 @@ You can see how those messages are supposed to look like in the respective **spe
   (s/keys :req-un [:ex/x :ex/y]))
 ~~~
 
-If you still haven't heard Rich Hickey talk about **[clojure.spec](http://clojure.org/about/spec)**, you really need to do that now. **clojure.spec** has many useful properties. Among them is that you'll know immediately if you've broken your application with some recent change, as the system would throw an error immediately, rather than drag that problem along and blow up in your face somewhere else, where you'll have a hard time figuring out where it originated. What's also very useful is that when you come back to some code you wrote some time ago and want to know what a message is supposed to look like, you don't have to print it out and infer what the rules may be. No, instead you just look at the piece of code that's run when validating the message, it'll tell you all nitty-gritty details of what the expectations are. Much nicer.
+If you still haven't heard Rich Hickey talk about **[clojure.spec](http://clojure.org/about/spec)**, you seriously need to do that now. **clojure.spec** has many useful properties. Among them is that you'll immediately know if you've broken your application with some recent change, as the system would throw an error immediately, rather than drag that problem along and blow up in your face somewhere else, where you'll have a hard time figuring out where it originated. What's also very useful is that when you come back to some code you wrote some time ago and wanted to know what a message is supposed to look like, you don't have to print it out and infer what the rules may be. No, instead you just look at the piece of code that's run when validating the message, it'll tell you all nitty-gritty details of what the expectations are. Much nicer.
 
 Next, let's have a look at the `mouse-view` function, which is responsible for rendering the UI component:
 
@@ -214,7 +214,7 @@ Next, let's have a look at the `mouse-view` function, which is responsible for r
         [mouse-hist-view state-snapshot :server-hist "rgba(0,0,0,0.06)" "rgba(0,0,128,0.05)"])]]))
 ~~~
 
-Note that this component gets passed a map with the `observed` and `local` keys. The `observed` key is an atom which holds the state of the component it observes. Here, this is always the latest snapshot of the `store-cmp`. The `local` atom contains some local state, such as the width of the SVG for resizing. Note that we're detecting the width on every call to the function, and also in the `onresize` callback of `js/window`. This ensures that the square mouse div fills the parent element, while working with the correct pixel coordinate system. One could instead also work with a viewBox, like this: `{:width "100%" :viewBox "0 0 1000 1000"}`. However, that would not work correctly in this case as the mouse position would not be aligned with the circles here.
+Note that this component gets passed a map with the `observed` and `local` keys. The `observed` key is an atom which holds the state of the component it observes. Here, this is always the latest snapshot of the `store-cmp`. The `local` atom contains some local state, such as the width of the SVG for resizing. Note that we're detecting the width on every call to the function, and also in the `onresize` callback of `js/window`. This ensures that the square mouse div fills the parent element, while working with the correct pixel coordinate system. One could instead also use a viewBox, like this: `{:width "100%" :viewBox "0 0 1000 1000"}`. However, that would not work correctly in this case as the mouse position would not be aligned with the circles here.
 
 Next, we have the `trailing-circles` function:
 
@@ -263,7 +263,7 @@ Finally, there's the `mouse-hist-view` function:
 
 Here, the history of mouse movements is rendered, either for your local mouse movements, or the last 1000 from all users. You've seen how that looks like in the screenshot above.
 
-That's it for the rendering of the mouse element. Next, let's discuss the server side, before looking into the wiring of the components. It's really short, this is the entire **[example.pointer](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljc/example/pointer.cljc)** namespace:
+That's it for the rendering of the mouse element. Next, let's discuss the server side, before looking into the wiring of the components. It's really short; this is the entire **[example.pointer](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljc/example/pointer.cljc)** namespace:
 
 ~~~
 (ns example.pointer
@@ -296,9 +296,9 @@ That's it for the rendering of the mouse element. Next, let's discuss the server
                  :mouse/get-hist get-mouse-hist}})
 ~~~
 
-At the bottom, you see the `cmp-map`, which again is the map specifiying the component that the switchboard will then instantiate. Inside, there's the `:state-fn`, which does nothing but create the initial state inside an atom. Then, there's the `:handler-map`, which here handles the two message types `:cmd/mouse-pos` and `:mouse/get-hist`.
+At the bottom, you see the `cmp-map`, which again is the map specifying the component that the switchboard will then instantiate. Inside, there's the `:state-fn`, which does nothing but creates the initial state inside an atom. Then, there's the `:handler-map`, which here handles the two message types `:cmd/mouse-pos` and `:mouse/get-hist`.
 
-The `process-mouse-pos` handler function then gets the `current-state`, the `msg-payload`, and the `msg-meta` inside the map it gets passed as a single argument, and returns both the `:new-state` and a message to emit, which is the same message it received, only now enriched by the `:count` from this component's state. Note that we are reusing the `msg-meta` from the original message, as this metadata also contains the `:sente-id` of the originating client, which is required to route the message back to the correct client. There's more information on the metadata, we'll get to that later.
+The `process-mouse-pos` handler function then gets the `current-state`, the `msg-payload`, and the `msg-meta` inside the map it gets passed as a single argument, and returns both the `:new-state` and a message to emit, which is the same message it received, only now enriched by the `:count` from this component's state. Note that we are reusing the `msg-meta` from the original message, as this metadata also contains the `:sente-id` of the originating client, which is required to route the message back to the client where it originated. There's more information on the metadata; we'll get to that later.
 
 Next, the messages need to get from the UI component to the server, and back to the client. Here's how that looks like:
 
@@ -352,5 +352,5 @@ For establishing these connections, let's have a look at the `core` namespaces o
 (init!)
 ~~~
 
-First, as usual, we create a `switchboard`. Then, we send messages to the switchboard, with the blueprints for the components we need initialized. For the core functionality discussed so far, only four of them are important: `:client/ws-cmp`, `:client/mouse-cmp`, `:client/info-cmp`, and `:client/store-cmp`.
+First, as usual, we create a switchboard. Then, we send messages to the switchboard, with the blueprints for the components we want the switchboard to initialize. For the core functionality discussed so far, only four of them are important: `:client/ws-cmp`, `:client/mouse-cmp`, `:client/info-cmp`, and `:client/store-cmp`.
 
