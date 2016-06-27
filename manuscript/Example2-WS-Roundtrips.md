@@ -419,7 +419,12 @@ Then, also in the server-side `example.core` namespace is the `-main` function, 
 
 Finally, we let the main thread sleep until roughly the end of time, or until the application gets killed, whatever happens first. Well, actually `Long/MAX_VALUE` is only until roughly 292 million years from now, but hey, that should be enough.
 
-Okay, now we have the message flow from capturing the mouse events to the server and back. Next, let's look at what happens to those events when they are back at the client in the **[example.store namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/store.cljs)**:
+Okay, now we have the message flow from capturing the mouse events to the server and back. Next, let's look at what happens to those events when they are back at the client.
+
+
+## :client/store-cmp
+
+Processing the returned data happens in the **[example.store namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/store.cljs)**:
 
 ~~~
 (ns example.store)
@@ -547,3 +552,80 @@ In contrast, this is how it looks like when the message comes directly from `:cl
  :tag              "a7ebdac0-ce78-4e47-adbc-0b955efef5b4"
  :client/store-cmp {:in-ts 1467046063478}}
 ~~~
+
+Of course, we could have also looked for the existence of the `:server/ptr-cmp` key on the metadata, rather than looking for the `:count` key on the payload in the branching logic when determining if a message comes from the server, it does not matter.
+
+Okay, back to the `:client/store-cmp`. We do a little bit more there:
+
+~~~
+(update-in [:network-times] conj (- rt-time srv-proc-time)
+~~~
+
+Here, the RTT times are collected in a sequence so we can use the individual values as input to the histograms.
+
+Next, there's the `show-all-handler` function to look at:
+
+~~~
+(defn show-all-handler
+  "Toggles boolean value in component state for provided key."
+  [{:keys [current-state msg-payload]}]
+  {:new-state (update-in current-state [:show-all msg-payload] not)})
+~~~
+
+This handler toggles the value in the view configuration for showing either `:local` or the `remote` history of mouse positions. These are then used as switches in the `:client/mouse-cmp`, as we've seen above. Finally, there's the `mouse-hist-handler` function:
+
+~~~
+(defn mouse-hist-handler
+  "Saves the received vector with mouse positions in component state."
+  [{:keys [current-state msg-payload]}]
+  {:new-state (assoc-in current-state [:server-hist] msg-payload)})
+~~~
+
+This handler takes care of a sequence of mouse positions received from the server and stores them in the component state, which is returned under the `:new-state` key in the returned map. If these are shown is then dependent on the `:remote` key in the `:show-all` map inside the component state. Typically, when the `:mouse/hist` is received, this switch will be set to true, as the request for these values and switching this key on will have been sent by the `:client/info-cmp` at the same time. The beauty of the UI component watching the state of another component which holds the application state is that we don't have to do anything else. Once the data is back from the server, the mouse component will just know that it needs to re-render itself, now with the new data available.
+
+## :client/histogram-cmp
+
+This was all to the `:client/store-cmp`, so let's into the next component, the `:client/histogram-cmp` in the **[example.ui-histograms namespace]()**, which makes use of the data we just collected:
+
+~~~
+(ns example.ui-histograms
+  (:require [matthiasn.systems-toolbox-ui.reagent :as r]
+            [matthiasn.systems-toolbox-ui.charts.histogram :as hist]))
+
+(defn histogram-view
+  "Renders an individual histogram for the given data, dimension, label and color."
+  [data label color]
+  [:svg {:width "100%" :viewBox "0 0 400 250"}
+   (hist/histogram-view data 80 180 300 160 label color 0.8 25)])
+
+(defn histograms-view
+  "Renders histograms with different data sets, labels and colors."
+  [{:keys [observed]}]
+  (let [state @observed
+        rtt-times (:rtt-times state)
+        server-proc-times (:server-proc-times state)
+        network-times (:network-times state)]
+    [:div
+     [:div
+      [histogram-view rtt-times "Roundtrip t/ms" "#D94B61"]
+      [histogram-view
+       (hist/percentile-range rtt-times 99) "Roundtrip t/ms (within 99th percentile)" "#D94B61"]
+      [histogram-view
+       (hist/percentile-range rtt-times 95) "Roundtrip t/ms (within 95th percentile)" "#D94B61"]]
+     [:div
+      [histogram-view network-times "Network time t/ms (within 99th percentile)" "#66A9A5"]
+      [histogram-view (hist/percentile-range network-times 95)
+       "Network time t/ms (within 95th percentile)" "#66A9A5"]
+      [histogram-view server-proc-times "Server processing time t/ms" "#F1684D"]]]))
+
+(defn cmp-map
+  [cmp-id]
+  (r/cmp-map {:cmp-id  cmp-id
+              :view-fn histograms-view
+              :dom-id  "histograms"
+              :cfg     {:throttle-ms           100
+                        :msgs-on-firehose      true
+                        :snapshots-on-firehose true}}))
+~~~
+
+The most interesting stuff here actually happens in the histogram namespace of the **systems-toolbox-ui** library, but we'll get there. There are some things of interest here anyway.
