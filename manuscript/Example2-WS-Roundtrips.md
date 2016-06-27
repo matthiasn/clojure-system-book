@@ -581,22 +581,17 @@ This handler toggles the value in the view configuration for showing either `:lo
   {:new-state (assoc-in current-state [:server-hist] msg-payload)})
 ~~~
 
-This handler takes care of a sequence of mouse positions received from the server and stores them in the component state, which is returned under the `:new-state` key in the returned map. If these are shown is then dependent on the `:remote` key in the `:show-all` map inside the component state. Typically, when the `:mouse/hist` is received, this switch will be set to true, as the request for these values and switching this key on will have been sent by the `:client/info-cmp` at the same time. The beauty of the UI component watching the state of another component which holds the application state is that we don't have to do anything else. Once the data is back from the server, the mouse component will just know that it needs to re-render itself, now with the new data available.
+This handler takes care of a sequence of mouse positions received from the server and stores them in the component state, which is returned under the `:new-state` key in the returned map. If these are shown is then dependent on the `:remote` key in the `:show-all` map inside the component state. Typically, when the `:mouse/hist` is received, this switch will be set to true, as the request for these values and switching this key on will have been sent by the `:client/info-cmp` at the same time. The beauty of the UI component watching the state of another component which holds the application state is that we don't have to do anything else. Once the data is back from the server, the mouse component will just know that it needs to re-render itself, now with the new data available. This was all to the `:client/store-cmp`, so let's into the next component, where the histograms are rendered. But actually, now might be a good time to take a break and go for a walk.
+
 
 ## :client/histogram-cmp
 
-This was all to the `:client/store-cmp`, so let's into the next component, the `:client/histogram-cmp` in the **[example.ui-histograms namespace]()**, which makes use of the data we just collected:
+Okay, ready? Let's move on. We've got some ground to cover. The `:client/histogram-cmp` in the **[example.ui-histograms namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/ui_histograms.cljs)** makes use of the data we just collected:
 
 ~~~
 (ns example.ui-histograms
   (:require [matthiasn.systems-toolbox-ui.reagent :as r]
-            [matthiasn.systems-toolbox-ui.charts.histogram :as hist]))
-
-(defn histogram-view
-  "Renders an individual histogram for the given data, dimension, label and color."
-  [data label color]
-  [:svg {:width "100%" :viewBox "0 0 400 250"}
-   (hist/histogram-view data 80 180 300 160 label color 0.8 25)])
+            [matthiasn.systems-toolbox-ui.charts.histogram :as h]))
 
 (defn histograms-view
   "Renders histograms with different data sets, labels and colors."
@@ -607,16 +602,16 @@ This was all to the `:client/store-cmp`, so let's into the next component, the `
         network-times (:network-times state)]
     [:div
      [:div
-      [histogram-view rtt-times "Roundtrip t/ms" "#D94B61"]
-      [histogram-view
-       (hist/percentile-range rtt-times 99) "Roundtrip t/ms (within 99th percentile)" "#D94B61"]
-      [histogram-view
-       (hist/percentile-range rtt-times 95) "Roundtrip t/ms (within 95th percentile)" "#D94B61"]]
+      [h/histogram-view rtt-times "Roundtrip t/ms" "#D94B61"]
+      [h/histogram-view
+       (h/percentile-range rtt-times 99) "Roundtrip t/ms (within 99th percentile)" "#D94B61"]
+      [h/histogram-view
+       (h/percentile-range rtt-times 95) "Roundtrip t/ms (within 95th percentile)" "#D94B61"]]
      [:div
-      [histogram-view network-times "Network time t/ms (within 99th percentile)" "#66A9A5"]
-      [histogram-view (hist/percentile-range network-times 95)
+      [h/histogram-view network-times "Network time t/ms (within 99th percentile)" "#66A9A5"]
+      [h/histogram-view (h/percentile-range network-times 95)
        "Network time t/ms (within 95th percentile)" "#66A9A5"]
-      [histogram-view server-proc-times "Server processing time t/ms" "#F1684D"]]]))
+      [h/histogram-view server-proc-times "Server processing time t/ms" "#F1684D"]]]))
 
 (defn cmp-map
   [cmp-id]
@@ -628,4 +623,164 @@ This was all to the `:client/store-cmp`, so let's into the next component, the `
                         :snapshots-on-firehose true}}))
 ~~~
 
-The most interesting stuff here actually happens in the histogram namespace of the **systems-toolbox-ui** library, but we'll get there. There are some things of interest here anyway.
+The most interesting stuff here actually happens in the histogram namespace of the **systems-toolbox-ui** library, but we'll get there. There are some things of interest here anyway. Did you not the `:throttle-ms` key in the `:cfg` of the `cmp-map`? This tells the systems-toolbox to only deliver new state snapshots every 100 milliseconds. This is because it is expensive enough to calculate the histograms to not want to do it on every frame. 10 times a second appears to be a good compromise between feeling alive and saving some CPU cycles.
+
+The rest of this namespace is probably not terribly surprising by now. The `histograms-view` function, which is the `:view-fn` of this **systems-toolbox-ui** component, renders a `:div` with six different `histogram-view`s, which each renders into an SVG with the chart itself. In some cases, we do some data manipulation first, such as the `hist/percentile-range` from the library namespace. Notice that there are two `:div`s inside the parent, each with three elements inside? That's for the **[Flexible Box](https://www.w3.org/TR/2016/CR-css-flexbox-1-20160526/)** layout, also known as **flexbox**. The rest of the layout is then done in **CSS**:
+
+~~~
+#histograms {
+    margin-bottom: 1em;
+}
+
+#histograms div div{
+    display: flex;
+    flex-flow: row;
+}
+~~~
+
+So what happens here is that we have two `flex` elements, each with `flex-flow: row;` so that each triplet will cover a row inside the available space.
+
+Okay, that's it here. There more interesting stuff happens in the next namespace.
+
+
+## matthiasn.systems-toolbox-ui.charts.histogram
+
+The most interesting stuff for rendering the histograms happens in the **[matthiasn.systems-toolbox-ui.charts.histogram](https://github.com/matthiasn/systems-toolbox-ui/blob/master/src/cljs/matthiasn/systems_toolbox_ui/charts/histogram.cljs)** namespace:
+
+~~~
+(ns matthiasn.systems-toolbox-ui.charts.histogram)
+
+(def text-default {:stroke "none" :fill "black" :style {:font-size 12}})
+(def text-bold (merge text-default {:style {:font-weight :bold :font-size 12}}))
+(def x-axis-label (merge text-default {:text-anchor :middle}))
+(def path-defaults {:fill :black :stroke :black :stroke-width 1})
+
+(defn interquartile-range
+  "Determines the interquartile range of values in a collection of numbers."
+  [sample]
+  (let [sorted (sort sample)
+        n (count sorted)
+        q1 (nth sorted (Math/floor (/ n 4)))
+        q3 (nth sorted (Math/floor (* (/ n 4) 3)))
+        iqr (- q3 q1)]
+    iqr))
+
+(defn percentile-range
+  "Returns only the values within the given percentile range."
+  [sample percentile]
+  (let [sorted (sort sample)
+        n (count sorted)
+        keep-n (Math/ceil (* n (/ percentile 100)))]
+    (take keep-n sorted)))
+
+(defn freedman-diaconis-rule
+  "Implements approximation of Freedman–Diaconis rule for determing bin size in histograms: bin size = 2 IQR(x) n^-1/3
+   where IQR(x) is the interquartile range of the data and n is the number of observations in the sample x.
+   Argument coll is expected to be a collection of numbers."
+  [sample]
+  (let [n (count sample)]
+    (when (pos? n)
+      (* 2 (interquartile-range sample) (Math/pow n (/ -1 3))))))
+
+(defn round-up [n increment] (* (Math/ceil (/ n increment)) increment))
+(defn round-down [n increment] (* (Math/floor (/ n increment)) increment))
+
+(defn histogram-y-axis
+  "Draws y-axis of a chart."
+  [x y h mx]
+  (let [increment (cond (> mx 6000) 1000
+                        (> mx 3000) 500
+                        (> mx 1000) 250
+                        (> mx 250) 100
+                        (> mx 100) 50
+                        (> mx 50) 20
+                        (> mx 25) 10 :else 5)
+        rng (range 0 (inc (round-up mx increment)) increment)
+        scale (/ h (dec (count rng)))]
+    [:g
+     [:path (merge path-defaults {:d (str "M" x " " y "l 0 " (* h -1) " z")})]
+     (for [n rng]
+       ^{:key (str "yt" n)}
+       [:path (merge path-defaults {:d (str "M" x " " (- y (* (/ n increment) scale)) "l -" 6 " 0")})])
+     (for [n rng]
+       ^{:key (str "yl" n)}
+       [:text (merge text-default {:x (- x 10) :y (- y (* (/ n increment) scale) -4) :text-anchor :end}) n])]))
+
+(defn histogram-x-axis
+  "Draws x-axis for histrogram."
+  [x y mn mx w scale increment]
+  (let [rng (range mn (inc mx) increment)]
+    [:g
+     [:path (merge path-defaults {:d (str "M" x " " y "l" w " 0 z")})]
+     (for [n rng] ^{:key (str "xt" n)}
+                  [:path (merge path-defaults {:d (str "M" (+ x (* (- n mn) scale)) " " y "l 0 " 6)})])
+     (for [n rng] ^{:key (str "xl" n)} [:text (merge x-axis-label {:x (+ x (* (- n mn) scale)) :y (+ y 20)}) n])]))
+
+(defn default-increment-fn
+  [rng]
+  (cond (> rng 20000) 5000
+        (> rng 8000) 2000
+        (> rng 3000) 1000
+        (> rng 1500) 500
+        (> rng 900) 200
+        (> rng 400) 100
+        (> rng 200) 50
+        (> rng 90) 20
+        :else 10))
+
+(defn histogram-view-fn
+  "Renders a histogram for roundtrip times."
+  [{:keys [rtt-times x y w h x-label color bin-cf max-bins increment-fn]}]
+  (let [mx (apply max rtt-times)
+        mn (apply min rtt-times)
+        rng (- mx mn)
+        increment-fn (or increment-fn default-increment-fn)
+        increment (increment-fn rng)
+        mx2 (round-up (or mx 100) increment)
+        mn2 (round-down (or mn 0) increment)
+        rng2 (- mx2 mn2)
+        x-scale (/ w rng2)
+        bin-size (max (/ rng max-bins) (* (freedman-diaconis-rule rtt-times) bin-cf))
+        binned-freq (frequencies (map (fn [n] (Math/floor (/ (- n mn) bin-size))) rtt-times))
+        binned-freq-mx (apply max (map (fn [[_ f]] f) binned-freq))
+        bins (inc (apply max (map (fn [[v _]] v) binned-freq)))
+        bar-width (/ (* rng x-scale) bins)
+        y-scale (/ (- h 20) binned-freq-mx)]
+    [:g
+     (if (> bins 4)
+       (for [[v f] binned-freq]
+         ^{:key (str "bf" x "-" y "-" v "-" f)}
+         [:rect {:x      (+ x (* (- mn mn2) x-scale) (* v bar-width))
+                 :y      (- y (* f y-scale))
+                 :fill   color :stroke "black"
+                 :width  bar-width
+                 :height (* f y-scale)}])
+       [:text {:x     (+ x (/ w 2)) :y (- y 50) :stroke "none" :fill "#DDD" :text-anchor :middle
+               :style {:font-weight :bold :font-size 24}} "insufficient data"])
+     (histogram-x-axis x (+ y 7) mn2 mx2 w x-scale increment)
+     [:text (merge x-axis-label text-bold {:x (+ x (/ w 2)) :y (+ y 48) :text-anchor :middle}) x-label]
+     [:text (let [x-coord (- x 45) y-coord (- y (/ h 3)) rotate (str "rotate(270 " x-coord " " y-coord ")")]
+              (merge x-axis-label text-bold {:x x-coord :y y-coord :transform rotate})) "Frequencies"]
+     (histogram-y-axis (- x 7) y h (or binned-freq-mx 10))]))
+
+(defn histogram-view
+  "Renders an individual histogram for the given data, dimension, label and color,
+  with a reasonable size inside a viewBox, which will then scale smoothly into any
+  div you put it in."
+  [data label color]
+  [:svg {:width "100%" :viewBox "0 0 400 250"}
+   (histogram-view-fn {:rtt-times data
+                       :x         80
+                       :y         180
+                       :w         300
+                       :h         160
+                       :x-label   label
+                       :color     color
+                       :bin-cf    0.8
+                       :max-bins  25})])
+~~~
+
+
+
+Okay, that was a bit involved. But hey, in order to use a histogram in your project, all you need is a import this namespace, and then use a one-liner to plot your histogram (and more chart types to come).
+
