@@ -35,6 +35,9 @@ Other than that potential issue with your firewall, there appears to be no downs
 
 WebSockets are also nice because you get an ordering guarantee, which would be much harder with REST calls. Another aspect not to underestimate is that with REST calls, you need to think about authentication on every single request, where you do it once for a WebSockets connection.
 
+
+## :client/mouse-cmp
+
 Anyway, let's look at some code, starting with where the messages originate in our example, the `ui-mouse-moves` component, and its respective **[namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/ui_mouse_moves.cljs)**:
 
 ~~~
@@ -263,6 +266,9 @@ Finally, there's the `mouse-hist-view` function:
 
 Here, the history of mouse movements is rendered, either for your local mouse movements, or the last 1000 from all users. You've seen how that looks like in the screenshot above.
 
+
+## :server/ptr-cmp
+
 That's it for the rendering of the mouse element. The messages emitted here then get sent both to the client-side and the server-side store components. Let's discuss the server side first, before looking into the wiring of the components. It's really short; this is the entire **[example.pointer](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljc/example/pointer.cljc)** namespace:
 
 ~~~
@@ -304,6 +310,9 @@ Next, the messages need to get from the UI component to the server, and back to 
 
 [message flow drawing]
 
+
+## example.core on client side
+
 For establishing these connections, let's have a look at the `core` namespaces on both server and client, starting with the **[client](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/core.cljs)**:
 
 ~~~
@@ -342,14 +351,12 @@ For establishing these connections, let's have a look at the `core` namespaces o
 
 (metrics/init! switchboard)
 (observer/init! switchboard)
-
 ~~~
 
----
 
 First, as usual, we create a switchboard. Then, we send messages to the switchboard, with the blueprints for the components we want the switchboard to initialize. For the core functionality discussed so far, only three of them are important: `:client/ws-cmp`, `:client/mouse-cmp`, and `:client/store-cmp`. We'll look at the other components later.
 
-Note that the switchboard is kept in a `defonce`, which means that it can't be redefined later on. This is important for working with **[Figwheel](https://github.com/bhauman/lein-figwheel)**, as it allows the switchboard to shut down existing components and fire them up again after reload, while retaining the previous component state. Otherwise, without the `defonce`, the old state of each component would be lost as there would be an entirely new switchboard.
+Note that the switchboard is kept in a `defonce`, which means that it can't be redefined later on. This is necessary for working with **[Figwheel](https://github.com/bhauman/lein-figwheel)**, as it allows the switchboard to shut down existing components and fire them up again after reload, while retaining the previous component state. Otherwise, without the `defonce`, the old state of each component would be lost as there would be an entirely new switchboard.
 
 Then, inside the component init block, the `:client/ws-cmp` is fired up first. This is the WebSockets component provided by the **[systems-toolbox-sente](https://github.com/matthiasn/systems-toolbox-sente)** library. Here, we specify that only messages of the types `:mouse/pos` and `:mouse/get-hist` should be relayed to the server.
 
@@ -362,6 +369,9 @@ Next, we wire the components together:
 * finally, the `:client/observer-cmp` is attached to the firehose, but more about that later.
 
 At the bottom of the namespace, we also fire up the observer and metrics components. We'll look at that when covering the respective components. 
+
+
+## example.core on server side
 
 With the client-side wiring in place, let's look at the server-side wiring in **[core.clj](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/clj/example/core.clj)**:
 
@@ -413,11 +423,11 @@ We've already discussed the `:server/ptr-cmp` above. The `:server/ws-cmp` is the
    :relay-types   #{:mouse/pos :stats/jvm :mouse/hist}})
 ~~~
 
-In this configuration map, we tell the component to relay three message types, `:mouse/pos`, `:stats/jvm`, and `:mouse/hist`. Also, we provide a function that renders the static HTML that is served to the clients. Have a look at the namespace to learn more. In particular, watch out for elements with an ID, like `[:div#mouse]`, `[:figure#histograms.fullwidth]`, `[:div#info]`, or `[:div#observer]`. These are the DOM elements that client-side application will then render dynamic content into.
+In this configuration map, we tell the component to relay three message types, `:mouse/pos`, `:stats/jvm`, and `:mouse/hist`. Also, we provide a function that renders the static HTML that is served to the clients. Have a look at the namespace to learn more. In particular, watch out for elements with an ID, like `[:div#mouse]`, `[:figure#histograms.fullwidth]`, `[:div#info]`, or `[:div#observer]`. The client-side application will render dynamic content into these DOM elements.
 
 Then, also in the server-side `example.core` namespace is the `-main` function, which is the entry point into the application. Here, we save a PID file, which will contain the process ID, also log the PID, and `start!` the application. We also start the server-side portion of the metrics gathering and display, but more about that later.
 
-Finally, we let the main thread sleep until roughly the end of time, or until the application gets killed, whatever happens first. Well, actually `Long/MAX_VALUE` is only until roughly 292 million years from now, but hey, that should be enough.
+Finally, we let the main thread sleep until roughly the end of time, or until the application gets killed, whatever happens first. Well, `Long/MAX_VALUE` is only until roughly 292 million years from now, but hey, that should be enough.
 
 Okay, now we have the message flow from capturing the mouse events to the server and back. Next, let's look at what happens to those events when they are back at the client.
 
@@ -502,7 +512,7 @@ In case the message is local, we do return new-state altered like this:
     (update-in [:local-hist] conj msg-payload))
 ~~~
 
-First, we set the `:local` key to contain the latest mouse position, then we add it to the local history.
+First, we set the `:local` key to contain the latest mouse position; then we add it to the local history.
 
 The branch when the message comes from the server is slightly more involved:
 
@@ -623,7 +633,7 @@ Okay, ready? Let's move on. We've got some ground to cover. The `:client/histogr
                         :snapshots-on-firehose true}}))
 ~~~
 
-The most interesting stuff here actually happens in the histogram namespace of the **systems-toolbox-ui** library, but we'll get there. There are some things of interest here anyway. Did you not the `:throttle-ms` key in the `:cfg` of the `cmp-map`? This tells the systems-toolbox to only deliver new state snapshots every 100 milliseconds. This is because it is expensive enough to calculate the histograms to not want to do it on every frame. 10 times a second appears to be a good compromise between feeling alive and saving some CPU cycles.
+The most exciting stuff here happens in the histogram namespace of the **systems-toolbox-ui** library, but we'll get there. There are some things of interest here anyway. Did you not the `:throttle-ms` key in the `:cfg` of the `cmp-map`? This tells the systems-toolbox to deliver new state snapshots only every 100 milliseconds. This throttling is done because it is expensive enough to calculate the histograms for us not to want to do it on every frame. Ten times a second appears to be a good compromise between feeling alive and saving some CPU cycles.
 
 The rest of this namespace is probably not terribly surprising by now. The `histograms-view` function, which is the `:view-fn` of this **systems-toolbox-ui** component, renders a `:div` with six different `histogram-view`s, which each renders into an SVG with the chart itself. In some cases, we do some data manipulation first, such as the `hist/percentile-range` from the library namespace. Notice that there are two `:div`s inside the parent, each with three elements inside? That's for the **[Flexible Box](https://www.w3.org/TR/2016/CR-css-flexbox-1-20160526/)** layout, also known as **flexbox**. The rest of the layout is then done in **CSS**:
 
@@ -640,7 +650,7 @@ The rest of this namespace is probably not terribly surprising by now. The `hist
 
 So what happens here is that we have two `flex` elements, each with `flex-flow: row;` so that each triplet will cover a row inside the available space.
 
-Okay, that's it here. There more interesting stuff happens in the next namespace.
+Okay, that's it in this namespace.
 
 
 ## matthiasn.systems-toolbox-ui.charts.histogram
