@@ -14,16 +14,16 @@ We'll look into validation in this chapter, too. But let's get started with the 
 
 On the client:
 
-* there's a component that shows the position of the mouse, both locally and for the message coming back from the server
-* there's the store, which holds the client-side state
-* there's a UI component for visualizing the round trip times as histograms
-* there's a UI component that shows some information about the app
-* also, there are components for visualizing message flow, and for showing some JVM stats
+* there's the `:client/mouse-cmp` component that shows the position of the mouse, both locally and for the message coming back from the server
+* there's the `:client/store-cmp`, which holds the client-side state
+* there's the `:client/histogram-cmp` UI component for visualizing the round trip times as histograms
+* there's `:client/info-cmp` UI component that shows some information about the app
+* also, there are components for visualizing message flow, and for showing some JVM stats: `:client/observer-cmp` and `:client/jvmstats-cmp`
 
 On the server:
 
-* there's the store, which keeps a counter of all messages passed through since application startup, and returns each mouse position message to the client where it originated, plus, upon request, a history of mouse positions from all connected clients
-* then, there's also a component for gathering some stats about the JVM, which get broadcast to all connected clients
+* there's the `:server/ptr-cmp` component, which keeps a counter of all messages passed through since application startup, and returns each mouse position message to the client where it originated, plus, upon request, a history of mouse positions from all connected clients
+* then, there's also the `:server/metrics-cmp` component for gathering some stats about the JVM, which get broadcast to all connected clients
 
 On both sides, there are **[Sente](https://github.com/ptaoussanis/sente)** components for establishing **bi-directional communication** between client and server. These ready-to-use components are provided by the **[systems-toolbox-sente](https://github.com/matthiasn/systems-toolbox-sente)** library, and you can use them in your projects, too, with a simple import and no more than a handful of lines of code.
 
@@ -38,7 +38,7 @@ WebSockets are also nice because you get an ordering guarantee, which would be m
 
 ## :client/mouse-cmp
 
-Anyway, let's look at some code, starting with where the messages originate in our example, the `ui-mouse-moves` component, and its respective **[namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/ui_mouse_moves.cljs)**:
+Anyway, let's look at some code, starting with where the messages originate in our example, the `:client/mouse-cmp` component, and its respective **[namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/ui_mouse_moves.cljs)**:
 
 ~~~
 (ns example.ui-mouse-moves
@@ -141,7 +141,7 @@ Note that we want this transparent element on top, covering the rest of the page
 
 Then, in the `init-fn`, we set `ontouchmove` and `ontouchmove` event handlers, which get called when these events are fired anywhere on the page. We could also more specifically handle these events in the component's div, but then the `pointer-events` would not be available for elements below the `mouse-view` element, such as for clicking a button. Then, whenever an event is fired, a messaged is sent with the mouse position. This message will be received by the client side store directly, and also via the server side, where it'll be enriched with some additional data.
 
-Then, the rendering of the **[SVG](https://www.w3.org/Graphics/SVG/)** covering the entire page is done in the `mouse-view` function, which adapts the size of the element when `onresize` element fires. Here, the `trailing-circles` function is called, which renders the two circles. This SVG rendering is trivial to achieve with Reagent. You can see that we just create a group with two circles, each with a distinct position based on the last known message. Fast movements will then reveal latency, as you'll see how the messages coming back from the server are lagging behind. Then, there are two calls to the `mouse-hist-view` function, which renders either a local history or the last moves of all clients, as you'll hopefully have seen when playing around with the live demo of the application. If not, here's what that looks like:
+Then, the rendering of the **[SVG](https://www.w3.org/Graphics/SVG/)** covering the entire page is done in the `mouse-view` function, which adapts the size of the element when `onresize` element fires. Here, the `trailing-circles` function is called, which renders the two circles. This SVG rendering is trivial to achieve with Reagent. You can see that we just create a group with two circles, each with a distinct position based on the last known message. Fast movements will then reveal latency, as you'll see how the messages coming back from the server are lagging behind. Then, there are two calls to the `mouse-hist-view` function, which renders either a local history or the last moves of all clients, as you hopefully have seen when playing around with the live demo of the application. If not, here's what that looks like:
 
 ![Screenshot](images/ws-lat-screenshot2.png "Screenshot")
 
@@ -192,7 +192,7 @@ You can see how those messages are supposed to look like in the respective **spe
   (s/keys :req-un [:ex/x :ex/y]))
 ~~~
 
-If you still haven't heard Rich Hickey talk about **[clojure.spec](http://clojure.org/about/spec)**, you seriously need to do that now. **clojure.spec** has many useful properties. Among them is that you'll immediately know if you've broken your application with some recent change, as the system would throw an error immediately, rather than drag that problem along and blow up in your face somewhere else, where you'll have a hard time figuring out where it originated. What's also very useful is that when you come back to some code you wrote some time ago and wanted to know what a message is supposed to look like, you don't have to print it out and infer what the rules may be. No, instead you just look at the piece of code that's run when validating the message, it'll tell you all nitty-gritty details of what the expectations are. Much nicer.
+If you still haven't heard Rich Hickey talk about **[clojure.spec](http://clojure.org/about/spec)** on the **[Cognicast](http://blog.cognitect.com/cognicast/103)**, you seriously need to do that now. **clojure.spec** has many useful properties. Among them is that you'll immediately know if you've broken your application with some recent change, as the system would throw an error immediately, rather than drag that problem along and blow up in your face somewhere else, where you'll have a hard time figuring out where it originated. What's also very useful is that when you come back to some code you wrote some time ago and wanted to know what a message is supposed to look like, you don't have to print it out and infer what the rules may be. No, instead you just look at the piece of code that's run when validating the message, it'll tell you all nitty-gritty details of what the expectations are. Much nicer.
 
 Next, let's have a look at the `mouse-view` function, which is responsible for rendering the UI component:
 
@@ -217,7 +217,7 @@ Next, let's have a look at the `mouse-view` function, which is responsible for r
         [mouse-hist-view state-snapshot :server-hist "rgba(0,0,0,0.06)" "rgba(0,0,128,0.05)"])]]))
 ~~~
 
-Note that this component gets passed a map with the `observed` and `local` keys. The `observed` key is an atom which holds the state of the component it observes. Here, this is always the latest snapshot of the `store-cmp`. The `local` atom contains some local state, such as the width of the SVG for resizing. Note that we're detecting the width on every call to the function, and also in the `onresize` callback of `js/window`. This ensures that the square mouse div fills the parent element, while working with the correct pixel coordinate system. One could instead also use a viewBox, like this: `{:width "100%" :viewBox "0 0 1000 1000"}`. However, that would not work correctly in this case as the mouse position would not be aligned with the circles here.
+Note that this component gets passed a map with the `observed` and `local` keys. The `observed` key is an atom which holds the state of the component it observes. Here, this is always the latest snapshot of the `store-cmp`. The `local` atom contains some local state, such as the width of the SVG for resizing. Note that we're detecting the width on every call to the function, and also in the `onresize` callback of `js/window`. This ensures that the mouse div fills the entire page, while working with the correct pixel coordinate system. One could instead also use a viewBox, like this: `{:width "100%" :viewBox "0 0 1000 1000"}`. However, that would not work correctly in this case as the mouse position would not be aligned with the circles here.
 
 Next, we have the `trailing-circles` function:
 
@@ -269,7 +269,7 @@ Here, the history of mouse movements is rendered, either for your local mouse mo
 
 ## :server/ptr-cmp
 
-That's it for the rendering of the mouse element. The messages emitted here then get sent both to the client-side and the server-side store components. Let's discuss the server side first, before looking into the wiring of the components. It's really short; this is the entire **[example.pointer](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljc/example/pointer.cljc)** namespace:
+That's it for the rendering of the mouse element. The messages emitted there then get sent both to the client-side and the server-side store components. Let's discuss the server side first, before looking into the wiring of the components. It's really short; this is the entire **[example.pointer](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljc/example/pointer.cljc)** namespace:
 
 ~~~
 (ns example.pointer
@@ -302,9 +302,11 @@ That's it for the rendering of the mouse element. The messages emitted here then
                  :mouse/get-hist get-mouse-hist}})
 ~~~
 
-At the bottom, you see the `cmp-map`, which again is the map specifying the component that the switchboard will then instantiate. Inside, there's the `:state-fn`, which does nothing but creates the initial state inside an atom. Then, there's the `:handler-map`, which here handles the two message types `:cmd/mouse-pos` and `:mouse/get-hist`.
+At the bottom, you see the `cmp-map`, which again is the map specifying the component that the switchboard will then instantiate. Inside, there's the `:state-fn`, which does nothing but create the initial state inside an atom. Then, there's the `:handler-map`, which here handles the two message types `:cmd/mouse-pos` and `:mouse/get-hist`.
 
-The `process-mouse-pos` handler function then gets the `current-state`, the `msg-payload`, and the `msg-meta` inside the map it gets passed as a single argument, and returns both the `:new-state` and a message to emit, which is the same message it received, only now enriched by the `:count` from this component's state. Note that we are reusing the `msg-meta` from the original message, as this metadata also contains the `:sente-id` of the client, which is required to route the message back to where it originated. There's more information on the metadata; we'll get to that later.
+The `process-mouse-pos` handler function then gets the `current-state`, the `msg-payload`, and the `msg-meta` inside the map it gets passed as a single argument, and returns both the `:new-state` and a message to emit, which is the same message it received, only now enriched by the `:count` from this component's state. Note that we are reusing the `msg-meta` from the original message, as this metadata also contains the `:sente-uid` of the client, which is required to route the message back to where it originated. There's more information on the metadata; we'll get to that later. Also, this function maintains the last 1001 positions from all connected client by taking the last 1000 and conjoining the received position.
+
+The `get-mouse-hist` handler function returns the history of mouse moves that's maintained in the `:server/ptr-cmp` back to the client. Once again, the `:sente-uid` on the metadata contains the requester's ID, so we pass on the `msg-meta` in the response.
 
 Next, the messages need to get from the UI component to the server, and back to the client. Here's how that looks like:
 
@@ -366,7 +368,7 @@ Next, we wire the components together:
 * messages from `:client/ws-cmp` are sent to both `:client/store-cmp` and `:client/jvmstats-cmp`
 * messages from  `:client/info-cmp` are sent to both `:client/store-cmp` and `:client/ws-cmp`
 * `:client/mouse-cmp`, `:client/histogram-cmp` and `:client/info-cmp` all observe the state of the `:client/store-cmp`
-* finally, the `:client/observer-cmp` is attached to the firehose, but more about that later.
+* finally, the `:client/observer-cmp` is attached to the firehose, but more about that later when we look at `:client/observer-cmp`.
 
 At the bottom of the namespace, we also fire up the observer and metrics components. We'll look at that when covering the respective components. 
 
@@ -423,11 +425,11 @@ We've already discussed the `:server/ptr-cmp` above. The `:server/ws-cmp` is the
    :relay-types   #{:mouse/pos :stats/jvm :mouse/hist}})
 ~~~
 
-In this configuration map, we tell the component to relay three message types, `:mouse/pos`, `:stats/jvm`, and `:mouse/hist`. Also, we provide a function that renders the static HTML that is served to the clients. Have a look at the namespace to learn more. In particular, watch out for elements with an ID, like `[:div#mouse]`, `[:figure#histograms.fullwidth]`, `[:div#info]`, or `[:div#observer]`. The client-side application will render dynamic content into these DOM elements.
+In this configuration map, we tell the component to relay three message types, `:mouse/pos`, `:stats/jvm`, and `:mouse/hist`. Also, we provide a function that renders the static HTML that is served to the clients. Have a look at the namespace to learn more. In particular, watch out for elements with an ID, such as `[:div#mouse]`, `[:figure#histograms.fullwidth]`, `[:div#info]`, or `[:div#observer]`. The client-side application will render dynamic content into these DOM elements.
 
-Then, also in the server-side `example.core` namespace is the `-main` function, which is the entry point into the application. Here, we save a PID file, which will contain the process ID, also log the PID, and `start!` the application. We also start the server-side portion of the metrics gathering and display, but more about that later.
+Then, also in the server-side `example.core` namespace, there is the `-main` function, which is the entry point into the application. Here, we save a PID file, which will contain the process ID, also log the PID, and `start!` the application. We also start the server-side portion of the metrics gathering and display, but more about that later.
 
-Finally, we let the main thread sleep until roughly the end of time, or until the application gets killed, whatever happens first. Well, `Long/MAX_VALUE` is only until roughly 292 million years from now, but hey, that should be enough.
+Finally, we let the main thread sleep until roughly the end of time, or until the application gets killed, whatever happens first. Well, `Long/MAX_VALUE` in milliseconds is only until roughly 292 million years from now, but hey, that should be enough.
 
 Okay, now we have the message flow from capturing the mouse events to the server and back. Next, let's look at what happens to those events when they are back at the client.
 
@@ -500,7 +502,7 @@ Processing the returned data happens in the **[example.store namespace](https://
                  :snapshots-on-firehose true}})
 ~~~
 
-The `cmp-map` function once again generates the blueprint for how to instantiate this component. We specify that the initial component state is generated by calling the `state-fn`, which is a map with some keys as you can see above. Then, there are handler functions for three message types `:mouse/pos`, `:cmd/show-all`, and `:mouse/hist`, which we'll look at in detail. Finally, there is some configuration in `:opts`, which specifies that both messages and state snapshots should go on the firehose. We'll discuss the firehose when looking into the observer component.
+The `cmp-map` function once again generates the blueprint for how to instantiate this component. We specify that the initial component state is generated by calling the `state-fn`, which is a map with some keys as you can see above. Then, there are handler functions for three message types `:mouse/pos`, `:cmd/show-all`, and `:mouse/hist`, which we'll look at in detail. Finally, there is some configuration in `:opts`, which specifies that both messages and state snapshots should go on the firehose. We'll discuss the firehose when looking into the `:client/observer` component.
 
 The most important handler function in this application is the `mouse-pos-handler` function. This function receives all `:mouse/pos` messages, which in this application can come either directly from the `:client/mouse-cmp` or from the `:server/ptr-cmp`. Where an individual message comes from is determined by the predicate `(:count msg-payload)` in the if statement. If that key exists, the message comes from the server, otherwise it's directly from `:client/mouse-cmp`.
 
@@ -582,7 +584,7 @@ Next, there's the `show-all-handler` function to look at:
   {:new-state (update-in current-state [:show-all msg-payload] not)})
 ~~~
 
-This handler toggles the value in the view configuration for showing either `:local` or the `remote` history of mouse positions. These are then used as switches in the `:client/mouse-cmp`, as we've seen above. Finally, there's the `mouse-hist-handler` function:
+This handler toggles the value in the view configuration for showing either `:local` or the `:remote` history of mouse positions. These are then used as switches in the `:client/mouse-cmp`, as we've seen above. Finally, there's the `mouse-hist-handler` function:
 
 ~~~
 (defn mouse-hist-handler
@@ -591,7 +593,7 @@ This handler toggles the value in the view configuration for showing either `:lo
   {:new-state (assoc-in current-state [:server-hist] msg-payload)})
 ~~~
 
-This handler takes care of a sequence of mouse positions received from the server and stores them in the component state, which is returned under the `:new-state` key in the returned map. If these are shown is then dependent on the `:remote` key in the `:show-all` map inside the component state. Typically, when the `:mouse/hist` is received, this switch will be set to true, as the request for these values and switching this key on will have been sent by the `:client/info-cmp` at the same time. The beauty of the UI component watching the state of another component which holds the application state is that we don't have to do anything else. Once the data is back from the server, the mouse component will just know that it needs to re-render itself, now with the new data available. This was all to the `:client/store-cmp`, so let's into the next component, where the histograms are rendered. But actually, now might be a good time to take a break and go for a walk.
+This handler takes care of a sequence of mouse positions received from the server and stores them in the component state, which is returned under the `:new-state` key in the returned map. If these are shown is then dependent on the `:remote` key in the `:show-all` map inside the component state. Typically, when the `:mouse/hist` is received, this switch will be set to true, as the request for these values and switching this key on will have been sent by the `:client/info-cmp` at the same time. The beauty of the UI component watching the state of another component which holds the application state is that we don't have to do anything else. Once the data is back from the server, the mouse component will just know that it needs to re-render itself, now with the new data available. This was all to the `:client/store-cmp`, so let's look into the next component, where the histograms are rendered. But actually, now might be a good time to take a break and go for a walk.
 
 
 ## :client/histogram-cmp
@@ -633,9 +635,9 @@ Okay, ready? Let's move on. We've got some ground to cover. The `:client/histogr
                         :snapshots-on-firehose true}}))
 ~~~
 
-The most exciting stuff here happens in the histogram namespace of the **systems-toolbox-ui** library, but we'll get there. There are some things of interest here anyway. Did you not the `:throttle-ms` key in the `:cfg` of the `cmp-map`? This tells the systems-toolbox to deliver new state snapshots only every 100 milliseconds. This throttling is done because it is expensive enough to calculate the histograms for us not to want to do it on every frame. Ten times a second appears to be a good compromise between feeling alive and saving some CPU cycles.
+The most exciting stuff here happens in the histogram namespace of the **systems-toolbox-ui** library, but we'll get there. There are some things of interest here anyway. Did you notice the `:throttle-ms` key in the `:cfg` of the `cmp-map`? This tells the systems-toolbox to deliver new state snapshots only every 100 milliseconds. This throttling is done because it is expensive enough to calculate the histograms for us not to want to do it on every frame. Ten times a second appears to be a good compromise between feeling alive and saving some CPU cycles.
 
-The rest of this namespace is probably not terribly surprising by now. The `histograms-view` function, which is the `:view-fn` of this **systems-toolbox-ui** component, renders a `:div` with six different `histogram-view`s, which each renders into an SVG with the chart itself. In some cases, we do some data manipulation first, such as the `hist/percentile-range` from the library namespace. Notice that there are two `:div`s inside the parent, each with three elements inside? That's for the **[Flexible Box](https://www.w3.org/TR/2016/CR-css-flexbox-1-20160526/)** layout, also known as **flexbox**. The rest of the layout is then done in **CSS**:
+The rest of this namespace is probably not terribly surprising by now. The `histograms-view` function, which is the `:view-fn` of this **systems-toolbox-ui** component, renders a `:div` with six different `histogram-view`s, which each renders into an SVG with the chart itself. In some cases, we do some data manipulation first, such as the `hist/percentile-range` from the library namespace. Notice that there are two `:div`s inside the parent, each with three elements inside? That's for the **[Flexible Box](https://www.w3.org/TR/2016/CR-css-flexbox-1-20160526/)** layout, also known as **flexbox**. The rest of the layout is then done in **[CSS](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/resources/public/css/example.css)**:
 
 ~~~
 #histograms {
@@ -684,9 +686,9 @@ The most interesting stuff for rendering the histograms happens in the **[matthi
     (take keep-n sorted)))
 
 (defn freedman-diaconis-rule
-  "Implements approximation of Freedman–Diaconis rule for determing bin size in histograms: bin size = 2 IQR(x) n^-1/3
-   where IQR(x) is the interquartile range of the data and n is the number of observations in the sample x.
-   Argument coll is expected to be a collection of numbers."
+  "Implements approximation of Freedman-Diaconis rule for determing bin size in histograms:
+  bin size = 2 IQR(x) n^-1/3 where IQR(x) is the interquartile range of the data and n is the
+  number of observations in the sample x. Argument coll is expected to be a collection of numbers."
   [sample]
   (let [n (count sample)]
     (when (pos? n)
@@ -711,10 +713,12 @@ The most interesting stuff for rendering the histograms happens in the **[matthi
      [:path (merge path-defaults {:d (str "M" x " " y "l 0 " (* h -1) " z")})]
      (for [n rng]
        ^{:key (str "yt" n)}
-       [:path (merge path-defaults {:d (str "M" x " " (- y (* (/ n increment) scale)) "l -" 6 " 0")})])
+       [:path (merge path-defaults
+                     {:d (str "M" x " " (- y (* (/ n increment) scale)) "l -" 6 " 0")})])
      (for [n rng]
        ^{:key (str "yl" n)}
-       [:text (merge text-default {:x (- x 10) :y (- y (* (/ n increment) scale) -4) :text-anchor :end}) n])]))
+       [:text (merge text-default
+                     {:x (- x 10) :y (- y (* (/ n increment) scale) -4) :text-anchor :end}) n])]))
 
 (defn histogram-x-axis
   "Draws x-axis for histrogram."
@@ -722,9 +726,12 @@ The most interesting stuff for rendering the histograms happens in the **[matthi
   (let [rng (range mn (inc mx) increment)]
     [:g
      [:path (merge path-defaults {:d (str "M" x " " y "l" w " 0 z")})]
-     (for [n rng] ^{:key (str "xt" n)}
-                  [:path (merge path-defaults {:d (str "M" (+ x (* (- n mn) scale)) " " y "l 0 " 6)})])
-     (for [n rng] ^{:key (str "xl" n)} [:text (merge x-axis-label {:x (+ x (* (- n mn) scale)) :y (+ y 20)}) n])]))
+     (for [n rng]
+       ^{:key (str "xt" n)}
+       [:path (merge path-defaults {:d (str "M" (+ x (* (- n mn) scale)) " " y "l 0 " 6)})])
+     (for [n rng]
+       ^{:key (str "xl" n)}
+       [:text (merge x-axis-label {:x (+ x (* (- n mn) scale)) :y (+ y 20)}) n])]))
 
 (defn default-increment-fn
   [rng]
@@ -765,12 +772,25 @@ The most interesting stuff for rendering the histograms happens in the **[matthi
                  :fill   color :stroke "black"
                  :width  bar-width
                  :height (* f y-scale)}])
-       [:text {:x     (+ x (/ w 2)) :y (- y 50) :stroke "none" :fill "#DDD" :text-anchor :middle
-               :style {:font-weight :bold :font-size 24}} "insufficient data"])
+       [:text {:x           (+ x (/ w 2))
+               :y           (- y 50)
+               :stroke      "none"
+               :fill        "#DDD"
+               :text-anchor :middle
+               :style       {:font-weight :bold :font-size 24}}
+        "insufficient data"])
      (histogram-x-axis x (+ y 7) mn2 mx2 w x-scale increment)
-     [:text (merge x-axis-label text-bold {:x (+ x (/ w 2)) :y (+ y 48) :text-anchor :middle}) x-label]
-     [:text (let [x-coord (- x 45) y-coord (- y (/ h 3)) rotate (str "rotate(270 " x-coord " " y-coord ")")]
-              (merge x-axis-label text-bold {:x x-coord :y y-coord :transform rotate})) "Frequencies"]
+     [:text (merge x-axis-label text-bold {:x           (+ x (/ w 2))
+                                           :y           (+ y 48)
+                                           :text-anchor :middle})
+      x-label]
+     [:text (let [x-coord (- x 45)
+                  y-coord (- y (/ h 3))
+                  rotate (str "rotate(270 " x-coord " " y-coord ")")]
+              (merge x-axis-label text-bold {:x         x-coord
+                                             :y         y-coord
+                                             :transform rotate}))
+      "Frequencies"]
      (histogram-y-axis (- x 7) y h (or binned-freq-mx 10))]))
 
 (defn histogram-view
@@ -778,7 +798,8 @@ The most interesting stuff for rendering the histograms happens in the **[matthi
   with a reasonable size inside a viewBox, which will then scale smoothly into any
   div you put it in."
   [data label color]
-  [:svg {:width "100%" :viewBox "0 0 400 250"}
+  [:svg {:width   "100%"
+         :viewBox "0 0 400 250"}
    (histogram-view-fn {:rtt-times data
                        :x         80
                        :y         180
