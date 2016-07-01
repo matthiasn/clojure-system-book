@@ -390,7 +390,7 @@ With the client-side wiring in place, let's look at the server-side wiring in **
 
 (defonce switchboard (sb/component :server/switchboard))
 
-(defn start!
+(defn restart!
   "Starts or restarts system by asking switchboard to fire up the provided ws-cmp and the ptr
   component, which handles and counts messages about mouse moves."
   []
@@ -399,7 +399,8 @@ With the client-side wiring in place, let's look at the server-side wiring in **
     [[:cmd/init-comp (sente/cmp-map :server/ws-cmp index/sente-map)]
      [:cmd/init-comp (ptr/cmp-map   :server/ptr-cmp)]
      [:cmd/route {:from :server/ptr-cmp :to :server/ws-cmp}]
-     [:cmd/route {:from :server/ws-cmp  :to :server/ptr-cmp}]]))
+     [:cmd/route {:from :server/ws-cmp  :to :server/ptr-cmp}]])
+  (metrics/start! switchboard))
 
 (defn -main
   "Starts the application from command line, saves and logs process ID. The system that is fired up
@@ -409,9 +410,8 @@ With the client-side wiring in place, let's look at the server-side wiring in **
   (pid/save "example.pid")
   (pid/delete-on-shutdown! "example.pid")
   (log/info "Application started, PID" (pid/current))
-  (start!)
-  (metrics/start! switchboard)
-  (Thread/sleep Long/MAX_VALUE))
+  (restart!)
+  (Thread/sleep Long/MAX_VALUE))  
 ~~~
 
 Here, just like on the client side, a switchboard is kept in a `defonce`. Then, we ask the switchboard to instantiate two components for us, the `:server/ws-cmp` and the `:server/ptr-cmp`, and then wire a simple message flow together.
@@ -431,12 +431,41 @@ Then, also in the server-side `example.core` namespace, there is the `-main` fun
 
 Finally, we let the main thread sleep until roughly the end of time, or until the application gets killed, whatever happens first. Well, `Long/MAX_VALUE` in milliseconds is only until roughly 292 million years from now, but hey, that should be enough.
 
-Okay, now we have the message flow from capturing the mouse events to the server and back. Next, let's look at what happens to those events when they are back at the client.
+
+## Application Reload from the REPL
+
+Oh, before I forget, you can also reload the server side on the JVM from the **[REPL](http://clojure.org/reference/repl_and_main)**, without long startup times, and while retaining application state. Try this:
+
+    $ lein repl
+    
+    example.core=> (restart!)
+
+This starts the server side application. Now change something, let's say in the `example.pointer` namespace, for example to print the message payload in `process-mouse-pos`:
+
+~~~
+(defn process-mouse-pos
+  "Handler function for received mouse positions, increments counter and returns mouse position
+  to sender."
+  [{:keys [current-state msg-meta msg-payload]}]
+  (let [new-state (-> current-state
+                      (update-in [:count] inc)
+                      (update-in [:mouse-moves] #(vec (take-last 1000 (conj % msg-payload)))))]
+    (prn msg-payload)
+    {:new-state new-state
+     :emit-msg (with-meta [:mouse/pos (assoc msg-payload :count (:count new-state))] msg-meta)}))
+~~~
+
+With this change, all you need to do now is reload the modified namespace, and then call `restart!` again:
+
+    example.core=> (require '[example.pointer :as ptr] :reload)
+    example.core=> (restart!)
+
+You will see that the application keeps functioning, while maintaining component state, with the only difference that now the message payloads get printed. Magic. Almost as cool as Figwheel, and much better than having to wait ten seconds for the JVM to start up after every change. Note that the sente components don't get reloaded by default because of the `:reload-cmp false` in their config. You can do the same in any of your components where required.
 
 
 ## :client/store-cmp
 
-Processing the returned data happens in the **[example.store namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/store.cljs)**:
+Okay, now we have the message flow from capturing the mouse events to the server and back. Next, let's look at what happens to those events when they are back at the client. Processing of the returned data happens in the **[example.store namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/store.cljs)**:
 
 ~~~
 (ns example.store)
