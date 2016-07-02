@@ -135,9 +135,70 @@ Are you still interested in constructing charts? Good, then let's go through thi
 The `histogram-view` function simply creates a container `:svg` element, which fills its parent div through the `:width "100%"` setting. Also note the `:viewBox "0 0 400 250"`, which allows us to work with a useful coordinate system that's independent from the size of the rendered element. Finally, the we pass some data on to the `histogram-view-fn`, which we'll look into next.
 
 ~~~
-
+(defn histogram-view-fn
+  "Renders a histogram."
+  [{:keys [data x y w h x-label color bin-cf max-bins increment-fn]}]
+  (let [mx (apply max data)
+        mn (apply min data)
+        rng (- mx mn)
+        increment-fn (or increment-fn m/default-increment-fn)
+        increment (increment-fn rng)
+        mx2 (m/round-up (or mx 10) increment)
+        mn2 (m/round-down (or mn 0) increment)
+        x-scale (/ w (- mx2 mn2))
+        bin-size (max (/ rng max-bins) (* (m/freedman-diaconis-rule data) bin-cf))
+        binned-freq (frequencies (map (fn [n] (Math/floor (/ (- n mn) bin-size))) data))
+        binned-freq-mx (apply max (map (fn [[_ f]] f) binned-freq))
+        bins (inc (apply max (map (fn [[v _]] v) binned-freq)))
+        bar-width (/ (* rng x-scale) bins)
+        y-scale (/ (- h 20) binned-freq-mx)]
+    [:g
+     (if (> bins 4)
+       (for [[v f] binned-freq]
+         ^{:key (str "bf" x "-" y "-" v "-" f)}
+         [:rect {:x      (+ x (* (- mn mn2) x-scale) (* v bar-width))
+                 :y      (- y (* f y-scale))
+                 :fill   color :stroke "black"
+                 :width  bar-width
+                 :height (* f y-scale)}])
+       [:text {:x           (+ x (/ w 2))
+               :y           (- y 50)
+               :stroke      "none"
+               :fill        "#DDD"
+               :text-anchor :middle
+               :style       {:font-weight :bold :font-size 24}}
+        "insufficient data"])
+     (histogram-x-axis x (+ y 7) mn2 mx2 w x-scale increment)
+     [:text (merge x-axis-label text-bold {:x           (+ x (/ w 2))
+                                           :y           (+ y 48)
+                                           :text-anchor :middle})
+      x-label]
+     [:text (let [x-coord (- x 45)
+                  y-coord (- y (/ h 3))
+                  rotate (str "rotate(270 " x-coord " " y-coord ")")]
+              (merge x-axis-label text-bold {:x         x-coord
+                                             :y         y-coord
+                                             :transform rotate}))
+      "Frequencies"]
+     (histogram-y-axis (- x 7) y h (or binned-freq-mx 5))]))
 ~~~
 
+Above, we render an **[SVG g element](https://developer.mozilla.org/en/docs/Web/SVG/Element/g)**, which contains the histogram. Before doing so, we need to calculate a few things from the provided data, which happens in the `let` binding, starting with the maximum value `mx`, the minimum value `mn` and the range contained in the data, `rng`. Next, we calculate the increments between the intervals on the histogram's x-axis, either by calling a provided `increment-fn`, or, if that doesn't exist, the `default-increment-fn`. We'll look into that when discussing the `charts.math` namespace in the next section. For now, it is enough to know that it'll give us a reasonable increment to use for the intervals, such as `10`, `25`, or also `500`, depending on the range in the provided `data`. Next, we calculate `mn2` and `mx2`, which are the next possible intervals given the chosen increments. Then, we calculate the `x-scale`, which will be used to translate positions into the given coordinate system.
+
+Next, we calculate the size of the bins using the `freedman-diaconis-rule` function. We'll look into that function in the next section. For now, it's enough to know the following four lines give us a reasonable number of bins for the provided data. A bin then translates into a bar in the histogram.
+
+~~~
+        bin-size (max (/ rng max-bins) (* (m/freedman-diaconis-rule data) bin-cf))
+        binned-freq (frequencies (map (fn [n] (Math/floor (/ (- n mn) bin-size))) data))
+        binned-freq-mx (apply max (map (fn [[_ f]] f) binned-freq))
+        bins (inc (apply max (map (fn [[v _]] v) binned-freq)))
+~~~
+
+Finally, we calculate the width of each bar in the histogram, plus the `y-scale`, which is like the `x-scale`, only for the **y-axis**.
+
+With the calculations done, we can render the histogram into a `:g` element. Here, it's only displayed if there are at least 4 bins, otherwise we display `"insufficient data"`. The value `4` is entirely arbitrary, but seems to work well. Feel free to suggest a better approach though.
+
+If the data is deemed sufficient, we instead render a vertical bar as a `:rect` for each bin. Then, we render the **x-axis** by calling `histogram-x-axis`, and the **y-axis** in `histogram-y-axis`, plus some label text.
 
 
 ## matthiasn.systems-toolbox-ui.charts.math
