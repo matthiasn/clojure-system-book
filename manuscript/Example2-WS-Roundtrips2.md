@@ -72,22 +72,13 @@ Okay, with that being said, let's dive into the code:
           :style       {:font-weight :bold :font-size 24}} text])
 
 (defn histogram-view-fn
-  "Renders a histogram."
-  [{:keys [data x y w h x-label y-label color bin-cf min-bins max-bins increment-fn warning]}]
-  (let [mx (apply max data)
-        mn (apply min data)
-        rng (- mx mn)
-        increment-fn (or increment-fn m/default-increment-fn)
-        increment (increment-fn rng)
-        mx2 (m/round-up (or mx 10) increment)
-        mn2 (m/round-down (or mn 0) increment)
+  "Renders a histogram. Only takes care of the presentational aspects, the calculations are
+   done in the histogram-calc function in matthiasn.systems-toolbox-ui.charts.math."
+  [{:keys [x y w h x-label y-label color min-bins warning] :as args}]
+  (let [{:keys [mn mn2 mx2 rng increment bins binned-freq binned-freq-mx]} (m/histogram-calc args)
         x-scale (/ w (- mx2 mn2))
-        bin-size (max (/ rng max-bins) (* (m/freedman-diaconis-rule data) bin-cf))
-        binned-freq (frequencies (map (fn [n] (Math/floor (/ (- n mn) bin-size))) data))
-        binned-freq-mx (apply max (map (fn [[_ f]] f) binned-freq))
-        bins (inc (apply max (map (fn [[v _]] v) binned-freq)))
-        bar-width (/ (* rng x-scale) bins)
-        y-scale (/ (- h 20) binned-freq-mx)]
+        y-scale (/ (- h 20) binned-freq-mx)
+        bar-width (/ (* rng x-scale) bins)]
     [:g
      (if (>= bins min-bins)
        (for [[v f] binned-freq]
@@ -117,7 +108,7 @@ Okay, with that being said, let's dive into the code:
                        :warning  "insufficient data"
                        :color    color
                        :bin-cf   0.8
-                       :min-bins 4
+                       :min-bins 5
                        :max-bins 25})])
 ~~~
 
@@ -150,22 +141,13 @@ The `histogram-view` function simply creates a container `:svg` element, which s
 
 ~~~
 (defn histogram-view-fn
-  "Renders a histogram."
-  [{:keys [data x y w h x-label y-label color bin-cf min-bins max-bins increment-fn warning]}]
-  (let [mx (apply max data)
-        mn (apply min data)
-        rng (- mx mn)
-        increment-fn (or increment-fn m/default-increment-fn)
-        increment (increment-fn rng)
-        mx2 (m/round-up (or mx 10) increment)
-        mn2 (m/round-down (or mn 0) increment)
+  "Renders a histogram. Only takes care of the presentational aspects, the calculations are
+   done in the histogram-calc function in matthiasn.systems-toolbox-ui.charts.math."
+  [{:keys [x y w h x-label y-label color min-bins warning] :as args}]
+  (let [{:keys [mn mn2 mx2 rng increment bins binned-freq binned-freq-mx]} (m/histogram-calc args)
         x-scale (/ w (- mx2 mn2))
-        bin-size (max (/ rng max-bins) (* (m/freedman-diaconis-rule data) bin-cf))
-        binned-freq (frequencies (map (fn [n] (Math/floor (/ (- n mn) bin-size))) data))
-        binned-freq-mx (apply max (map (fn [[_ f]] f) binned-freq))
-        bins (inc (apply max (map (fn [[v _]] v) binned-freq)))
-        bar-width (/ (* rng x-scale) bins)
-        y-scale (/ (- h 20) binned-freq-mx)]
+        y-scale (/ (- h 20) binned-freq-mx)
+        bar-width (/ (* rng x-scale) bins)]
     [:g
      (if (>= bins min-bins)
        (for [[v f] binned-freq]
@@ -180,20 +162,23 @@ The `histogram-view` function simply creates a container `:svg` element, which s
      [histogram-y-axis (- x 7) y h (or binned-freq-mx 5) y-label]]))
 ~~~
 
-Above, we render an **[SVG g element](https://developer.mozilla.org/en/docs/Web/SVG/Element/g)**, which contains the histogram. Before doing so, we need to calculate a few things from the provided data, which happens in the `let` binding, starting with the maximum value `mx`, the minimum value `mn` and the range contained in the data, `rng`. Next, we calculate the increments between the intervals on the histogram's x-axis, either by calling a provided `increment-fn` or, if that doesn't exist, the `default-increment-fn`. We'll look into that when discussing the `charts.math` namespace in the next section. For now, it is enough to know that it'll give us a reasonable increment to use for the intervals, such as `10`, `25`, or also `500`, depending on the range of the provided `data`. Next, we calculate `mn2` and `mx2`, which are the next possible intervals given the chosen increments. Then, we calculate the `x-scale`, which will be used to translate positions into the given coordinate system.
+Above, we render an **[SVG g element](https://developer.mozilla.org/en/docs/Web/SVG/Element/g)**, which contains the histogram. Before we can render the bars of the histogram, we need to calculate a few things from the provided data, which happens in the first line in the `let` binding:
 
-Next, we calculate the size of the bins using the `freedman-diaconis-rule` function. We'll look into that function in the next section. For now, it's enough to know that the following four lines give us a reasonable number of bins for the provided data. A bin then translates into a bar in the histogram.
+`{:keys [mn mn2 mx2 rng increment bins binned-freq binned-freq-mx]} (m/histogram-calc args)`
 
-~~~
-        bin-size (max (/ rng max-bins) (* (m/freedman-diaconis-rule data) bin-cf))
-        binned-freq (frequencies (map (fn [n] (Math/floor (/ (- n mn) bin-size))) data))
-        binned-freq-mx (apply max (map (fn [[_ f]] f) binned-freq))
-        bins (inc (apply max (map (fn [[v _]] v) binned-freq)))
-~~~
+We will look into the calculations in the next section. For the dicussion here, we only need to know what each one does. `mn` is the minimum value in the data. `m2` is the minimum rounded down to the next increment, as it's not always useful to start the x-axis from zero. Let me show you an example:
 
-Finally, we calculate the width of each bar in the histogram, plus the `y-scale`, which is like the `x-scale`, only for the **y-axis**.
+![1000 ms delay](images/histogram1000ms.png "1000 ms delay")
 
-With the calculations done, we can render the histogram into a `:g` element. Here, the bars are only displayed if there are enough bins. Otherwise, we display `"insufficient data"`. The number of bins is configured in the `:min-bins` key of the argument map. When called from the `histogram-view`, I've chosen a minimum of five bins. This value is entirely arbitrary but seems to work fairly well. Less than five bins look stupid and don't provide much meaningful information either.
+Here, all our values are between 1000 and 1050 milliseconds. The histogram would be fairly useless if the x-axis started at zero because the bars would be so thin that we probably couldn't even see them, let alone tell apart.
+
+I> We will look at creating the delay of 1000ms for each message in a subsequent chapter when discussing the **systems-toolbox** messaging model.
+
+Next, we have `rng`, which is the distance between the minimum and the maximum value. Then, there's the `increment`. This is the distance between the ticks on the x-axis, such as `10`, `25`, or also `500`, depending on the range of the provided `data`. `bins` is the number of bins in the histogram, each of which will be represented as a bar. `binned-freq` is contains the frequencies per bin. Finally, `binned-freq-mx` is the maximum frequency in any of the bins, which is used to determine the scale on the y-axis.
+
+With those values, we can calculate the `x-scale` and `y-scale`, which will be used to translate positions into the given coordinate system. Finally, we can determine the width of each bar, by dividing the product of `rng` and `x-scale` through the number of `bins`.
+
+With those calculations completed, we can render the histogram into a `:g` element. Here, the bars are only displayed if there are enough bins. Otherwise, we display `"insufficient data"`. The number of bins is configured in the `:min-bins` key of the argument map. When called from the `histogram-view`, I've chosen a minimum of five bins. This value is entirely arbitrary but seems to work fairly well. Less than five bins look stupid and don't provide much meaningful information either.
 
 If the data is deemed sufficient, we render a vertical bar as a `:rect` for each bin. This rendering happens in a **[for-comprehension](https://clojuredocs.org/clojure.core/for)**, as you've already seen in the previous chapter. Of importance here is the `:key` on each elements' metadata. While we would get by without, **React** needs this key to work more efficiently by reusing elements in the next render cycle. Without assigning the keys, the browser needs to do more work and React prints long and ugly warnings in the browser's console.
 
