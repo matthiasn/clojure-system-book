@@ -121,7 +121,7 @@ Okay, with that being said, let's dive into the code:
                        :max-bins 25})])
 ~~~
 
-Okay, that was a bit involved. But hey, in order to use a histogram in your project, all you need is a import this namespace, and then use a one-liner to plot your histogram (and more chart types to come - feel free to contribute).
+Okay, that was a bit involved. But hey, to use a histogram in your project, all you need is to import this namespace, and then use a one-liner to plot your histogram (and more chart types to come - feel free to contribute).
 
 After skim reading the namespace, are you still interested in constructing charts? Good, then let's go through function by function:
 
@@ -146,7 +146,7 @@ After skim reading the namespace, are you still interested in constructing chart
                        :max-bins 25})])
 ~~~
 
-The `histogram-view` function simply creates a container `:svg` element, which scales into its parent element through the `:width "100%"` setting. Also note the `:viewBox "0 0 400 250"`, which allows us to work with a useful coordinate system that's independent from the size of the rendered element. Finally, the we pass some data to the `histogram-view-fn`, which we'll look into next.
+The `histogram-view` function simply creates a container `:svg` element, which scales into its parent element through the `:width "100%"` setting. Also note the `:viewBox "0 0 400 250"`, which allows us to work with a useful coordinate system that's independent of the size of the rendered element. Finally, we pass some data to the `histogram-view-fn`, which we'll look into next.
 
 ~~~
 (defn histogram-view-fn
@@ -180,7 +180,7 @@ The `histogram-view` function simply creates a container `:svg` element, which s
      [histogram-y-axis (- x 7) y h (or binned-freq-mx 5) y-label]]))
 ~~~
 
-Above, we render an **[SVG g element](https://developer.mozilla.org/en/docs/Web/SVG/Element/g)**, which contains the histogram. Before doing so, we need to calculate a few things from the provided data, which happens in the `let` binding, starting with the maximum value `mx`, the minimum value `mn` and the range contained in the data, `rng`. Next, we calculate the increments between the intervals on the histogram's x-axis, either by calling a provided `increment-fn`, or, if that doesn't exist, the `default-increment-fn`. We'll look into that when discussing the `charts.math` namespace in the next section. For now, it is enough to know that it'll give us a reasonable increment to use for the intervals, such as `10`, `25`, or also `500`, depending on the range in the provided `data`. Next, we calculate `mn2` and `mx2`, which are the next possible intervals given the chosen increments. Then, we calculate the `x-scale`, which will be used to translate positions into the given coordinate system.
+Above, we render an **[SVG g element](https://developer.mozilla.org/en/docs/Web/SVG/Element/g)**, which contains the histogram. Before doing so, we need to calculate a few things from the provided data, which happens in the `let` binding, starting with the maximum value `mx`, the minimum value `mn` and the range contained in the data, `rng`. Next, we calculate the increments between the intervals on the histogram's x-axis, either by calling a provided `increment-fn` or, if that doesn't exist, the `default-increment-fn`. We'll look into that when discussing the `charts.math` namespace in the next section. For now, it is enough to know that it'll give us a reasonable increment to use for the intervals, such as `10`, `25`, or also `500`, depending on the range of the provided `data`. Next, we calculate `mn2` and `mx2`, which are the next possible intervals given the chosen increments. Then, we calculate the `x-scale`, which will be used to translate positions into the given coordinate system.
 
 Next, we calculate the size of the bins using the `freedman-diaconis-rule` function. We'll look into that function in the next section. For now, it's enough to know that the following four lines give us a reasonable number of bins for the provided data. A bin then translates into a bar in the histogram.
 
@@ -193,13 +193,13 @@ Next, we calculate the size of the bins using the `freedman-diaconis-rule` funct
 
 Finally, we calculate the width of each bar in the histogram, plus the `y-scale`, which is like the `x-scale`, only for the **y-axis**.
 
-With the calculations done, we can render the histogram into a `:g` element. Here, the bars are only displayed if there are enough bins, otherwise we display `"insufficient data"`. The number of bins is configured in the `:min-bins` key of the argument map. When called from the `histogram-view`, I've chosen a minimum of five bins. This value is entirely arbitrary, but seems to work fairly well. Less than five bins look stupid, and don't provide much meaningful information either.
+With the calculations done, we can render the histogram into a `:g` element. Here, the bars are only displayed if there are enough bins. Otherwise, we display `"insufficient data"`. The number of bins is configured in the `:min-bins` key of the argument map. When called from the `histogram-view`, I've chosen a minimum of five bins. This value is entirely arbitrary but seems to work fairly well. Less than five bins look stupid and don't provide much meaningful information either.
 
-If the data is deemed sufficient, we render a vertical bar as a `:rect` for each bin. This happens in a **[for-comprehension](https://clojuredocs.org/clojure.core/for)**, as you've already seen in the previous chapter. Of importance here is the `:key` on each elements' metadata. While we would get by without, **React** needs this key to work more efficiently by reusing elements in the next render cycle. Without assigning the keys, the browser needs to do more work, and React prints long and ugly warnings in the browser's console.
+If the data is deemed sufficient, we render a vertical bar as a `:rect` for each bin. This rendering happens in a **[for-comprehension](https://clojuredocs.org/clojure.core/for)**, as you've already seen in the previous chapter. Of importance here is the `:key` on each elements' metadata. While we would get by without, **React** needs this key to work more efficiently by reusing elements in the next render cycle. Without assigning the keys, the browser needs to do more work and React prints long and ugly warnings in the browser's console.
 
 Then, we render the **x-axis** by calling `histogram-x-axis`, and the **y-axis** in `histogram-y-axis`.
 
-The fucntions for rendering the axes are fairly straightforward. Here's the `histogram-x-axis` function:
+The functions for rendering the axes are fairly straightforward. Here's the `histogram-x-axis` function:
 
 ~~~
 (defn histogram-x-axis
@@ -225,11 +225,11 @@ The mechanism here will probably look fairly familiar by now:
 * next, there's the axis itself, rendered by the `path` function
 * there's a `for`-comprehension for the ticks on the axis, which also use the `path` function
 * there's another `for`-comprehension for the axis labels (the numbers associated with a tick)
-* finally, there's a label, which in our example application here would for example be `"Roundtrip t/ms"`
+* finally, there's a label, which in our example application here would, for example, be `"Roundtrip t/ms"`
 
 Both `for`-comprehensions make use of the range `rng`, which is a sequence from `mn` to one larger than `mx`, with the step size `increment`. All these values depend on the data and are computed individually, as we will see in the next section.
 
-Here's the aforementioned `path` function, which is really only a thin wrapper over `:path`, with a few defaults so we save some typing later on:
+Here's the aforementioned `path` function, which is only a thin wrapper over `:path`, with a few defaults, so we save some typing later on:
 
 ~~~
 (defn path
@@ -268,10 +268,10 @@ The `histogram-y-axis` is somewhat similar, only that here we can calculate more
                                              :transform rotate})) y-label]]))
 ~~~
 
-Other than calculating the `rng` and `scale` locally inside the `let`-binding, the function is pretty much the same as the `histogram-y-axis` function, with the other difference that the paths and labels are rotated, as obviously the y-axis is vertical. If you want to learn more about **SVG** paths, I'd recommend either one of the tutorials out there, or to just modify the values and see how that affects the histogram. For that, I would copy the code over into the sample app and use **Figwheel** for immediate feedback. Otherwise, you'd have to publish the library locally after each change, and then recompile the sample application, which takes away all the fun. Tight feedback loops are important.
+Other than calculating the `rng` and `scale` locally inside the `let`-binding, the function is pretty much the same as the `histogram-y-axis` function, with the other difference that the paths and labels are rotated, as obviously, the y-axis is vertical. If you want to learn more about **SVG** paths, I'd recommend either one of the tutorials out there, or to just modify the values and see how that affects the histogram. For that, I would copy the code over into the sample app and use **Figwheel** for immediate feedback. Otherwise, you'd have to publish the library locally after each change, and then recompile the sample application, which takes away all the fun. Tight feedback loops are important.
 
-This is it for the rendering of the histogram. In the next chapter, I'll guide you through the math behind the calculations used here.
+This is all for the rendering of the histogram. In the next chapter, I'll guide you through the math behind the calculations used here.
 
-If you want to use a histogram in your application and are happy with the defaults, you can simply call the `histogram-view` function. Or, if you want more fine-grained control, you can copy this function and use the values you desire. Or, you can of course use this whole thing as an inspiration and come up with your own chart. In that case, please consider submitting a PR, others might benefit from that, too.
+If you want to use a histogram in your application and are happy with the defaults, you can simply call the `histogram-view` function. Or, if you want more fine-grained control, you can copy this function and use the values you desire. Or, you can, of course, use this whole thing as an inspiration and come up with your own chart. In that case, please consider submitting a PR, others might benefit from that, too.
 
-Questions? Send me an email, I'm happy to help. <matthias.nehlsen@gmail.com>
+Questions? Send me an email; I'm happy to help. <matthias.nehlsen@gmail.com>
