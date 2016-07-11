@@ -207,3 +207,36 @@ This approach is much more generic and seems to work well.
 
 D> I'm always amazed that we can do all these calculations whenever there's a change in the data. The browser really has become a powerful environment these days.
 
+Finally in this namespace, there's the `histogram-calc` function:
+
+~~~
+(defn histogram-calc
+  "Calculations for histogram."
+  [{:keys [data bin-cf max-bins increment-fn]}]
+  (let [mx (apply max data)
+        mn (apply min data)
+        rng (- mx mn)
+        increment-fn (or increment-fn default-increment-fn)
+        increment (increment-fn rng)
+        bin-size (max (/ rng max-bins) (* (freedman-diaconis-rule data) bin-cf))
+        binned-freq (frequencies (map (fn [n] (Math/floor (/ (- n mn) bin-size))) data))]
+    {:mn             mn
+     :mn2            (round-down (or mn 0) increment)
+     :mx2            (round-up (or mx 10) increment)
+     :rng            rng
+     :increment      increment
+     :binned-freq    binned-freq
+     :binned-freq-mx (apply max (map (fn [[_ f]] f) binned-freq))
+     :bins           (inc (apply max (map (fn [[v _]] v) binned-freq)))}))
+~~~
+
+This function does all the required calculations to get the data into the shape that's required for the actual rendering of the histogram:
+
+* find min value `mn`, max value `mx`, and range of the data `rng`
+* calculate `increment` between ticks on the x-axis (note that you can specify your own function for finding the increments here)
+* determine size of the bins `bin-size`
+* put values into bins in `binned-freq`
+* find max frequency in bins (for scaling)
+* find number of bins (including empty ones)
+
+I> Okay, that's all in this namespace. While the material convered here is not strictly related to the rest of the book, I hope you found it interesting nonetheless. Also, we will use the histograms later in the book when looking into observability of systems, and it never hurts to understand your tools a little better.
