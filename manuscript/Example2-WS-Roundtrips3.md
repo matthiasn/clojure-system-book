@@ -199,7 +199,7 @@ Depending on the range `rng`, I would select different spacing between the ticks
 
 * generate some multipliers, such as `(1.0 10.0 100.0 1000.0 10000.0 100000.0)`
 * multiply each with `1`, `2.5` and `5`, then flatten those result vectors
-* then, with this sequence of possible and a target value of five ticks (which look good in a histogram IMHO), call the `best-increment` function
+* then, with this sequence of possible increments, and a target value of five ticks (which look good in a histogram IMHO), call the `best-increment` function
 * there, the candidate increments are sorted by the delta between the desired number of ticks and the number of ticks we'd get with the respective increment
 * the first of these sorted values is returned, which is the one with the smallest delta
 
