@@ -131,13 +131,13 @@ The `interquartile-range` function takes a sample, which is a sequence of number
       (* 2 (interquartile-range sample) (Math/pow n (/ -1 3))))))
 ~~~
 
-The freedman-diaconis-rule is fairly simply, once we have implemented the IQR:
+The **[Freedman-Diaconis rule](https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule)** is fairly simply, once we have implemented the IQR:
 
 * determine the IQR
 * multiply it by 2
 * multiply it by the cube root of n, the count of items
 
-This gives us a suggested size of the bins in a histogram, which can then be used to determine the number of bins and thus the number of bars to display in our histogram.
+Following these steps gives us a suggested size of the bins in a histogram, which can then be used to determine the number of bins and thus the number of bars to display in our histogram.
 
 Then, there's also the `percentile-range` function:
 
@@ -151,7 +151,7 @@ Then, there's also the `percentile-range` function:
     (take keep-n sorted)))
 ~~~
 
-This function helps when trying to get rid of outliers. This may or may not be helpful in your data. Here, it sometimes helps, for example when all values are in the low hundreds and there's a single outlier in the thousands, as that outlier would otherwise lead to bins that are too large, with many empty bins. As with all visualization, it depends on the data and requires some experimentation.
+This function helps when trying to get rid of outliers, which may or may not be helpful in your data. Here, it sometimes helps, for example when all values are in the low hundreds, and there's a single outlier in the thousands, as that outlier would otherwise lead to bins that are too large, with many empty bins. As with all visualization, it depends on the data and requires some experimentation.
 
 Next, there are helpers for determining the intervals at which to put the ticks in the histogram axes:
 
@@ -179,7 +179,7 @@ Next, there are helpers for determining the intervals at which to put the ticks 
     1))
 ~~~
 
-This is an interesting problem. Of course we could hardwire the increments between the ticks, but then the histogram would hardly be reusable. My initial approach was something this:
+This is an interesting problem. Of course, we could hardwire the increments between the ticks, but then the histogram would hardly be reusable. My initial approach was something this:
 
 ~~~
 (defn default-increment-fn
@@ -195,17 +195,17 @@ This is an interesting problem. Of course we could hardwire the increments betwe
         :else 10))
 ~~~ 
 
-Depending on the range `rng`, I would select different spacing between the ticks on an axis. But that's not really general enough. So what I came up with instead is this:
+Depending on the range `rng`, I would select different spacing between the ticks on an axis. But that's not general enough. So what I came up with instead is this:
 
 * generate some multipliers, such as `(1.0 10.0 100.0 1000.0 10000.0 100000.0)`
 * multiply each with `1`, `2.5` and `5`, then flatten those result vectors
-* then, with this sequence of possible and a target value of five ticks (which look good in a histogram IMHO), call `best-increment` function
+* then, with this sequence of possible and a target value of five ticks (which look good in a histogram IMHO), call the `best-increment` function
 * there, the candidate increments are sorted by the delta between the desired number of ticks and the number of ticks we'd get with the respective increment
 * the first of these sorted values is returned, which is the one with the smallest delta
 
 This approach is much more generic and seems to work well.
 
-D> I'm always amazed that we can do all these calculations whenever there's a change in the data. The browser really has become a powerful environment these days.
+D> I'm always amazed that we can do all these calculations whenever there's a change in the data. The browser has become a powerful environment these days indeed.
 
 Finally in this namespace, there's the `histogram-calc` function:
 
