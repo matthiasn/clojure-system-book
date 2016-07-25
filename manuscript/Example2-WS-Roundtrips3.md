@@ -31,8 +31,8 @@ In the `matthiasn.systems-toolbox-ui.charts.histogram` namespace, we used a hand
           (mean [bottom-val top-val]))))))
 
 (defn interquartile-range
-  "Determines the interquartile range of values in a sequence of numbers. Returns nil
-   when sequence empty or only contains a single entry."
+  "Determines the interquartile range of values in a sequence of numbers.
+   Returns nil when sequence empty or only contains a single entry."
   [sample]
   (let [sorted (sort sample)
         cnt (count sorted)
@@ -46,13 +46,14 @@ In the `matthiasn.systems-toolbox-ui.charts.histogram` namespace, we used a hand
   [sample percentile]
   (let [sorted (sort sample)
         cnt (count sorted)
-        keep-n (Math/ceil (* n (/ percentile 100)))]
+        keep-n (Math/ceil (* cnt (/ percentile 100)))]
     (take keep-n sorted)))
 
 (defn freedman-diaconis-rule
-  "Implements approximation of the Freedman-Diaconis rule for determing bin size in histograms:
-   bin size = 2 IQR(x) n^-1/3 where IQR(x) is the interquartile range of the data and n is the
-   number of observations in sample x. Argument is expected to be a sequence of numbers."
+  "Implements approximation of the Freedman-Diaconis rule for determing bin size
+   in histograms: bin size = 2 IQR(x) n^-1/3 where IQR(x) is the interquartile
+   range of the data and n is the number of observations in sample x. Argument
+   is expected to be a sequence of numbers."
   [sample]
   (let [n (count sample)]
     (when (pos? n)
@@ -64,9 +65,9 @@ In the `matthiasn.systems-toolbox-ui.charts.histogram` namespace, we used a hand
 (defn best-increment-fn
   "Takes a seq of increments, a desired number of intervals in histogram axis,
    and the range of the values in the histogram. Sorts the values in increments
-   by dividing the range by each to determine number of intervals with this value,
-   subtracting the desired number of intervals, and then returning the increment
-   with the smallest delta."
+   by dividing the range by each to determine number of intervals with this
+   value, subtracting the desired number of intervals, and then returning the
+   increment with the smallest delta."
   [increments desired-n rng]
   (first (sort-by #(Math/abs (- (/ rng %) desired-n)) increments)))
 
@@ -76,7 +77,8 @@ In the `matthiasn.systems-toolbox-ui.charts.histogram` namespace, we used a hand
   [rng]
   (if rng
     (let [multipliers (map #(Math/pow 10 %) (range 0 6))
-          increments (flatten (map (fn [i] (map #(* i %) multipliers)) [1 2.5 5]))
+          increments (flatten (map (fn [i] (map #(* i %) multipliers))
+                                   [1 2.5 5]))
           best-increment (best-increment-fn increments 5 rng)]
       (if (zero? (mod best-increment 1))
         (int best-increment)
@@ -92,7 +94,8 @@ In the `matthiasn.systems-toolbox-ui.charts.histogram` namespace, we used a hand
         increment-fn (or increment-fn default-increment-fn)
         increment (increment-fn rng)
         bin-size (max (/ rng max-bins) (* (freedman-diaconis-rule data) bin-cf))
-        binned-freq (frequencies (map (fn [n] (Math/floor (/ (- n mn) bin-size))) data))]
+        binned-freq (frequencies (map (fn [n] (Math/floor (/ (- n mn) bin-size)))
+                                      data))]
     {:mn             mn
      :mn2            (round-down (or mn 0) increment)
      :mx2            (round-up (or mx 10) increment)
@@ -107,8 +110,8 @@ The first two functions here, `mean` and `median`, are borrowed from the **[Cloj
 
 ~~~
 (defn interquartile-range
-  "Determines the interquartile range of values in a sequence of numbers. Returns nil
-   when sequence empty or only contains a single entry."
+  "Determines the interquartile range of values in a sequence of numbers.
+   Returns nil when sequence empty or only contains a single entry."
   [sample]
   (let [sorted (sort sample)
         cnt (count sorted)
@@ -122,9 +125,10 @@ The `interquartile-range` function takes a sample, which is a sequence of number
 
 ~~~
 (defn freedman-diaconis-rule
-  "Implements approximation of the Freedman-Diaconis rule for determing bin size in histograms:
-   bin size = 2 IQR(x) n^-1/3 where IQR(x) is the interquartile range of the data and n is the
-   number of observations in sample x. Argument is expected to be a sequence of numbers."
+  "Implements approximation of the Freedman-Diaconis rule for determing bin size
+   in histograms: bin size = 2 IQR(x) n^-1/3 where IQR(x) is the interquartile
+   range of the data and n is the number of observations in sample x. Argument
+   is expected to be a sequence of numbers."
   [sample]
   (let [n (count sample)]
     (when (pos? n)
@@ -159,9 +163,9 @@ Next, there are helpers for determining the intervals at which to put the ticks 
 (defn best-increment-fn
   "Takes a seq of increments, a desired number of intervals in histogram axis,
    and the range of the values in the histogram. Sorts the values in increments
-   by dividing the range by each to determine number of intervals with this value,
-   subtracting the desired number of intervals, and then returning the increment
-   with the smallest delta."
+   by dividing the range by each to determine number of intervals with this
+   value, subtracting the desired number of intervals, and then returning the
+   increment with the smallest delta."
   [increments desired-n rng]
   (first (sort-by #(Math/abs (- (/ rng %) desired-n)) increments)))
 
@@ -171,7 +175,8 @@ Next, there are helpers for determining the intervals at which to put the ticks 
   [rng]
   (if rng
     (let [multipliers (map #(Math/pow 10 %) (range 0 6))
-          increments (flatten (map (fn [i] (map #(* i %) multipliers)) [1 2.5 5]))
+          increments (flatten (map (fn [i] (map #(* i %) multipliers))
+                                   [1 2.5 5]))
           best-increment (best-increment-fn increments 5 rng)]
       (if (zero? (mod best-increment 1))
         (int best-increment)
@@ -219,7 +224,8 @@ Finally in this namespace, there's the `histogram-calc` function:
         increment-fn (or increment-fn default-increment-fn)
         increment (increment-fn rng)
         bin-size (max (/ rng max-bins) (* (freedman-diaconis-rule data) bin-cf))
-        binned-freq (frequencies (map (fn [n] (Math/floor (/ (- n mn) bin-size))) data))]
+        binned-freq (frequencies (map (fn [n] (Math/floor (/ (- n mn) bin-size)))
+                                      data))]
     {:mn             mn
      :mn2            (round-down (or mn 0) increment)
      :mx2            (round-up (or mx 10) increment)

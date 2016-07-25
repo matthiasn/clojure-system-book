@@ -68,9 +68,9 @@ Anyway, let's look at some code, starting with where the messages originate in o
                    :fill         fill}])])))
 
 (defn trailing-circles
-  "Displays two transparent circles. The position of the circles comes from the most recent
-  messages, one sent locally and the other with a roundtrip to the server in between.  This
-  makes it easier to visually detect any delays."
+  "Displays two transparent circles. The position of the circles comes from
+   the most recent messages, one sent locally and the other with a roundtrip to
+   the server in between. This makes it easier to visually detect any delays."
   [state]
   (let [local-pos (:local state)
         from-server (:from-server state)]
@@ -82,13 +82,14 @@ Anyway, let's look at some code, starting with where the messages originate in o
                                       :fill "rgba(0,0,255,0.1)"})]]))
 
 (defn mouse-view
-  "Renders SVG with both local mouse position and the last one returned from the server,
-  in an area that covers the entire visible page."
+  "Renders SVG with both local mouse position and the last one returned from the
+   server, in an area that covers the entire visible page."
   [{:keys [observed local]}]
   (let [state-snapshot @observed
         mouse-div (by-id "mouse")
-        update-dim #(do (swap! local assoc :width (- (.-offsetWidth mouse-div) 2))
-                        (swap! local assoc :height (aget js/document "body" "scrollHeight")))]
+        update-dim
+        #(do (swap! local assoc :width (- (.-offsetWidth mouse-div) 2))
+             (swap! local assoc :height (aget js/document "body" "scrollHeight")))]
     (update-dim)
     (aset js/window "onresize" update-dim)
     [:div
@@ -96,9 +97,11 @@ Anyway, let's look at some code, starting with where the messages originate in o
             :height (:height @local)}
       (trailing-circles state-snapshot)
       (when (-> state-snapshot :show-all :local)
-        [mouse-hist-view state-snapshot :local-hist "rgba(0,0,0,0.06)" "rgba(0,255,0,0.05)"])
+        [mouse-hist-view state-snapshot :local-hist
+         "rgba(0,0,0,0.06)" "rgba(0,255,0,0.05)"])
       (when (-> state-snapshot :show-all :server)
-        [mouse-hist-view state-snapshot :server-hist "rgba(0,0,0,0.06)" "rgba(0,0,128,0.05)"])]]))
+        [mouse-hist-view state-snapshot :server-hist
+         "rgba(0,0,0,0.06)" "rgba(0,0,128,0.05)"])]]))
 
 (defn init-fn
   "Listen to onmousemove events for entire page, emit message when fired.
@@ -198,13 +201,14 @@ Next, let's have a look at the `mouse-view` function, which is responsible for r
 
 ~~~
 (defn mouse-view
-  "Renders SVG with both local mouse position and the last one returned from the server,
-  in an area that covers the entire visible page."
+  "Renders SVG with both local mouse position and the last one returned from the
+   server, in an area that covers the entire visible page."
   [{:keys [observed local]}]
   (let [state-snapshot @observed
         mouse-div (by-id "mouse")
-        update-dim #(do (swap! local assoc :width (- (.-offsetWidth mouse-div) 2))
-                        (swap! local assoc :height (aget js/document "body" "scrollHeight")))]
+        update-dim
+        #(do (swap! local assoc :width (- (.-offsetWidth mouse-div) 2))
+             (swap! local assoc :height (aget js/document "body" "scrollHeight")))]
     (update-dim)
     (aset js/window "onresize" update-dim)
     [:div
@@ -212,9 +216,11 @@ Next, let's have a look at the `mouse-view` function, which is responsible for r
             :height (:height @local)}
       (trailing-circles state-snapshot)
       (when (-> state-snapshot :show-all :local)
-        [mouse-hist-view state-snapshot :local-hist "rgba(0,0,0,0.06)" "rgba(0,255,0,0.05)"])
+        [mouse-hist-view state-snapshot :local-hist
+         "rgba(0,0,0,0.06)" "rgba(0,255,0,0.05)"])
       (when (-> state-snapshot :show-all :server)
-        [mouse-hist-view state-snapshot :server-hist "rgba(0,0,0,0.06)" "rgba(0,0,128,0.05)"])]]))
+        [mouse-hist-view state-snapshot :server-hist
+         "rgba(0,0,0,0.06)" "rgba(0,0,128,0.05)"])]]))
 ~~~
 
 Note that this component gets passed a map with the `observed` and `local` keys. The `observed` key is an atom which holds the state of the component it observes. Here, this is always the latest snapshot of the `store-cmp`. The `local` atom contains some local state, such as the width of the SVG for resizing. Note that we're detecting the width on every call to the function, and also in the `onresize` callback of `js/window`. This ensures that the mouse div fills the entire page, while working with the correct pixel coordinate system. One could instead also use a viewBox, like this: `{:width "100%" :viewBox "0 0 1000 1000"}`. However, that would not work correctly in this case as the mouse position would not be aligned with the circles here.
@@ -223,9 +229,9 @@ Next, we have the `trailing-circles` function:
 
 ~~~
 (defn trailing-circles
-  "Displays two transparent circles. The position of the circles comes from the most recent
-  messages, one sent locally and the other with a roundtrip to the server in between.  This
-  makes it easier to visually detect any delays."
+  "Displays two transparent circles. The position of the circles comes from
+   the most recent messages, one sent locally and the other with a roundtrip to
+   the server in between. This makes it easier to visually detect any delays."
   [state]
   (let [local-pos (:local state)
         from-server (:from-server state)]
@@ -273,21 +279,25 @@ That's it for the rendering of the mouse element. The messages emitted there the
 
 ~~~
 (ns example.pointer
-  "This component receives messages, keeps a counter, decorates them with the state of the
-  counter, and sends them back. Here, this provides a way to measure roundtrip time from the UI,
-  as timestamps are recorded as the message flows through the system.
-  Also records a recent history of mouse positions for all clients, which the component provides
-  to clients upon request.")
+  "This component receives messages, keeps a counter, decorates them with the
+   state of the counter, and sends them back. Here, this provides a way to
+   measure roundtrip time from the UI, as timestamps are recorded as the message
+   flows through the system.
+   Also records a recent history of mouse positions for all clients, which the
+   component provides to clients upon request.")
 
 (defn process-mouse-pos
-  "Handler function for received mouse positions, increments counter and returns mouse position
-  to sender."
+  "Handler function for received mouse positions, increments counter and returns
+   mouse position to sender."
   [{:keys [current-state msg-meta msg-payload]}]
   (let [new-state (-> current-state
                       (update-in [:count] inc)
-                      (update-in [:mouse-moves] #(vec (take-last 1000 (conj % msg-payload)))))]
+                      (update-in [:mouse-moves]
+                                 #(vec (take-last 1000 (conj % msg-payload)))))]
     {:new-state new-state
-     :emit-msg (with-meta [:mouse/pos (assoc msg-payload :count (:count new-state))] msg-meta)}))
+     :emit-msg (with-meta
+                 [:mouse/pos (assoc msg-payload :count (:count new-state))]
+                 msg-meta)}))
 
 (defn get-mouse-hist
   "Gets the recent mouse position history from server."
@@ -299,7 +309,9 @@ That's it for the rendering of the mouse element. The messages emitted there the
   {:cmp-id      cmp-id
    :state-fn    (fn [_] {:state (atom {:count 0 :mouse-moves []})})
    :handler-map {:mouse/pos      process-mouse-pos
-                 :mouse/get-hist get-mouse-hist}})
+                 :mouse/get-hist get-mouse-hist}
+   :opts        {:msgs-on-firehose      true
+                 :snapshots-on-firehose true}})
 ~~~
 
 At the bottom, you see the `cmp-map`, which again is the map specifying the component that the switchboard will then instantiate. Inside, there's the `:state-fn`, which does nothing but create the initial state inside an atom. Then, there's the `:handler-map`, which here handles the two message types `:cmd/mouse-pos` and `:mouse/get-hist`.
@@ -333,26 +345,37 @@ For establishing these connections, let's have a look at the `core` namespaces o
 
 (defonce switchboard (sb/component :client/switchboard))
 
+; TODO: maybe firehose messages should implicitly be relayed?
 (defn init! []
   (sb/send-mult-cmd
     switchboard
     [[:cmd/init-comp
-      #{(sente/cmp-map :client/ws-cmp {:relay-types #{:mouse/pos :mouse/get-hist}
-                                       :msgs-on-firehose true})
+      #{(sente/cmp-map :client/ws-cmp
+                       {:relay-types      #{:mouse/pos
+                                            :mouse/get-hist
+                                            :firehose/cmp-put
+                                            :firehose/cmp-recv
+                                            :firehose/cmp-publish-state
+                                            :firehose/cmp-recv-state}
+                        :msgs-on-firehose true})
         (mouse/cmp-map :client/mouse-cmp)
-        (info/cmp-map  :client/info-cmp)
+        (info/cmp-map :client/info-cmp)
         (store/cmp-map :client/store-cmp)
-        (hist/cmp-map  :client/histogram-cmp)}]
-     [:cmd/route {:from :client/mouse-cmp :to #{:client/store-cmp :client/ws-cmp}}]
-     [:cmd/route {:from :client/ws-cmp :to :client/store-cmp}]
-     [:cmd/route {:from :client/info-cmp :to #{:client/store-cmp :client/ws-cmp}}]
+        (hist/cmp-map :client/histogram-cmp)}]
+     [:cmd/route {:from :client/mouse-cmp
+                  :to   #{:client/store-cmp :client/ws-cmp}}]
+     [:cmd/route {:from :client/ws-cmp
+                  :to   :client/store-cmp}]
+     [:cmd/route {:from :client/info-cmp
+                  :to   #{:client/store-cmp :client/ws-cmp}}]
      [:cmd/observe-state {:from :client/store-cmp
-                          :to #{:client/mouse-cmp :client/histogram-cmp :client/info-cmp}}]]))
+                          :to   #{:client/mouse-cmp
+                                  :client/histogram-cmp
+                                  :client/info-cmp}}]])
+  (metrics/init! switchboard)
+  (observer/init! switchboard))
 
 (init!)
-
-(metrics/init! switchboard)
-(observer/init! switchboard)
 ~~~
 
 
@@ -383,6 +406,7 @@ With the client-side wiring in place, let's look at the server-side wiring in **
             [matthiasn.systems-toolbox.switchboard :as sb]
             [matthiasn.systems-toolbox-sente.server :as sente]
             [example.metrics :as metrics]
+            [matthiasn.systems-toolbox-observer.probe :as probe]
             [example.index :as index]
             [clojure.tools.logging :as log]
             [clj-pid.core :as pid]
@@ -391,27 +415,31 @@ With the client-side wiring in place, let's look at the server-side wiring in **
 (defonce switchboard (sb/component :server/switchboard))
 
 (defn restart!
-  "Starts or restarts system by asking switchboard to fire up the provided ws-cmp and the ptr
-  component, which handles and counts messages about mouse moves."
+  "Starts or restarts system by asking switchboard to fire up the provided
+   ws-cmp and the ptr component, which handles and counts messages about mouse
+   moves."
   []
   (sb/send-mult-cmd
     switchboard
-    [[:cmd/init-comp (sente/cmp-map :server/ws-cmp index/sente-map)]
-     [:cmd/init-comp (ptr/cmp-map   :server/ptr-cmp)]
+    [[:cmd/init-comp #{(sente/cmp-map :server/ws-cmp index/sente-map)
+                       (ptr/cmp-map :server/ptr-cmp)}]
      [:cmd/route {:from :server/ptr-cmp :to :server/ws-cmp}]
-     [:cmd/route {:from :server/ws-cmp  :to :server/ptr-cmp}]])
-  (metrics/start! switchboard))
+     [:cmd/route {:from :server/ws-cmp :to :server/ptr-cmp}]])
+  (metrics/start! switchboard)
+  #_
+  (probe/start! switchboard))
 
 (defn -main
-  "Starts the application from command line, saves and logs process ID. The system that is fired up
-  when restart! is called proceeds in core.async's thread pool. Since we don't want the application
-  to exit when just because the current thread is out of work, we just put it to sleep."
+  "Starts the application from command line, saves and logs process ID. The
+   system that is fired up when restart! is called proceeds in core.async's
+   thread pool. Since we don't want the application to exit when just because
+   the current thread is out of work, we just put it to sleep."
   [& args]
   (pid/save "example.pid")
   (pid/delete-on-shutdown! "example.pid")
   (log/info "Application started, PID" (pid/current))
   (restart!)
-  (Thread/sleep Long/MAX_VALUE))  
+  (Thread/sleep Long/MAX_VALUE))
 ~~~
 
 Here, just like on the client side, a switchboard is kept in a `defonce`. Then, we ask the switchboard to instantiate two components for us, the `:server/ws-cmp` and the `:server/ptr-cmp`, and then wire a simple message flow together.
@@ -444,15 +472,17 @@ This starts the server side application. Now change something, let's say in the 
 
 ~~~
 (defn process-mouse-pos
-  "Handler function for received mouse positions, increments counter and returns mouse position
-  to sender."
+  "Handler function for received mouse positions, increments counter and returns
+   mouse position to sender."
   [{:keys [current-state msg-meta msg-payload]}]
   (let [new-state (-> current-state
                       (update-in [:count] inc)
-                      (update-in [:mouse-moves] #(vec (take-last 1000 (conj % msg-payload)))))]
-    (prn msg-payload)
+                      (update-in [:mouse-moves]
+                                 #(vec (take-last 1000 (conj % msg-payload)))))]
     {:new-state new-state
-     :emit-msg (with-meta [:mouse/pos (assoc msg-payload :count (:count new-state))] msg-meta)}))
+     :emit-msg (with-meta
+                 [:mouse/pos (assoc msg-payload :count (:count new-state))]
+                 msg-meta)}))
 ~~~
 
 With this change, all you need to do now is reload the modified namespace, and then call `restart!` again:
@@ -472,11 +502,13 @@ Okay, now we have the message flow from capturing the mouse events to the server
 
 (defn mouse-pos-handler
   "Handler function for mouse position messages. When message from server:
-    - determine the round trip time (RTT) by subtracting the message creation timestamp
-      from the timestamp when the message is finally received by the store component.
-    - determine server side processing time is determined. For this, we can use the timestamps
-      from when the ws-cmp on the server side emits a message coming from the client and when the
-      processed message is received back for delivery to the client.
+    - determine the round trip time (RTT) by subtracting the message creation
+      timestamp from the timestamp when the message is finally received by the
+      store component.
+    - determine server side processing time is determined. For this, we can use
+      the timestamps from when the ws-cmp on the server side emits a message
+      coming from the client and when the processed message is received back for
+      delivery to the client.
     - update component state with the new mouse location under :from-server.
    When message received locally, only update position in :local."
   [{:keys [current-state msg-payload msg-meta]}]
@@ -632,7 +664,8 @@ Okay, ready? Let's move on. We've got some ground to cover. The `:client/histogr
 ~~~
 (ns example.ui-histograms
   (:require [matthiasn.systems-toolbox-ui.reagent :as r]
-            [matthiasn.systems-toolbox-ui.charts.histogram :as h]))
+            [matthiasn.systems-toolbox-ui.charts.histogram :as h]
+            [matthiasn.systems-toolbox-ui.charts.math :as m]))
 
 (defn histograms-view
   "Renders histograms with different data sets, labels and colors."
@@ -644,15 +677,18 @@ Okay, ready? Let's move on. We've got some ground to cover. The `:client/histogr
     [:div
      [:div
       [h/histogram-view rtt-times "Roundtrip t/ms" "#D94B61"]
-      [h/histogram-view
-       (h/percentile-range rtt-times 99) "Roundtrip t/ms (within 99th percentile)" "#D94B61"]
-      [h/histogram-view
-       (h/percentile-range rtt-times 95) "Roundtrip t/ms (within 95th percentile)" "#D94B61"]]
+      [h/histogram-view (m/percentile-range rtt-times 99)
+       "Roundtrip t/ms (within 99th percentile)" "#D94B61"]
+      [h/histogram-view (m/percentile-range rtt-times 95)
+       "Roundtrip t/ms (within 95th percentile)" "#D94B61"]]
      [:div
-      [h/histogram-view network-times "Network time t/ms (within 99th percentile)" "#66A9A5"]
-      [h/histogram-view (h/percentile-range network-times 95)
+      [h/histogram-view network-times
+       "Network time t/ms (within 99th percentile)" "#66A9A5"]
+      [h/histogram-view
+       (m/percentile-range network-times 95)
        "Network time t/ms (within 95th percentile)" "#66A9A5"]
-      [h/histogram-view server-proc-times "Server processing time t/ms" "#F1684D"]]]))
+      [h/histogram-view server-proc-times
+       "Server processing time t/ms" "#F1684D"]]]))
 
 (defn cmp-map
   [cmp-id]

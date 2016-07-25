@@ -72,10 +72,12 @@ Okay, with that being said, let's dive into the code:
           :style       {:font-weight :bold :font-size 24}} text])
 
 (defn histogram-view-fn
-  "Renders a histogram. Only takes care of the presentational aspects, the calculations are
-   done in the histogram-calc function in matthiasn.systems-toolbox-ui.charts.math."
+  "Renders a histogram. Only takes care of the presentational aspects, the
+   calculations are done in the histogram-calc function in
+   matthiasn.systems-toolbox-ui.charts.math."
   [{:keys [x y w h x-label y-label color min-bins warning] :as args}]
-  (let [{:keys [mn mn2 mx2 rng increment bins binned-freq binned-freq-mx]} (m/histogram-calc args)
+  (let [{:keys [mn mn2 mx2 rng increment bins binned-freq binned-freq-mx]}
+        (m/histogram-calc args)
         x-scale (/ w (- mx2 mn2))
         y-scale (/ (- h 20) binned-freq-mx)
         bar-width (/ (* rng x-scale) bins)]
@@ -93,8 +95,9 @@ Okay, with that being said, let's dive into the code:
      [histogram-y-axis (- x 7) y h (or binned-freq-mx 5) y-label]]))
 
 (defn histogram-view
-  "Renders an individual histogram for the given data, dimension, label and color, with a
-   reasonable size inside a viewBox, which will then scale smoothly into any div you put it in."
+  "Renders an individual histogram for the given data, dimension, label and
+   color, with a reasonable size inside a viewBox, which will then scale
+   smoothly into any div you put it in."
   [data label color]
   [:svg {:width   "100%"
          :viewBox "0 0 400 250"}
@@ -118,8 +121,9 @@ After skim reading the namespace, are you still interested in constructing chart
 
 ~~~
 (defn histogram-view
-  "Renders an individual histogram for the given data, dimension, label and color, with a
-   reasonable size inside a viewBox, which will then scale smoothly into any div you put it in."
+  "Renders an individual histogram for the given data, dimension, label and
+   color, with a reasonable size inside a viewBox, which will then scale
+   smoothly into any div you put it in."
   [data label color]
   [:svg {:width   "100%"
          :viewBox "0 0 400 250"}
@@ -141,10 +145,12 @@ The `histogram-view` function simply creates a container `:svg` element, which s
 
 ~~~
 (defn histogram-view-fn
-  "Renders a histogram. Only takes care of the presentational aspects, the calculations are
-   done in the histogram-calc function in matthiasn.systems-toolbox-ui.charts.math."
+  "Renders a histogram. Only takes care of the presentational aspects, the
+   calculations are done in the histogram-calc function in
+   matthiasn.systems-toolbox-ui.charts.math."
   [{:keys [x y w h x-label y-label color min-bins warning] :as args}]
-  (let [{:keys [mn mn2 mx2 rng increment bins binned-freq binned-freq-mx]} (m/histogram-calc args)
+  (let [{:keys [mn mn2 mx2 rng increment bins binned-freq binned-freq-mx]}
+        (m/histogram-calc args)
         x-scale (/ w (- mx2 mn2))
         y-scale (/ (- h 20) binned-freq-mx)
         bar-width (/ (* rng x-scale) bins)]
